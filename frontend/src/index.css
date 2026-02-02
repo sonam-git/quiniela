@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark theme body */
+.dark body,
+:root.dark body {
+  background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%);
+  color: #e2e8f0;
+}
+
+/* Light theme body */
+.light body,
+:root.light body {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
+  color: #1e293b;
+}
+
+@layer components {
+  /* Dark Theme Buttons */
+  .dark .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 
+           text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-300 
+           disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-glow
+           text-sm sm:text-base;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-dark-700 hover:bg-dark-600 text-dark-100 font-semibold py-2.5 px-5 
+           rounded-lg transition-all duration-300 border border-dark-500 hover:border-dark-400
+           text-sm sm:text-base;
+  }
+
+  .dark .btn-accent {
+    @apply bg-gradient-to-r from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 
+           text-dark-900 font-bold py-2.5 px-5 rounded-lg transition-all duration-300 
+           shadow-lg hover:shadow-glow-accent
+           text-sm sm:text-base;
+  }
+
+  .dark .input-field {
+    @apply w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg 
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+           transition-all duration-300 text-dark-100 placeholder-dark-400
+           text-sm sm:text-base;
+  }
+
+  .dark .card {
+    @apply bg-gradient-to-br from-dark-800/90 to-dark-900/95 rounded-2xl shadow-card 
+           p-4 sm:p-6 border border-dark-700/50 backdrop-blur-sm;
+  }
+
+  /* Light Theme Buttons */
+  .light .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 
+           text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-300 
+           disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-glow
+           text-sm sm:text-base;
+  }
+
+  .light .btn-secondary {
+    @apply bg-light-200 hover:bg-light-300 text-light-800 font-semibold py-2.5 px-5 
+           rounded-lg transition-all duration-300 border border-light-400 hover:border-light-500
+           text-sm sm:text-base;
+  }
+
+  .light .btn-accent {
+    @apply bg-gradient-to-r from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 
+           text-white font-bold py-2.5 px-5 rounded-lg transition-all duration-300 
+           shadow-lg hover:shadow-glow-accent
+           text-sm sm:text-base;
+  }
+
+  .light .input-field {
+    @apply w-full px-4 py-3 bg-white border border-light-400 rounded-lg 
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+           transition-all duration-300 text-light-900 placeholder-light-500
+           text-sm sm:text-base;
+  }
+
+  .light .card {
+    @apply bg-white rounded-2xl shadow-card-light
+           p-4 sm:p-6 border border-light-300;
+  }
+
+  /* Common styles that work for both themes */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 
+           text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-300 
+           disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-glow
+           text-sm sm:text-base;
+  }
+
+  .btn-secondary {
+    @apply font-semibold py-2.5 px-5 rounded-lg transition-all duration-300 text-sm sm:text-base;
+  }
+
+  .btn-accent {
+    @apply bg-gradient-to-r from-accent-400 to-accent-500 hover:from-accent-500 hover:to-accent-600 
+           font-bold py-2.5 px-5 rounded-lg transition-all duration-300 
+           shadow-lg hover:shadow-glow-accent text-sm sm:text-base;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 
+           focus:border-transparent transition-all duration-300 text-sm sm:text-base;
+  }
+
+  .card {
+    @apply rounded-2xl p-4 sm:p-6 transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-glow transition-all duration-300;
+  }
+
+  .dark .winner-row {
+    @apply bg-gradient-to-r from-accent-400/20 via-accent-300/30 to-accent-400/20 
+           border-2 border-accent-400/50;
+  }
+
+  .light .winner-row {
+    @apply bg-gradient-to-r from-accent-100 via-accent-50 to-accent-100 
+           border-2 border-accent-400;
+  }
+
+  .dark .text-gradient {
+    @apply bg-gradient-to-r from-primary-400 to-sports-green bg-clip-text text-transparent;
+  }
+
+  .light .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent;
+  }
+
+  .dark .glass-effect {
+    @apply bg-dark-800/40 backdrop-blur-md border border-dark-700/50;
+  }
+
+  .light .glass-effect {
+    @apply bg-white/80 backdrop-blur-md border border-light-300;
+  }
+}
+
+/* Scrollbar styling - Dark */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Scrollbar styling - Light */
+.light ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Theme toggle button animation */
+.theme-toggle {
+  @apply relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300;
+}
+
+.theme-toggle:hover {
+  @apply scale-110;
+}
+
+.theme-toggle svg {
+  @apply transition-transform duration-300;
+}
+
+.theme-toggle:hover svg {
+  @apply rotate-12;
+}

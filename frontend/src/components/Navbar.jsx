@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
@@ -68,6 +68,14 @@ const AboutIcon = () => (
   </svg>
 )
 
+const InstructionsIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+    />
+  </svg>
+)
+
 const MenuIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -84,11 +92,40 @@ export default function Navbar() {
   const { user, logout } = useAuth()
   const { toggleTheme, isDark } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const isActive = (path) => location.pathname === path
+
+  const getLinkClasses = (path, isButton = false) => {
+    if (isButton) return '' // Buttons like Place Bet have their own styling
+    
+    const active = isActive(path)
+    if (active) {
+      return isDark
+        ? 'text-white bg-dark-700'
+        : 'text-gray-900 bg-gray-100'
+    }
+    return isDark
+      ? 'text-dark-200 hover:text-white hover:bg-dark-700'
+      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+  }
+
+  const getMobileLinkClasses = (path) => {
+    const active = isActive(path)
+    if (active) {
+      return isDark
+        ? 'text-white bg-dark-700'
+        : 'text-gray-900 bg-gray-100'
+    }
+    return isDark
+      ? 'text-dark-200 hover:bg-dark-800'
+      : 'text-gray-700 hover:bg-gray-50'
   }
 
   return (
@@ -101,7 +138,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-600">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden ">
               <img 
                 src="/quiniela-logo.png" 
                 alt="Quiniela" 
@@ -126,14 +163,17 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1">
             <Link
               to="/about"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                isDark 
-                  ? 'text-dark-200 hover:text-white hover:bg-dark-700' 
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/about')}`}
             >
               <AboutIcon />
               About
+            </Link>
+            <Link
+              to="/instructions"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/instructions')}`}
+            >
+              <InstructionsIcon />
+              How to Play
             </Link>
 
             {/* Theme Toggle */}
@@ -155,18 +195,18 @@ export default function Navbar() {
               <>
                 <Link
                   to="/dashboard"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                    isDark 
-                      ? 'text-dark-200 hover:text-white hover:bg-dark-700' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/dashboard')}`}
                 >
                   <DashboardIcon />
                   Dashboard
                 </Link>
                 <Link
                   to="/place-bet"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold transition-all duration-200 ${
+                    isActive('/place-bet')
+                      ? 'bg-emerald-700 text-white ring-2 ring-emerald-500 ring-offset-2 ' + (isDark ? 'ring-offset-dark-900' : 'ring-offset-white')
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
                 >
                   <BetIcon />
                   Place Bet
@@ -181,12 +221,12 @@ export default function Navbar() {
                     </span>
                   </div>
                   <span className={`text-sm font-medium ${isDark ? 'text-dark-200' : 'text-gray-700'}`}>
-                    {user.name}
+                    {user.name[0].toUpperCase() + user.name.slice(1)}
                   </span>
                   <button
                     onClick={handleLogout}
                     className={`p-1.5 rounded transition-colors ${
-                      isDark ? 'text-dark-400 hover:text-red-400 hover:bg-dark-700' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'
+                      isDark ? 'text-red-300 hover:text-red-400 hover:bg-dark-700' : 'text-red-400 hover:text-red-500 hover:bg-red-100'
                     }`}
                     title="Logout"
                   >
@@ -198,18 +238,18 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                    isDark 
-                      ? 'text-dark-200 hover:text-white hover:bg-dark-700' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/login')}`}
                 >
                   <LoginIcon />
                   Sign in
                 </Link>
                 <Link
                   to="/signup"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold transition-all duration-200 ${
+                    isActive('/signup')
+                      ? 'bg-emerald-700 text-white ring-2 ring-emerald-500 ring-offset-2 ' + (isDark ? 'ring-offset-dark-900' : 'ring-offset-white')
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
                 >
                   <SignupIcon />
                   Sign up
@@ -266,9 +306,7 @@ export default function Navbar() {
                 <Link
                   to="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                    isDark ? 'text-dark-200 hover:bg-dark-800' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/dashboard')}`}
                 >
                   <DashboardIcon />
                   Dashboard
@@ -277,9 +315,7 @@ export default function Navbar() {
                 <Link
                   to="/place-bet"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                    isDark ? 'text-dark-200 hover:bg-dark-800' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/place-bet')}`}
                 >
                   <BetIcon />
                   Place Bet
@@ -288,12 +324,19 @@ export default function Navbar() {
                 <Link
                   to="/about"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                    isDark ? 'text-dark-200 hover:bg-dark-800' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/about')}`}
                 >
                   <AboutIcon />
                   About
+                </Link>
+
+                <Link
+                  to="/instructions"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/instructions')}`}
+                >
+                  <InstructionsIcon />
+                  How to Play
                 </Link>
 
                 <div className={`my-2 border-t ${isDark ? 'border-dark-700' : 'border-gray-200'}`} />
@@ -313,20 +356,25 @@ export default function Navbar() {
                 <Link
                   to="/about"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                    isDark ? 'text-dark-200 hover:bg-dark-800' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/about')}`}
                 >
                   <AboutIcon />
                   About
                 </Link>
 
                 <Link
+                  to="/instructions"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/instructions')}`}
+                >
+                  <InstructionsIcon />
+                  How to Play
+                </Link>
+
+                <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                    isDark ? 'text-dark-200 hover:bg-dark-800' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/login')}`}
                 >
                   <LoginIcon />
                   Sign in
@@ -335,7 +383,7 @@ export default function Navbar() {
                 <Link
                   to="/signup"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 mx-2 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors"
+                  className="flex items-center justify-center gap-2 mx-2 mt-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all duration-200"
                 >
                   <SignupIcon />
                   Sign up

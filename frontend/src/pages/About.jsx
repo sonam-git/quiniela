@@ -28,10 +28,11 @@ export default function About() {
         
         {/* Hero */}
         <div className="text-center mb-10">
-          <div className="w-14 h-14 rounded-xl mx-auto mb-4 bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-            <span className="text-2xl">⚽</span>
-          </div>
-          <h1 className={`text-2xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-2xl font-semibold mb-2 flex items-center justify-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <circle cx="12" cy="12" r="9" strokeWidth="2" />
+              <path strokeWidth="2" d="M12 3v4M12 17v4M3 12h4M17 12h4M6.34 6.34l2.83 2.83M14.83 14.83l2.83 2.83M6.34 17.66l2.83-2.83M14.83 9.17l2.83-2.83" />
+            </svg>
             About Quiniela
           </h1>
           <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
@@ -180,7 +181,7 @@ export default function About() {
         {/* Footer */}
         <div className={`mt-10 pt-6 border-t text-center ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
           <p className={`text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-            Made with ❤️ for the Liga MX community
+            Developed by Sonam Sherpa. © 2026 Quiniela. All rights reserved.
           </p>
         </div>
       </div>

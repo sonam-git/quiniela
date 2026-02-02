@@ -8,6 +8,7 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import PlaceBet from './pages/PlaceBet'
 import About from './pages/About'
+import Instructions from './pages/Instructions'
 
 // Protected Route Component using React 19 patterns
 function ProtectedRoute({ children }) {
@@ -70,6 +71,7 @@ function AppContent() {
             } 
           />
           <Route path="/about" element={<About />} />
+          <Route path="/instructions" element={<Instructions />} />
         </Routes>
       </main>
       <Toaster 

@@ -99,7 +99,13 @@ export default function Dashboard() {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+                </svg>
                 Dashboard
               </h1>
               <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
@@ -258,16 +264,16 @@ export default function Dashboard() {
         {/* Standings Section */}
         {schedule && (
           <div className={`rounded-lg border ${
-            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-gray-50 border-gray-200'
           }`}>
             <div className={`px-4 py-3 border-b flex items-center justify-between ${
               isDark ? 'border-dark-700' : 'border-gray-200'
             }`}>
-              <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Standings
+              <h2 className={`text-xs font-italic flex items-center gap-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <span>🏆</span> Standings : Jornada {weekInfo.weekNumber}
               </h2>
-              <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                {bets.length} participant{bets.length !== 1 ? 's' : ''}
+              <span className={`text-xs flex items-center gap-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                <span>👥</span> {bets.length} participant{bets.length !== 1 ? 's' : ''}
               </span>
             </div>
             <div className="p-4">

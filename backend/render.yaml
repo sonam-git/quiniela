@@ -1,0 +1,23 @@
+# Render deployment configuration for Quiniela Backend
+# Deploy from: https://dashboard.render.com
+# Set Root Directory to: backend
+
+services:
+  - type: web
+    name: quiniela-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard
+      - key: JWT_SECRET
+        sync: false  # Set this in Render dashboard
+      - key: API_FOOTBALL_KEY
+        sync: false  # Set this in Render dashboard
+      - key: FRONTEND_URL
+        sync: false  # Set this after Vercel deployment

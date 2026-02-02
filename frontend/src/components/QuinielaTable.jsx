@@ -138,14 +138,18 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
               <tr
                 key={bet._id}
                 className={`
-                  ${bet.isWinner && isSettled ? 'winner-row' : isDark ? 'hover:bg-dark-700/30' : 'hover:bg-gray-50'}
+                  ${bet.isWinner && isSettled 
+                    ? isDark 
+                      ? 'bg-gradient-to-r from-sports-gold/20 via-yellow-500/10 to-sports-gold/20 border-l-4 border-sports-gold' 
+                      : 'bg-gradient-to-r from-yellow-100 via-amber-50 to-yellow-100 border-l-4 border-yellow-500'
+                    : isDark ? 'hover:bg-dark-700/30' : 'hover:bg-gray-50'}
                   transition-colors
                 `}
               >
                 <td className="px-3 py-4 whitespace-nowrap">
                   <span className={`
-                    ${index === 0 && isSettled ? 'text-lg' : 'text-sm'}
-                    font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}
+                    ${bet.isWinner && isSettled ? 'text-lg' : 'text-sm'}
+                    font-medium ${bet.isWinner && isSettled ? 'text-sports-gold' : isDark ? 'text-dark-300' : 'text-gray-600'}
                   `}>
                     {bet.isWinner && isSettled ? '👑' : index + 1}
                   </span>
@@ -153,15 +157,26 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
                 
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                    <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+                      bet.isWinner && isSettled 
+                        ? 'bg-gradient-to-br from-sports-gold to-yellow-600' 
+                        : 'bg-gradient-to-br from-primary-500 to-primary-600'
+                    }`}>
                       <span className="text-white font-bold text-sm">
                         {bet.userId?.name?.charAt(0) || '?'}
                       </span>
                     </div>
-                    <div className="ml-3">
-                      <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
+                    <div className="ml-3 flex items-center gap-2">
+                      <p className={`text-sm font-medium ${
+                        bet.isWinner && isSettled 
+                          ? 'text-sports-gold font-bold' 
+                          : isDark ? 'text-dark-100' : 'text-gray-900'
+                      }`}>
                         {bet.userId?.name || 'Unknown'}
                       </p>
+                      {bet.isWinner && isSettled && (
+                        <span className="text-lg" title="Winner! 💰">💰</span>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -245,27 +260,44 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
         {bets.map((bet, index) => (
           <div
             key={bet._id}
-            className={`p-4 rounded-xl border ${
+            className={`p-4 rounded-xl border-2 ${
               bet.isWinner && isSettled 
-                ? 'winner-row border-sports-gold/50' 
+                ? isDark
+                  ? 'bg-gradient-to-r from-sports-gold/20 via-yellow-500/10 to-sports-gold/20 border-sports-gold shadow-lg shadow-sports-gold/20' 
+                  : 'bg-gradient-to-r from-yellow-100 via-amber-50 to-yellow-100 border-yellow-400 shadow-lg shadow-yellow-200'
                 : isDark ? 'bg-dark-700/30 border-dark-600/50' : 'bg-white border-gray-200 shadow-sm'
             }`}
           >
             {/* Header row with rank, name, and paid status */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className={`text-lg font-bold ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                <span className={`text-lg font-bold ${
+                  bet.isWinner && isSettled ? 'text-sports-gold' : isDark ? 'text-dark-300' : 'text-gray-600'
+                }`}>
                   {bet.isWinner && isSettled ? '👑' : `#${index + 1}`}
                 </span>
                 <div className="flex items-center">
-                  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                  <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+                    bet.isWinner && isSettled 
+                      ? 'bg-gradient-to-br from-sports-gold to-yellow-600' 
+                      : 'bg-gradient-to-br from-primary-500 to-primary-600'
+                  }`}>
                     <span className="text-white font-bold text-sm">
                       {bet.userId?.name?.charAt(0) || '?'}
                     </span>
                   </div>
-                  <span className={`ml-2 font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
-                    {bet.userId?.name || 'Unknown'}
-                  </span>
+                  <div className="ml-2 flex items-center gap-1">
+                    <span className={`font-medium ${
+                      bet.isWinner && isSettled 
+                        ? 'text-sports-gold font-bold' 
+                        : isDark ? 'text-dark-100' : 'text-gray-900'
+                    }`}>
+                      {bet.userId?.name || 'Unknown'}
+                    </span>
+                    {bet.isWinner && isSettled && (
+                      <span className="text-lg" title="Winner!">💰</span>
+                    )}
+                  </div>
                 </div>
               </div>
               {bet.paid ? (
@@ -280,6 +312,15 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
                 </span>
               )}
             </div>
+
+            {/* Winner banner for mobile */}
+            {bet.isWinner && isSettled && (
+              <div className={`mb-3 py-2 px-3 rounded-lg text-center ${
+                isDark ? 'bg-sports-gold/30 text-sports-gold' : 'bg-yellow-200 text-yellow-800'
+              }`}>
+                <span className="font-bold text-sm">🏆 WINNER! 💰</span>
+              </div>
+            )}
 
             {/* Stats row */}
             <div className="flex items-center gap-4 mb-3">

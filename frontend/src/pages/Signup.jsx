@@ -51,9 +51,13 @@ export default function Signup() {
     }`}>
       <div className="w-full max-w-sm">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl mx-auto mb-4 bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-            <span className="text-2xl">⚽</span>
+        <div className="text-center mb-4">
+                <div className=" rounded-xl mx-auto mb-4 flex items-center justify-center">
+            <img
+              src="/quiniela-logo.png"
+              alt="Quiniela Logo"
+              className="w-15 h-15"
+            />
           </div>
           <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Create your account

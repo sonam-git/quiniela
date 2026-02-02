@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
 import { useTheme } from '../context/ThemeContext'
-import toast from 'react-hot-toast'
 import QuinielaTable from '../components/QuinielaTable'
 
 export default function Dashboard() {
   const [schedule, setSchedule] = useState(null)
   const [bets, setBets] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [lockStatus, setLockStatus] = useState({
     isBettingLocked: false,
     hasStarted: false,
@@ -18,14 +18,9 @@ export default function Dashboard() {
   const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0 })
   const { isDark } = useTheme()
 
-  useEffect(() => {
-    fetchData()
-    const interval = setInterval(fetchData, 60000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
+      setError(null)
       const [scheduleRes, betsRes] = await Promise.all([
         api.get('/schedule/current'),
         api.get('/bets/current')
@@ -45,14 +40,34 @@ export default function Dashboard() {
       })
     } catch (error) {
       if (error.response?.status === 404) {
-        toast.error('No schedule found for this week')
+        setError({
+          type: 'not_found',
+          title: 'No Schedule Available',
+          message: 'The schedule for this week hasn\'t been created yet. Please check back later.'
+        })
+      } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        setError({
+          type: 'network',
+          title: 'Connection Error',
+          message: 'Unable to connect to the server. Please check your internet connection and try again.'
+        })
       } else {
-        toast.error('Failed to load data')
+        setError({
+          type: 'server',
+          title: 'Failed to Load Data',
+          message: 'Something went wrong while loading the data. Please try again later.'
+        })
       }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
+  }, [fetchData])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -87,6 +102,99 @@ export default function Dashboard() {
             isDark ? 'border-emerald-500 border-t-transparent' : 'border-emerald-600 border-t-transparent'
           }`} />
           <p className={`mt-3 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    const errorIcons = {
+      not_found: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
+      network: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3" />
+        </svg>
+      ),
+      server: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      )
+    }
+
+    const errorColors = {
+      not_found: {
+        icon: isDark ? 'text-amber-400' : 'text-amber-500',
+        bg: isDark ? 'bg-amber-900/20' : 'bg-amber-50',
+        border: isDark ? 'border-amber-800/50' : 'border-amber-200'
+      },
+      network: {
+        icon: isDark ? 'text-blue-400' : 'text-blue-500',
+        bg: isDark ? 'bg-blue-900/20' : 'bg-blue-50',
+        border: isDark ? 'border-blue-800/50' : 'border-blue-200'
+      },
+      server: {
+        icon: isDark ? 'text-red-400' : 'text-red-500',
+        bg: isDark ? 'bg-red-900/20' : 'bg-red-50',
+        border: isDark ? 'border-red-800/50' : 'border-red-200'
+      }
+    }
+
+    const colors = errorColors[error.type] || errorColors.server
+
+    return (
+      <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
+        <div className="max-w-lg mx-auto px-4 py-16">
+          <div className={`rounded-xl border p-8 text-center ${colors.bg} ${colors.border}`}>
+            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-5 ${
+              isDark ? 'bg-dark-800' : 'bg-white'
+            }`}>
+              <span className={colors.icon}>
+                {errorIcons[error.type] || errorIcons.server}
+              </span>
+            </div>
+            
+            <h2 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {error.title}
+            </h2>
+            
+            <p className={`text-sm mb-6 ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
+              {error.message}
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={() => {
+                  setLoading(true)
+                  fetchData()
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Try Again
+              </button>
+              
+              <Link
+                to="/instructions"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isDark
+                    ? 'bg-dark-700 hover:bg-dark-600 text-white border border-dark-600'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                How to Play
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )

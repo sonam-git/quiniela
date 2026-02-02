@@ -11,6 +11,12 @@ const matchSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  // teamA is always the home team, teamB is always the away team
+  // This follows standard Liga MX format: Home vs Away
+  teamAIsHome: {
+    type: Boolean,
+    default: true // First team listed is always home
+  },
   startTime: {
     type: Date,
     required: true

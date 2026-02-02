@@ -20,7 +20,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData()
-    // Refresh every minute to update lock status
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [])
@@ -84,197 +83,222 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className={`mt-4 ${isDark ? 'text-dark-300' : 'text-light-600'}`}>Loading dashboard...</p>
+          <div className={`animate-spin rounded-full h-8 w-8 border-2 mx-auto ${
+            isDark ? 'border-emerald-500 border-t-transparent' : 'border-emerald-600 border-t-transparent'
+          }`} />
+          <p className={`mt-3 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Loading...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className={`text-2xl sm:text-3xl font-bold flex items-center gap-2 ${
-              isDark ? 'text-gradient' : 'text-light-900'
-            }`}>
-              <span>🏟️</span> Quiniela Dashboard
-            </h1>
-            <p className={`mt-1 text-sm sm:text-base flex items-center gap-2 ${
-              isDark ? 'text-dark-300' : 'text-light-600'
-            }`}>
-              <span>🇲🇽</span> Liga MX - Week {weekInfo.weekNumber}, {weekInfo.year}
-            </p>
-          </div>
+    <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Dashboard
+              </h1>
+              <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                Liga MX · Week {weekInfo.weekNumber}, {weekInfo.year}
+              </p>
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Lock Status Badge */}
-            {lockStatus.isBettingLocked ? (
-              <div className={`flex items-center justify-center px-4 py-2.5 rounded-xl border ${
-                isDark 
-                  ? 'bg-red-900/30 text-red-400 border-red-700/50' 
-                  : 'bg-red-50 text-red-600 border-red-200'
-              }`}>
-                <span className="mr-2">🔒</span>
-                <span className="font-medium text-sm sm:text-base">Betting Closed</span>
-              </div>
-            ) : (
-              <div className={`flex items-center justify-center px-4 py-2.5 rounded-xl border ${
-                isDark 
-                  ? 'bg-sports-green/10 text-sports-green border-sports-green/30' 
-                  : 'bg-green-50 text-green-600 border-green-200'
-              }`}>
-                <span className="mr-2">🔓</span>
-                <span className="font-medium text-sm sm:text-base">
-                  Open {getTimeUntilLockout() && <span className="hidden sm:inline">({getTimeUntilLockout()} left)</span>}
+            <div className="flex items-center gap-3">
+              {/* Status Badge */}
+              {lockStatus.isBettingLocked ? (
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                  isDark 
+                    ? 'bg-red-900/30 text-red-400 border border-red-800/50' 
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  Betting closed
                 </span>
-              </div>
-            )}
+              ) : (
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                  isDark 
+                    ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' 
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Open {getTimeUntilLockout() && `· ${getTimeUntilLockout()}`}
+                </span>
+              )}
 
-            {!lockStatus.isBettingLocked && (
-              <Link
-                to="/place-bet"
-                className="btn-accent flex items-center justify-center gap-2 py-2.5"
-              >
-                <span>📝</span>
-                <span>Place Bet</span>
-              </Link>
-            )}
+              {!lockStatus.isBettingLocked && (
+                <Link
+                  to="/place-bet"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                >
+                  Place bet
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-        
-        {/* Mobile countdown */}
-        {!lockStatus.isBettingLocked && getTimeUntilLockout() && (
-          <div className={`sm:hidden text-center text-sm ${isDark ? 'text-dark-400' : 'text-light-600'}`}>
-            ⏰ {getTimeUntilLockout()} remaining
+
+        {/* Stats Cards */}
+        {schedule && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className={`p-4 rounded-lg border ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+            }`}>
+              <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                Matches
+              </p>
+              <p className={`text-2xl font-semibold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {schedule.matches.length}
+              </p>
+            </div>
+            <div className={`p-4 rounded-lg border ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+            }`}>
+              <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                Completed
+              </p>
+              <p className={`text-2xl font-semibold mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                {schedule.matches.filter(m => m.isCompleted).length}
+              </p>
+            </div>
+            <div className={`p-4 rounded-lg border ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+            }`}>
+              <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                Participants
+              </p>
+              <p className={`text-2xl font-semibold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {bets.length}
+              </p>
+            </div>
+            <div className={`p-4 rounded-lg border ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+            }`}>
+              <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                Total Goals
+              </p>
+              <p className={`text-2xl font-semibold mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                {schedule.actualTotalGoals ?? '—'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Matches Section */}
+        {schedule && (
+          <div className={`rounded-lg border mb-6 ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+          }`}>
+            <div className={`px-4 py-3 border-b ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
+              <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                This Week's Matches
+              </h2>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {schedule.matches.map((match, index) => (
+                  <div
+                    key={match._id}
+                    className={`p-3 rounded-lg border ${
+                      match.isCompleted
+                        ? isDark 
+                          ? 'border-emerald-800/50 bg-emerald-900/20' 
+                          : 'border-emerald-200 bg-emerald-50'
+                        : isDark 
+                          ? 'border-dark-600 bg-dark-700/50' 
+                          : 'border-gray-200 bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-[10px] font-medium uppercase tracking-wide ${
+                        isDark ? 'text-dark-400' : 'text-gray-500'
+                      }`}>
+                        Match {index + 1}
+                      </span>
+                      {match.isCompleted && (
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                          isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          Final
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
+                        <span className="text-xs mr-1" title="Home">🏠</span>
+                        {match.teamA}
+                      </p>
+                      <p className={`text-[10px] my-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</p>
+                      <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
+                        <span className="text-xs mr-1" title="Away">✈️</span>
+                        {match.teamB}
+                      </p>
+                      {match.isCompleted ? (
+                        <p className={`text-lg font-bold mt-2 ${
+                          isDark ? 'text-emerald-400' : 'text-emerald-600'
+                        }`}>
+                          {match.scoreTeamA} – {match.scoreTeamB}
+                        </p>
+                      ) : (
+                        <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          {formatDate(match.startTime)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Standings Section */}
+        {schedule && (
+          <div className={`rounded-lg border ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+          }`}>
+            <div className={`px-4 py-3 border-b flex items-center justify-between ${
+              isDark ? 'border-dark-700' : 'border-gray-200'
+            }`}>
+              <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Standings
+              </h2>
+              <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                {bets.length} participant{bets.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="p-4">
+              <QuinielaTable 
+                bets={bets} 
+                schedule={schedule} 
+                isSettled={isSettled}
+                hasStarted={lockStatus.hasStarted}
+              />
+            </div>
+          </div>
+        )}
+
+        {!schedule && (
+          <div className={`rounded-lg border p-8 text-center ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+          }`}>
+            <div className={`w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center ${
+              isDark ? 'bg-dark-700' : 'bg-gray-100'
+            }`}>
+              <span className="text-2xl">📅</span>
+            </div>
+            <h2 className={`text-base font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              No schedule available
+            </h2>
+            <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+              The schedule for this week hasn't been created yet.
+            </p>
           </div>
         )}
       </div>
-
-      {/* Schedule Overview */}
-      {schedule && (
-        <div className={`rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 transition-all duration-300 ${
-          isDark 
-            ? 'bg-gradient-to-br from-dark-800/90 to-dark-900/95 border border-dark-700/50 shadow-card' 
-            : 'bg-white border border-light-300 shadow-card-light'
-        }`}>
-          <h2 className={`text-lg sm:text-xl font-bold mb-4 flex items-center gap-2 ${
-            isDark ? 'text-dark-100' : 'text-light-900'
-          }`}>
-            <span>🇲🇽</span> This Week's Matches
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {schedule.matches.map((match, index) => (
-              <div
-                key={match._id}
-                className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${
-                  match.isCompleted
-                    ? isDark 
-                      ? 'border-sports-green/30 bg-sports-green/5' 
-                      : 'border-green-300 bg-green-50'
-                    : isDark 
-                      ? 'border-dark-600/50 bg-dark-700/30' 
-                      : 'border-light-300 bg-light-100'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-light-600'}`}>
-                    Match {index + 1}
-                  </span>
-                  {match.isCompleted && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      isDark 
-                        ? 'bg-sports-green/20 text-sports-green' 
-                        : 'bg-green-100 text-green-700'
-                    }`}>
-                      ✓ Final
-                    </span>
-                  )}
-                </div>
-                <div className="text-center">
-                  <p className={`font-bold text-sm sm:text-base ${isDark ? 'text-dark-100' : 'text-light-900'}`}>
-                    {match.teamA}
-                  </p>
-                  <p className={`text-xs my-1 ${isDark ? 'text-dark-400' : 'text-light-500'}`}>vs</p>
-                  <p className={`font-bold text-sm sm:text-base ${isDark ? 'text-dark-100' : 'text-light-900'}`}>
-                    {match.teamB}
-                  </p>
-                  {match.isCompleted ? (
-                    <p className={`text-xl sm:text-2xl font-bold mt-2 ${
-                      isDark ? 'text-sports-green' : 'text-green-600'
-                    }`}>
-                      {match.scoreTeamA} - {match.scoreTeamB}
-                    </p>
-                  ) : (
-                    <p className={`text-xs sm:text-sm mt-2 ${isDark ? 'text-dark-400' : 'text-light-600'}`}>
-                      {formatDate(match.startTime)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {isSettled && schedule.actualTotalGoals !== null && (
-            <div className={`mt-4 sm:mt-6 p-4 rounded-xl border ${
-              isDark 
-                ? 'bg-gradient-to-r from-sports-gold/10 to-sports-gold/5 border-sports-gold/30' 
-                : 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200'
-            }`}>
-              <p className={`text-center text-base sm:text-lg font-bold flex items-center justify-center gap-2 ${
-                isDark ? 'text-sports-gold' : 'text-amber-600'
-              }`}>
-                <span>⚽</span> Total Goals This Week: {schedule.actualTotalGoals}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Quiniela Table */}
-      {schedule && (
-        <div className={`rounded-2xl p-4 sm:p-6 transition-all duration-300 ${
-          isDark 
-            ? 'bg-gradient-to-br from-dark-800/90 to-dark-900/95 border border-dark-700/50 shadow-card' 
-            : 'bg-white border border-light-300 shadow-card-light'
-        }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6">
-            <h2 className={`text-lg sm:text-xl font-bold flex items-center gap-2 ${
-              isDark ? 'text-dark-100' : 'text-light-900'
-            }`}>
-              <span>🏆</span> Quiniela Standings
-            </h2>
-            <span className={`text-sm ${isDark ? 'text-dark-400' : 'text-light-600'}`}>
-              {bets.length} participant{bets.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-          
-          <QuinielaTable 
-            bets={bets} 
-            schedule={schedule} 
-            isSettled={isSettled}
-            hasStarted={lockStatus.hasStarted}
-          />
-        </div>
-      )}
-
-      {!schedule && (
-        <div className={`rounded-2xl p-4 sm:p-6 text-center py-8 sm:py-12 ${
-          isDark 
-            ? 'bg-gradient-to-br from-dark-800/90 to-dark-900/95 border border-dark-700/50' 
-            : 'bg-white border border-light-300 shadow-card-light'
-        }`}>
-          <span className="text-5xl sm:text-6xl mb-4 block">📅</span>
-          <h2 className={`text-lg sm:text-xl font-bold mb-2 ${isDark ? 'text-dark-100' : 'text-light-900'}`}>
-            No Schedule Available
-          </h2>
-          <p className={`text-sm sm:text-base ${isDark ? 'text-dark-400' : 'text-light-600'}`}>
-            The Liga MX schedule for this week hasn't been created yet.
-          </p>
-        </div>
-      )}
     </div>
   )
 }

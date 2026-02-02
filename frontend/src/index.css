@@ -14,20 +14,42 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+/* AWS-style typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.125rem; }
+
+@media (min-width: 640px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.5rem; }
+  h4 { font-size: 1.25rem; }
 }
 
 /* Dark theme body */
 .dark body,
 :root.dark body {
-  background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%);
-  color: #e2e8f0;
+  background: #0f1419;
+  color: #d1d5db;
 }
 
 /* Light theme body */
 .light body,
 :root.light body {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
-  color: #1e293b;
+  background: #fafafa;
+  color: #232f3e;
 }
 
 @layer components {

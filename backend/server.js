@@ -12,10 +12,13 @@ const app = express();
 
 // Middleware
 // Configure CORS for production
+const allowedOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || '*'; // Remove trailing slash if present
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
+  origin: allowedOrigin,
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 app.use(express.json());

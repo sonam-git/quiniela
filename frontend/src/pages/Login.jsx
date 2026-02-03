@@ -21,7 +21,7 @@ export default function Login() {
       try {
         await login(email, password, adminCode.trim() || null)
         toast.success('Welcome back!')
-        navigate('/dashboard')
+        navigate('/')
       } catch (error) {
         toast.error(error.response?.data?.message || 'Login failed')
       }
@@ -33,6 +33,19 @@ export default function Login() {
       isDark ? 'bg-dark-900' : 'bg-gray-50'
     }`}>
       <div className="w-full max-w-sm">
+        {/* Back to Home */}
+        <Link 
+          to="/" 
+          className={`inline-flex items-center gap-1.5 mb-6 text-sm font-medium transition-colors ${
+            isDark ? 'text-dark-400 hover:text-emerald-400' : 'text-gray-500 hover:text-emerald-600'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Home
+        </Link>
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className=" rounded-xl mx-auto mb-4 flex items-center justify-center">
@@ -46,7 +59,7 @@ export default function Login() {
             Sign in to Quiniela
           </h1>
           <p className={`text-sm mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-            Liga MX betting platform
+            Liga MX digital platform for quiniela enthusiasts
           </p>
         </div>
 

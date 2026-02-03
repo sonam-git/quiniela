@@ -61,7 +61,7 @@ export default function Home() {
                 isDark ? 'text-dark-300' : 'text-gray-600'
               }`}>
                 {user 
-                  ? "Ready to make your predictions? Place your bets and compete for weekly prizes!"
+                  ? "Ready to make your predictions? Place your prediction and compete for weekly prizes!"
                   : "The ultimate Liga MX prediction game. Predict match outcomes, compete with friends, and win weekly prizes."
                 }
               </p>
@@ -70,27 +70,36 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 {user ? (
                   <>
+                       <Link
+                      to="/admin"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold text-white bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-emerald-600 hover:to-teal-700 shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Admin
+                    </Link>
                     <Link
-                      to="/bet"
+                      to="/place-bet"
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
-                      Place Your Bet
+                      Prediction
                     </Link>
                     <Link
                       to="/dashboard"
                       className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 hover:-translate-y-1 ${
                         isDark 
-                          ? 'bg-dark-700/80 text-white ring-1 ring-dark-600 hover:bg-dark-600 hover:ring-dark-500' 
+                          ? 'bg-dark-600 text-white ring-1 ring-dark-600 hover:bg-dark-600 hover:ring-dark-500' 
                           : 'bg-white text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50 shadow-lg hover:shadow-xl'
                       }`}
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      View Standings
+                      Standings
                     </Link>
                   </>
                 ) : (

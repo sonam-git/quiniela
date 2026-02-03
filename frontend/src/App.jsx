@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard'
 import PlaceBet from './pages/PlaceBet'
 import About from './pages/About'
 import Instructions from './pages/Instructions'
+import Admin from './pages/Admin'
+import Profile from './pages/Profile'
 
 // Protected Route Component using React 19 patterns
 function ProtectedRoute({ children }) {
@@ -31,6 +33,35 @@ function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" />
+  }
+
+  return children
+}
+
+// Admin Protected Route
+function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth()
+  const { isDark } = useTheme()
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${
+        isDark ? 'bg-dark-900' : 'bg-light-100'
+      }`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <p className={`mt-4 ${isDark ? 'text-dark-300' : 'text-light-600'}`}>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" />
   }
 
   return children
@@ -70,6 +101,22 @@ function AppContent() {
           />
           <Route path="/about" element={<About />} />
           <Route path="/instructions" element={<Instructions />} />
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </main>
       <Toaster 

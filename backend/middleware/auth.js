@@ -26,4 +26,23 @@ const auth = async (req, res, next) => {
   }
 };
 
+// Admin middleware - must be used after auth middleware
+const adminAuth = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Admin auth middleware error:', error.message);
+    res.status(403).json({ message: 'Access denied' });
+  }
+};
+
 module.exports = auth;
+module.exports.adminAuth = adminAuth;

@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
-// Icon Components - Smaller, cleaner AWS style
+// Icon Components - Clean, modern style
 const SunIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
       d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" 
     />
@@ -13,7 +13,7 @@ const SunIcon = () => (
 )
 
 const MoonIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
       d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" 
     />
@@ -23,12 +23,12 @@ const MoonIcon = () => (
 const DashboardIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
+      d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" 
     />
   </svg>
 )
 
-const BetIcon = () => (
+export const BetIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" 
@@ -79,7 +79,15 @@ const HomeIcon = () => (
 const InstructionsIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" 
+    />
+  </svg>
+)
+
+const AdminIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" 
     />
   </svg>
 )
@@ -96,12 +104,89 @@ const CloseIcon = () => (
   </svg>
 )
 
+const ChevronDownIcon = () => (
+  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+)
+
+// NavLink component for consistent styling
+const NavLink = ({ to, icon: Icon, children, isActive, isDark, onClick, className = '' }) => {
+  const baseClasses = 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200'
+  const activeClasses = isDark
+    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+  const inactiveClasses = isDark
+    ? 'text-gray-300 hover:bg-dark-700/50 hover:text-white border border-transparent'
+    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
+  
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses} ${className}`}
+    >
+      {Icon && <Icon />}
+      {children}
+    </Link>
+  )
+}
+
+// AdminNavLink with special amber styling
+const AdminNavLink = ({ to, icon: Icon, children, isActive, isDark, onClick }) => {
+  const baseClasses = 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200'
+  const activeClasses = isDark
+    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+    : 'bg-amber-50 text-amber-700 border border-amber-200'
+  const inactiveClasses = isDark
+    ? 'text-amber-400/80 hover:bg-amber-500/10 hover:text-amber-400 border border-transparent'
+    : 'text-amber-600 hover:bg-amber-50 hover:text-amber-700 border border-transparent'
+  
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+    >
+      {Icon && <Icon />}
+      {children}
+    </Link>
+  )
+}
+
+// Primary button-style link
+const PrimaryButton = ({ to, icon: Icon, children, isActive, isDark, onClick }) => {
+  const baseClasses = 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm'
+  const activeClasses = 'bg-emerald-600 text-white ring-2 ring-emerald-500 ring-offset-2 ' + 
+    (isDark ? 'ring-offset-dark-800' : 'ring-offset-white')
+  const inactiveClasses = 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white hover:shadow-md hover:shadow-emerald-500/25'
+  
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+    >
+      {Icon && <Icon />}
+      {children}
+    </Link>
+  )
+}
+
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
   const { toggleTheme, isDark } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  // Handle scroll for shadow effect
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -109,184 +194,162 @@ export default function Navbar() {
   }
 
   const isActive = (path) => location.pathname === path
-
-  const getLinkClasses = (path, isButton = false) => {
-    if (isButton) return '' // Buttons like Place Bet have their own styling
-    
-    const active = isActive(path)
-    if (active) {
-      return isDark
-        ? 'text-white bg-dark-700'
-        : 'text-gray-900 bg-gray-100'
-    }
-    return isDark
-      ? 'text-dark-200 hover:text-white hover:bg-dark-700'
-      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-  }
-
-  const getMobileLinkClasses = (path) => {
-    const active = isActive(path)
-    if (active) {
-      return isDark
-        ? 'text-white bg-dark-700'
-        : 'text-gray-900 bg-gray-100'
-    }
-    return isDark
-      ? 'text-dark-200 hover:bg-dark-800'
-      : 'text-gray-700 hover:bg-gray-50'
-  }
+  const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
-    <nav className={`sticky top-0 z-50 border-b transition-colors ${
+    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
       isDark 
-        ? 'bg-dark-900 border-dark-700' 
-        : 'bg-white border-gray-200'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-14">
+        ? 'bg-dark-800/95 backdrop-blur-md border-b border-dark-700/50' 
+        : 'bg-white/95 backdrop-blur-md border-b border-gray-200/50'
+    } ${scrolled ? (isDark ? 'shadow-lg shadow-black/20' : 'shadow-lg shadow-gray-200/50') : ''}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden ">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-md transition-transform group-hover:scale-105 ${
+              isDark ? 'bg-dark-700 ring-1 ring-dark-600' : 'bg-white ring-1 ring-gray-200'
+            }`}>
               <img 
                 src="/quiniela-logo.png" 
                 alt="Quiniela" 
-                className="w-full h-full object-contain"
+                className="w-8 h-8 object-contain"
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<span class="text-lg">⚽</span>';
+                  e.target.parentElement.innerHTML = '<span class="text-xl">⚽</span>';
                 }}
               />
             </div>
             <div className="flex flex-col">
-              <span className={`font-semibold text-base leading-tight ${
+              <span className={`font-bold text-lg leading-tight tracking-tight ${
                 isDark ? 'text-white' : 'text-gray-900'
               }`}>Quiniela</span>
-              <span className={`text-[10px] font-medium leading-tight ${
-                isDark ? 'text-emerald-400' : 'text-emerald-600'
-              }`}>Liga MX</span>
+              <div className="flex items-center gap-1">
+                <span className={`text-xs font-semibold leading-tight ${
+                  isDark ? 'text-emerald-400' : 'text-emerald-600'
+                }`}>Liga MX 2026</span>
+              </div>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            <Link
-              to="/"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/')}`}
-            >
-              <HomeIcon />
-              Home
-            </Link>
-            <Link
-              to="/about"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/about')}`}
-            >
-              <AboutIcon />
-              About
-            </Link>
-            <Link
-              to="/instructions"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/instructions')}`}
-            >
-              <InstructionsIcon />
-              How to Play
-            </Link>
+          <div className="hidden lg:flex items-center gap-1">
+            {/* Main Nav Links */}
+            <div className={`flex items-center gap-1 px-1 py-1 rounded-xl ${
+              isDark ? 'bg-dark-700/40' : 'bg-gray-100/60'
+            }`}>
+              <NavLink to="/" icon={HomeIcon} isActive={isActive('/')} isDark={isDark}>
+                Home
+              </NavLink>
+              <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark}>
+                About
+              </NavLink>
+              <NavLink to="/instructions" icon={InstructionsIcon} isActive={isActive('/instructions')} isDark={isDark}>
+                How to Play
+              </NavLink>
+            </div>
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded transition-colors ${
-                isDark 
-                  ? 'text-dark-300 hover:text-amber-400 hover:bg-dark-700' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
-              title={isDark ? 'Light mode' : 'Dark mode'}
-            >
-              {isDark ? <SunIcon /> : <MoonIcon />}
-            </button>
-
-            <div className={`h-5 w-px mx-2 ${isDark ? 'bg-dark-700' : 'bg-gray-200'}`} />
-
+            {/* Divider */}
+            <div className={`h-8 w-px mx-3 ${isDark ? 'bg-dark-600' : 'bg-gray-200'}`} />
             {user ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/dashboard')}`}
-                >
-                  <DashboardIcon />
-                  Dashboard
-                </Link>
-                <Link
-                  to="/place-bet"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold transition-all duration-200 ${
-                    isActive('/place-bet')
-                      ? 'bg-emerald-700 text-white ring-2 ring-emerald-500 ring-offset-2 ' + (isDark ? 'ring-offset-dark-900' : 'ring-offset-white')
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  }`}
-                >
-                  <BetIcon />
-                  Place Bet
-                </Link>
+               
 
-                <div className={`h-5 w-px mx-2 ${isDark ? 'bg-dark-700' : 'bg-gray-200'}`} />
-
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                    <span className="text-white font-semibold text-xs">
-                      {user.name?.charAt(0).toUpperCase()}
+                {/* User Nav Links */}
+                <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <AdminNavLink to="/admin" icon={AdminIcon} isActive={isActive('/admin')} isDark={isDark}>
+                      Admin
+                    </AdminNavLink>
+                  )}
+                    <NavLink to="/dashboard" icon={DashboardIcon} isActive={isActive('/dashboard')} isDark={isDark}>
+                    Dashboard
+                  </NavLink>
+                  <PrimaryButton to="/place-bet" icon={BetIcon} isActive={isActive('/place-bet')} isDark={isDark}>
+                    Predict Now
+                  </PrimaryButton>
+                </div>
+                {/* User Profile */}
+                <div className="flex items-center gap-3">
+                  <Link
+                    to="/profile"
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 ${
+                      isActive('/profile')
+                        ? isDark 
+                          ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' 
+                          : 'bg-emerald-50 ring-1 ring-emerald-200'
+                        : isDark 
+                          ? 'bg-dark-700/50 hover:bg-dark-700 hover:ring-1 hover:ring-dark-600' 
+                          : 'bg-gray-100/80 hover:bg-gray-200 hover:ring-1 hover:ring-gray-300'
+                    }`}
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
+                      <span className="text-white font-bold text-xs">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className={`text-sm font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                      {user.name?.charAt(0).toUpperCase() + user.name?.slice(1)}
                     </span>
-                  </div>
-                  <span className={`text-sm font-medium ${isDark ? 'text-dark-200' : 'text-gray-700'}`}>
-                    {user.name[0].toUpperCase() + user.name.slice(1)}
-                  </span>
+                  </Link>
                   <button
                     onClick={handleLogout}
-                    className={`p-1.5 rounded transition-colors ${
-                      isDark ? 'text-red-300 hover:text-red-400 hover:bg-dark-700' : 'text-red-400 hover:text-red-500 hover:bg-red-100'
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      isDark 
+                        ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:ring-1 hover:ring-red-500/20' 
+                        : 'text-red-500 hover:text-red-600 hover:bg-red-50 hover:ring-1 hover:ring-red-200'
                     }`}
-                    title="Logout"
+                    title="Sign out"
                   >
                     <LogoutIcon />
                   </button>
+                   {/* Divider */}
+                <div className={`h-8 w-px mx-3 ${isDark ? 'bg-dark-600' : 'bg-gray-200'}`} />
+                     {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2.5 rounded-xl transition-all duration-200 ${
+                isDark 
+                  ? 'text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 hover:ring-1 hover:ring-amber-500/20' 
+                  : 'text-gray-500 hover:text-amber-500 hover:bg-amber-50 hover:ring-1 hover:ring-amber-200'
+              }`}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <SunIcon /> : <MoonIcon />}
+            </button>
                 </div>
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${getLinkClasses('/login')}`}
-                >
-                  <LoginIcon />
-                  Sign in
-                </Link>
-                <Link
-                  to="/signup"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold transition-all duration-200 ${
-                    isActive('/signup')
-                      ? 'bg-emerald-700 text-white ring-2 ring-emerald-500 ring-offset-2 ' + (isDark ? 'ring-offset-dark-900' : 'ring-offset-white')
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  }`}
-                >
-                  <SignupIcon />
-                  Sign up
-                </Link>
+                {/* Divider */}
+                <div className={`h-8 w-px mx-3 ${isDark ? 'bg-dark-600' : 'bg-gray-200'}`} />
+                
+                {/* Auth Links */}
+                <div className="flex items-center gap-2">
+                  <NavLink to="/login" icon={LoginIcon} isActive={isActive('/login')} isDark={isDark}>
+                    Sign in
+                  </NavLink>
+                  <PrimaryButton to="/signup" icon={SignupIcon} isActive={isActive('/signup')} isDark={isDark}>
+                    Get Started
+                  </PrimaryButton>
+                </div>
               </>
             )}
           </div>
 
           {/* Mobile controls */}
-          <div className="md:hidden flex items-center gap-1">
+          <div className="lg:hidden flex items-center gap-2">
             <button
               onClick={toggleTheme}
-              className={`p-2 rounded transition-colors ${
-                isDark ? 'text-dark-300 hover:text-amber-400' : 'text-gray-500 hover:text-gray-700'
+              className={`p-2.5 rounded-xl transition-colors ${
+                isDark ? 'text-gray-400 hover:text-amber-400 hover:bg-dark-700' : 'text-gray-500 hover:text-amber-500 hover:bg-gray-100'
               }`}
             >
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`p-2 rounded transition-colors ${
-                isDark ? 'text-dark-200 hover:bg-dark-700' : 'text-gray-600 hover:bg-gray-100'
+              className={`p-2.5 rounded-xl transition-colors ${
+                isDark ? 'text-gray-300 hover:bg-dark-700' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
@@ -295,80 +358,81 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className={`md:hidden py-3 border-t ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
+        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'
+        }`}>
+          <div className={`pt-3 border-t ${isDark ? 'border-dark-700/50' : 'border-gray-200/50'}`}>
             {user ? (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {/* User Info */}
-                <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 ${
-                  isDark ? 'bg-dark-800' : 'bg-gray-50'
-                }`}>
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
+                <Link
+                  to="/profile"
+                  onClick={closeMobileMenu}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl mx-1 transition-all ${
+                    isActive('/profile')
+                      ? isDark 
+                        ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' 
+                        : 'bg-emerald-50 ring-1 ring-emerald-200'
+                      : isDark 
+                        ? 'bg-dark-700/50 hover:bg-dark-700' 
+                        : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-bold text-sm">
                       {user.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <span className={`font-medium text-sm block ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
-                      {user.name}
+                  <div className="flex-1">
+                    <span className={`font-semibold text-sm block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {user.name?.charAt(0).toUpperCase() + user.name?.slice(1)}
                     </span>
-                    <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       {user.email}
                     </span>
                   </div>
+                  <span className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    View Profile →
+                  </span>
+                </Link>
+
+                {/* Mobile Nav Links */}
+                <div className="space-y-1 px-1">
+                  <NavLink to="/" icon={HomeIcon} isActive={isActive('/')} isDark={isDark} onClick={closeMobileMenu}>
+                    Home
+                  </NavLink>
+                  <NavLink to="/dashboard" icon={DashboardIcon} isActive={isActive('/dashboard')} isDark={isDark} onClick={closeMobileMenu}>
+                    Dashboard
+                  </NavLink>
+                  {isAdmin && (
+                    <AdminNavLink to="/admin" icon={AdminIcon} isActive={isActive('/admin')} isDark={isDark} onClick={closeMobileMenu}>
+                      Admin Panel
+                    </AdminNavLink>
+                  )}
+                  <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark} onClick={closeMobileMenu}>
+                    About
+                  </NavLink>
+                  <NavLink to="/instructions" icon={InstructionsIcon} isActive={isActive('/instructions')} isDark={isDark} onClick={closeMobileMenu}>
+                    How to Play
+                  </NavLink>
                 </div>
 
-                <Link
-                  to="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/')}`}
-                >
-                  <HomeIcon />
-                  Home
-                </Link>
+                {/* CTA Button */}
+                <div className="px-1 pt-2">
+                  <PrimaryButton to="/place-bet" icon={BetIcon} isActive={isActive('/place-bet')} isDark={isDark} onClick={closeMobileMenu}>
+                    Place Bet
+                  </PrimaryButton>
+                </div>
 
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/dashboard')}`}
-                >
-                  <DashboardIcon />
-                  Dashboard
-                </Link>
+                <div className={`my-3 border-t mx-1 ${isDark ? 'border-dark-700/50' : 'border-gray-200/50'}`} />
                 
-                <Link
-                  to="/place-bet"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/place-bet')}`}
-                >
-                  <BetIcon />
-                  Place Bet
-                </Link>
-
-                <Link
-                  to="/about"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/about')}`}
-                >
-                  <AboutIcon />
-                  About
-                </Link>
-
-                <Link
-                  to="/instructions"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/instructions')}`}
-                >
-                  <InstructionsIcon />
-                  How to Play
-                </Link>
-
-                <div className={`my-2 border-t ${isDark ? 'border-dark-700' : 'border-gray-200'}`} />
-                
+                {/* Logout Button */}
                 <button
-                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                  className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium ${
-                    isDark ? 'text-red-400 hover:bg-red-900/20' : 'text-red-600 hover:bg-red-50'
+                  onClick={() => { handleLogout(); closeMobileMenu(); }}
+                  className={`flex items-center gap-2 w-full mx-1 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    isDark 
+                      ? 'text-red-400 hover:bg-red-500/10 hover:ring-1 hover:ring-red-500/20' 
+                      : 'text-red-600 hover:bg-red-50 hover:ring-1 hover:ring-red-200'
                   }`}
                 >
                   <LogoutIcon />
@@ -376,55 +440,34 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-1">
-                <Link
-                  to="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/')}`}
-                >
-                  <HomeIcon />
+              <div className="space-y-2 px-1">
+                <NavLink to="/" icon={HomeIcon} isActive={isActive('/')} isDark={isDark} onClick={closeMobileMenu}>
                   Home
-                </Link>
-
-                <Link
-                  to="/about"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/about')}`}
-                >
-                  <AboutIcon />
+                </NavLink>
+                <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark} onClick={closeMobileMenu}>
                   About
-                </Link>
-
-                <Link
-                  to="/instructions"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/instructions')}`}
-                >
-                  <InstructionsIcon />
+                </NavLink>
+                <NavLink to="/instructions" icon={InstructionsIcon} isActive={isActive('/instructions')} isDark={isDark} onClick={closeMobileMenu}>
                   How to Play
-                </Link>
-
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getMobileLinkClasses('/login')}`}
-                >
-                  <LoginIcon />
+                </NavLink>
+                <NavLink to="/login" icon={LoginIcon} isActive={isActive('/login')} isDark={isDark} onClick={closeMobileMenu}>
                   Sign in
-                </Link>
+                </NavLink>
                 
-                <Link
-                  to="/signup"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 mx-2 mt-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all duration-200"
-                >
-                  <SignupIcon />
-                  Sign up
-                </Link>
+                <div className="pt-2">
+                  <Link
+                    to="/signup"
+                    onClick={closeMobileMenu}
+                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-emerald-500/25"
+                  >
+                    <SignupIcon />
+                    Get Started — It's Free
+                  </Link>
+                </div>
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   )

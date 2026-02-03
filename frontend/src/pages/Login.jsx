@@ -7,6 +7,8 @@ import toast from 'react-hot-toast'
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [adminCode, setAdminCode] = useState('')
+  const [showAdminCode, setShowAdminCode] = useState(false)
   const [isPending, startTransition] = useTransition()
   const { login } = useAuth()
   const { isDark } = useTheme()
@@ -17,7 +19,7 @@ export default function Login() {
 
     startTransition(async () => {
       try {
-        await login(email, password)
+        await login(email, password, adminCode.trim() || null)
         toast.success('Welcome back!')
         navigate('/dashboard')
       } catch (error) {
@@ -93,6 +95,42 @@ export default function Login() {
                 placeholder="••••••••"
                 required
               />
+            </div>
+
+            {/* Admin Code Toggle */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowAdminCode(!showAdminCode)}
+                className={`text-xs font-medium flex items-center gap-1 ${
+                  isDark ? 'text-dark-400 hover:text-dark-300' : 'text-gray-500 hover:text-gray-600'
+                }`}
+              >
+                <svg className={`w-3.5 h-3.5 transition-transform ${showAdminCode ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                Admin access
+              </button>
+              
+              {showAdminCode && (
+                <div className="mt-2">
+                  <input
+                    type="password"
+                    value={adminCode}
+                    onChange={(e) => setAdminCode(e.target.value.toUpperCase())}
+                    className={`w-full px-3 py-2 rounded-lg text-sm transition-colors
+                      focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent ${
+                      isDark 
+                        ? 'bg-dark-700 border border-amber-800/50 text-dark-100 placeholder-dark-400' 
+                        : 'bg-white border border-amber-300 text-gray-900 placeholder-gray-400'
+                    }`}
+                    placeholder="Enter admin code (optional)"
+                  />
+                  <p className={`text-xs mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                    Leave empty for regular user login
+                  </p>
+                </div>
+              )}
             </div>
 
             <button

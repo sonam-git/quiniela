@@ -7,6 +7,8 @@ const authRoutes = require('./routes/auth');
 const betRoutes = require('./routes/bets');
 const scheduleRoutes = require('./routes/schedule');
 const resultsRoutes = require('./routes/results');
+const adminRoutes = require('./routes/admin');
+const announcementsRoutes = require('./routes/announcements');
 
 const app = express();
 
@@ -33,6 +35,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bets', betRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/results', resultsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/announcements', announcementsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

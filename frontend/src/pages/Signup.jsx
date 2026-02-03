@@ -9,6 +9,7 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [isPending, startTransition] = useTransition()
   const { signup } = useAuth()
   const { isDark } = useTheme()
@@ -16,6 +17,11 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (!inviteCode.trim()) {
+      toast.error('Invite code is required')
+      return
+    }
 
     if (password !== confirmPassword) {
       toast.error('Passwords do not match')
@@ -29,7 +35,7 @@ export default function Signup() {
 
     startTransition(async () => {
       try {
-        await signup(name, email, password)
+        await signup(name, email, password, inviteCode)
         toast.success('Account created successfully!')
         navigate('/dashboard')
       } catch (error) {
@@ -134,6 +140,25 @@ export default function Signup() {
                 placeholder="••••••••"
                 required
               />
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium mb-1.5 ${
+                isDark ? 'text-dark-200' : 'text-gray-700'
+              }`}>
+                Invite code
+              </label>
+              <input
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                className={inputClassName}
+                placeholder="Enter your invite code"
+                required
+              />
+              <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                You need a valid invite code to create an account
+              </p>
             </div>
 
             <button

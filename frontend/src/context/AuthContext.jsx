@@ -26,8 +26,12 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }
 
-  const login = async (email, password) => {
-    const response = await api.post('/auth/login', { email, password })
+  const login = async (email, password, adminCode = null) => {
+    const payload = { email, password }
+    if (adminCode) {
+      payload.adminCode = adminCode
+    }
+    const response = await api.post('/auth/login', payload)
     localStorage.setItem('token', response.data.token)
     startTransition(() => {
       setUser(response.data.user)
@@ -35,8 +39,8 @@ export function AuthProvider({ children }) {
     return response.data
   }
 
-  const signup = async (name, email, password) => {
-    const response = await api.post('/auth/signup', { name, email, password })
+  const signup = async (name, email, password, inviteCode) => {
+    const response = await api.post('/auth/signup', { name, email, password, inviteCode })
     localStorage.setItem('token', response.data.token)
     startTransition(() => {
       setUser(response.data.user)
@@ -51,8 +55,10 @@ export function AuthProvider({ children }) {
     })
   }
 
+  const isAdmin = user?.isAdmin || false
+
   return (
-    <AuthContext.Provider value={{ user, loading, isPending, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, isPending, isAdmin, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   )

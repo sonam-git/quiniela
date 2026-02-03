@@ -9,7 +9,7 @@ export default function Instructions() {
       number: 1,
       icon: '📝',
       title: 'Sign Up for an Account',
-      description: 'Create your Quiniela account by clicking "Sign Up" in the navigation bar. Enter your name, email, and create a password to get started.'
+      description: 'Create your Quiniela account by clicking "Sign Up" in the navigation bar. Enter your name, email, invitation code and create a password to get started.'
     },
     {
       number: 2,
@@ -20,8 +20,8 @@ export default function Instructions() {
     {
       number: 3,
       icon: '🎯',
-      title: 'Place Your Bet',
-      description: 'Click on "Place Bet" to make your predictions. For each of the 9 matches, choose your guess: 🏠 Home Win, ✈️ Away Win, or E for Draw.'
+      title: 'Place your predictions',
+      description: 'Click on "Predict Now" to make your predictions. For each of the 9 matches, choose your guess: 🏠 Home Win, ✈️ Away Win, or E for Draw. You can also update your prediction before the first game. Once the first game is started you cannot change your prediction'
     },
     {
       number: 4,
@@ -33,13 +33,13 @@ export default function Instructions() {
       number: 5,
       icon: '💰',
       title: 'Pay the Entry Fee',
-      description: 'Pay the entry amount to the game administrator. Your bet will show as "Pending Payment" until confirmed by the admin.'
+      description: 'Pay the entry amount to the game administrator. Your prediction will show as "Pending Payment" until confirmed by the admin.'
     },
     {
       number: 6,
       icon: '✅',
-      title: 'Submit Your Bet',
-      description: 'Once you\'ve made all your predictions and your payment is confirmed, submit your bet before the first match begins. Betting closes when the first game starts!'
+      title: 'Submit Your Prediction',
+      description: 'Once you\'ve made all your predictions and your payment is confirmed, submit your prediction before the first match begins. Betting closes when the first game starts!'
     },
     {
       number: 7,

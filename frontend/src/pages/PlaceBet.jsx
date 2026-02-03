@@ -426,7 +426,7 @@ export default function PlaceBet() {
                         onClick={() => handlePredictionChange(match._id, 'draw')}
                         className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                           predictions[match._id] === 'draw'
-                            ? isDark ? 'bg-dark-500 text-white' : 'bg-gray-700 text-white'
+                            ? 'bg-emerald-600 text-white'
                             : isDark 
                               ? 'bg-dark-700 border border-dark-600 text-dark-300 hover:border-dark-500' 
                               : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
@@ -474,7 +474,7 @@ export default function PlaceBet() {
                 onClick={() => setPaymentStatus('paid')}
                 className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                   paymentStatus === 'paid'
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-blue-600 text-white'
                     : isDark 
                       ? 'bg-dark-700 border border-dark-600 text-dark-200 hover:border-dark-500' 
                       : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
@@ -501,7 +501,7 @@ export default function PlaceBet() {
             <div className={`p-3 rounded-lg text-xs ${
               paymentStatus === 'pending'
                 ? isDark ? 'bg-red-900/20 text-red-300' : 'bg-red-50 text-red-700'
-                : isDark ? 'bg-emerald-900/20 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                : isDark ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-700'
             }`}>
               {paymentStatus === 'pending' 
                 ? 'Payment required before first match. Without payment, you cannot claim the prize.'

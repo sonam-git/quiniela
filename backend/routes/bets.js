@@ -228,4 +228,39 @@ router.patch('/:betId/paid', auth, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/bets/my/current
+// @desc    Delete current user's bet for the current week
+// @access  Private
+router.delete('/my/current', auth, async (req, res) => {
+  try {
+    const now = new Date();
+    const weekNumber = getWeekNumber(now);
+    const year = now.getFullYear();
+
+    // Check betting lock - can only delete if betting is still open
+    const lockStatus = await checkBettingLock(weekNumber, year);
+    if (lockStatus.locked) {
+      return res.status(403).json({ 
+        message: 'Cannot delete bet after betting is locked',
+        ...lockStatus
+      });
+    }
+
+    const bet = await Bet.findOneAndDelete({ 
+      userId: req.user._id, 
+      weekNumber, 
+      year 
+    });
+
+    if (!bet) {
+      return res.status(404).json({ message: 'No bet found for this week' });
+    }
+
+    res.json({ message: 'Bet deleted successfully' });
+  } catch (error) {
+    console.error('Delete bet error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

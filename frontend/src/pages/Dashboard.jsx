@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import QuinielaTable from '../components/QuinielaTable'
+import { BetIcon } from '../components/Navbar'
 
 export default function Dashboard() {
   const [schedule, setSchedule] = useState(null)
@@ -17,14 +19,21 @@ export default function Dashboard() {
   const [isSettled, setIsSettled] = useState(false)
   const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0 })
   const [activeTab, setActiveTab] = useState('standings')
+  const [announcements, setAnnouncements] = useState([])
+  const [dismissedAnnouncements, setDismissedAnnouncements] = useState(() => {
+    const saved = localStorage.getItem('dismissedAnnouncements')
+    return saved ? JSON.parse(saved) : []
+  })
   const { isDark } = useTheme()
+  const { user } = useAuth()
 
   const fetchData = useCallback(async () => {
     try {
       setError(null)
-      const [scheduleRes, betsRes] = await Promise.all([
+      const [scheduleRes, betsRes, announcementsRes] = await Promise.all([
         api.get('/schedule/current'),
-        api.get('/bets/current')
+        api.get('/bets/current'),
+        api.get('/announcements')
       ])
 
       setSchedule(scheduleRes.data.schedule)
@@ -39,6 +48,7 @@ export default function Dashboard() {
         weekNumber: scheduleRes.data.weekNumber,
         year: scheduleRes.data.year
       })
+      setAnnouncements(announcementsRes.data.announcements || [])
     } catch (error) {
       if (error.response?.status === 404) {
         setError({
@@ -69,6 +79,14 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
+
+  const dismissAnnouncement = (id) => {
+    const updated = [...dismissedAnnouncements, id]
+    setDismissedAnnouncements(updated)
+    localStorage.setItem('dismissedAnnouncements', JSON.stringify(updated))
+  }
+
+  const visibleAnnouncements = announcements.filter(a => !dismissedAnnouncements.includes(a._id))
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -273,6 +291,76 @@ export default function Dashboard() {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Announcements Banner */}
+        {visibleAnnouncements.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {visibleAnnouncements.map((announcement) => (
+              <div
+                key={announcement._id}
+                className={`relative overflow-hidden rounded-xl border ${
+                  isDark 
+                    ? 'bg-gradient-to-r from-emerald-900/20 via-dark-800 to-dark-800 border-emerald-800/30' 
+                    : 'bg-gradient-to-r from-emerald-50 via-white to-white border-emerald-200'
+                }`}
+              >
+                <div className="flex items-start gap-4 p-4">
+                  {/* Icon */}
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isDark ? 'bg-emerald-900/50' : 'bg-emerald-100'
+                  }`}>
+                    <span className="text-xl">📢</span>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {announcement.title}
+                      </h3>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        isDark ? 'bg-emerald-900/50 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        New
+                      </span>
+                    </div>
+                    <p className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                      {announcement.message}
+                    </p>
+                    <p className={`text-xs mt-2 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                      Posted {new Date(announcement.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  
+                  {/* Dismiss Button */}
+                  <button
+                    onClick={() => dismissAnnouncement(announcement._id)}
+                    className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
+                      isDark 
+                        ? 'text-dark-400 hover:text-dark-200 hover:bg-dark-700' 
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                    }`}
+                    title="Dismiss"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* Decorative accent */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                  isDark ? 'bg-emerald-500' : 'bg-emerald-500'
+                }`} />
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Page Header */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -304,7 +392,6 @@ export default function Dashboard() {
                 </span>
               ) : (
                 <div className="flex items-center gap-3">
-                  {/* Live Status Indicator */}
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${
                     isDark 
                       ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' 
@@ -316,8 +403,6 @@ export default function Dashboard() {
                     </span>
                     LIVE
                   </span>
-
-                  {/* Countdown Clock */}
                   {countdown && (
                     <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg ${
                       isDark 
@@ -364,62 +449,20 @@ export default function Dashboard() {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
 
-              {!lockStatus.isBettingLocked && (
-                <Link
-                  to="/place-bet"
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
-                >
-                  Place bet
-                </Link>
+                  {!lockStatus.isBettingLocked && (
+                    <Link
+                      to="/place-bet"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                    >
+                      <BetIcon /> {bets.some(bet => bet.userId?._id === user?._id || bet.userId === user?._id) ? 'Update' : 'Predict Now'}
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Current Leader Section */}
-        {schedule && bets.length > 0 && (
-          <div className={`mb-6 p-4 rounded-xl border ${
-            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  isDark ? 'bg-amber-900/30' : 'bg-amber-100'
-                }`}>
-                  <span className="text-xl">👑</span>
-                </div>
-                <div>
-                  <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Current Leader
-                  </p>
-                  {completedMatchesCount > 0 && currentLeader ? (
-                    <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {currentLeader.userId?.name || currentLeader.userName || 'Unknown'}
-                    </p>
-                  ) : (
-                    <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      The leader will display only after the completion of first game
-                    </p>
-                  )}
-                </div>
-              </div>
-              {completedMatchesCount > 0 && currentLeader && (
-                <div className="text-right">
-                  <div className={`flex items-center gap-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    <span className="text-2xl font-bold">{currentLeader.totalPoints}</span>
-                    <span className="text-xs font-medium">pts</span>
-                  </div>
-                  <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    {completedMatchesCount}/{schedule.matches.length} matches
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Tab Navigation */}
         {schedule && (
@@ -435,7 +478,7 @@ export default function Dashboard() {
                       ? 'bg-emerald-600 text-white shadow-lg'
                       : 'bg-white text-gray-900 shadow-md'
                     : isDark
-                      ? 'text-dark-400 hover:text-white hover:bg-dark-700/50'
+                      ? 'text-dark-100 hover:text-yellow-300 hover:bg-dark-700/50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                 }`}
               >
@@ -452,7 +495,7 @@ export default function Dashboard() {
                       ? 'bg-emerald-600 text-white shadow-lg'
                       : 'bg-white text-gray-900 shadow-md'
                     : isDark
-                      ? 'text-dark-400 hover:text-white hover:bg-dark-700/50'
+                      ? 'text-dark-100 hover:text-yellow-300 hover:bg-dark-700/50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                 }`}
               >
@@ -469,7 +512,7 @@ export default function Dashboard() {
                       ? 'bg-emerald-600 text-white shadow-lg'
                       : 'bg-white text-gray-900 shadow-md'
                     : isDark
-                      ? 'text-dark-400 hover:text-white hover:bg-dark-700/50'
+                      ? 'text-dark-100 hover:text-yellow-300 hover:bg-dark-700/50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                 }`}
               >

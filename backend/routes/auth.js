@@ -5,12 +5,31 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get codes dynamically from admin module (lazy loaded to avoid circular dependency)
+const getCodes = () => {
+  try {
+    const { getCodes: getAdminCodes } = require('./admin');
+    return getAdminCodes();
+  } catch {
+    return {
+      SIGNUP_CODE: process.env.SIGNUP_CODE || 'QL2026',
+      ADMIN_CODE: process.env.ADMIN_CODE || 'QLADMIN2026'
+    };
+  }
+};
+
 // @route   POST /api/auth/signup
 // @desc    Register a new user
 // @access  Public
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, inviteCode } = req.body;
+    const { SIGNUP_CODE } = getCodes();
+
+    // Validate invite code
+    if (!inviteCode || inviteCode !== SIGNUP_CODE) {
+      return res.status(400).json({ message: 'Invalid invite code. Please enter a valid code to sign up.' });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -35,7 +54,8 @@ router.post('/signup', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        isAdmin: user.isAdmin
       }
     });
   } catch (error) {
@@ -53,7 +73,8 @@ router.post('/signup', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, adminCode } = req.body;
+    const { ADMIN_CODE } = getCodes();
 
     // Validate input
     if (!email || !password) {
@@ -72,9 +93,24 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Check if admin code is provided and valid
+    let isAdminSession = false;
+    if (adminCode) {
+      if (adminCode === ADMIN_CODE) {
+        isAdminSession = true;
+        // Optionally persist admin status to user record
+        if (!user.isAdmin) {
+          user.isAdmin = true;
+          await user.save();
+        }
+      } else {
+        return res.status(400).json({ message: 'Invalid admin code' });
+      }
+    }
+
     // Generate JWT
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, isAdmin: isAdminSession || user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -85,7 +121,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        isAdmin: isAdminSession || user.isAdmin
       }
     });
   } catch (error) {
@@ -102,7 +139,8 @@ router.get('/me', auth, async (req, res) => {
     user: {
       id: req.user._id,
       name: req.user.name,
-      email: req.user.email
+      email: req.user.email,
+      isAdmin: req.user.isAdmin || false
     }
   });
 });

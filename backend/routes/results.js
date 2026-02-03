@@ -60,7 +60,7 @@ router.post('/update-match', auth, async (req, res) => {
 
 // Helper function to recalculate points for all bets
 const recalculatePoints = async (weekNumber, year, schedule) => {
-  const bets = await Bet.find({ weekNumber, year });
+  const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
 
   for (const bet of bets) {
     let totalPoints = 0;
@@ -138,7 +138,7 @@ router.post('/settle', auth, async (req, res) => {
     }
 
     // Determine winner with tie-breaker logic
-    const sortedBets = await Bet.find({ weekNumber, year })
+    const sortedBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
       .sort({ totalPoints: -1, goalDifference: 1 });
 
     if (sortedBets.length > 0) {
@@ -164,7 +164,7 @@ router.post('/settle', auth, async (req, res) => {
     await schedule.save();
 
     // Return the final results
-    const finalBets = await Bet.find({ weekNumber, year })
+    const finalBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });
 
@@ -199,8 +199,8 @@ const settleWeeklyResults = async (weekNumber, year) => {
 
   schedule.actualTotalGoals = actualTotalGoals;
 
-  // Get all bets
-  const bets = await Bet.find({ weekNumber, year });
+  // Get all bets (excluding placeholder bets)
+  const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
 
   // Calculate points
   for (const bet of bets) {
@@ -223,7 +223,7 @@ const settleWeeklyResults = async (weekNumber, year) => {
   }
 
   // Sort and determine winner with tie-breaker
-  const sortedBets = await Bet.find({ weekNumber, year })
+  const sortedBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
     .sort({ totalPoints: -1, goalDifference: 1 });
 
   if (sortedBets.length > 0) {

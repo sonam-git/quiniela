@@ -164,6 +164,193 @@ router.patch('/bets/:betId/payment', auth, adminAuth, async (req, res) => {
   }
 });
 
+// @route   PATCH /api/admin/users/:userId/payment
+// @desc    Update payment status for a user (creates placeholder bet if needed)
+// @access  Admin
+router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body; // 'paid', 'pending', 'na'
+
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get current week's schedule
+    const now = new Date();
+    const schedule = await Schedule.findOne({
+      weekStart: { $lte: now },
+      weekEnd: { $gte: now }
+    });
+
+    // Calculate current week number if no schedule
+    const getWeekNumber = (date) => {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    };
+
+    const weekNumber = schedule?.weekNumber || getWeekNumber(now);
+    const year = schedule?.year || now.getFullYear();
+    const scheduleId = schedule?._id || null;
+
+    // Find existing bet for this user and week
+    let bet = await Bet.findOne({
+      userId,
+      weekNumber,
+      year
+    });
+
+    if (status === 'na') {
+      // If setting to N/A and there's a placeholder bet (no predictions), delete it
+      if (bet && bet.isPlaceholder) {
+        await Bet.findByIdAndDelete(bet._id);
+        return res.json({ 
+          message: 'Payment status set to N/A',
+          status: 'na'
+        });
+      } else if (bet) {
+        // User has actual bet, just mark as unpaid
+        bet.paid = false;
+        await bet.save();
+        return res.json({ 
+          message: 'Payment status set to Pending (user has active bet)',
+          status: 'pending',
+          bet
+        });
+      }
+      return res.json({ 
+        message: 'Payment status is already N/A',
+        status: 'na'
+      });
+    }
+
+    if (bet) {
+      // Update existing bet
+      bet.paid = status === 'paid';
+      await bet.save();
+    } else {
+      // Create a placeholder bet for payment tracking only
+      const betData = {
+        userId,
+        weekNumber,
+        year,
+        totalGoals: 0,
+        predictions: [],
+        paid: status === 'paid',
+        isPlaceholder: true
+      };
+      
+      // Only add scheduleId if we have a schedule
+      if (scheduleId) {
+        betData.scheduleId = scheduleId;
+      }
+      
+      bet = new Bet(betData);
+      await bet.save();
+    }
+
+    res.json({ 
+      message: `Payment status updated to ${status === 'paid' ? 'Paid' : 'Pending'}`,
+      status,
+      bet
+    });
+  } catch (error) {
+    console.error('Update user payment error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/payments
+// @desc    Get all users with their bet/payment status for current week
+// @access  Admin
+router.get('/payments', auth, adminAuth, async (req, res) => {
+  try {
+    // Get current week's schedule
+    const now = new Date();
+    const schedule = await Schedule.findOne({
+      weekStart: { $lte: now },
+      weekEnd: { $gte: now }
+    });
+
+    // Calculate current week number if no schedule
+    const getWeekNumber = (date) => {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    };
+
+    const weekNumber = schedule?.weekNumber || getWeekNumber(now);
+    const year = schedule?.year || now.getFullYear();
+
+    // Get all users (excluding password)
+    const users = await User.find().select('-password').sort({ name: 1 });
+
+    // Get all bets for this week
+    const bets = await Bet.find({ weekNumber, year });
+    
+    // Create a map of userId to bet for quick lookup
+    const betMap = new Map();
+    bets.forEach(bet => {
+      betMap.set(bet.userId.toString(), bet);
+    });
+
+    // Combine users with their bet info
+    const paymentsData = users.map(user => {
+      const bet = betMap.get(user._id.toString());
+      const isPlaceholder = bet?.isPlaceholder || false;
+      const hasRealBet = bet && !isPlaceholder;
+      
+      // Determine payment status: 'paid', 'pending', or 'na'
+      let paymentStatus = 'na';
+      if (bet) {
+        paymentStatus = bet.paid ? 'paid' : 'pending';
+      }
+      
+      return {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        hasBet: hasRealBet,
+        isPlaceholder,
+        betId: bet?._id || null,
+        paid: bet?.paid || false,
+        paymentStatus,
+        totalPoints: hasRealBet ? (bet?.totalPoints || 0) : 0,
+        totalGoals: hasRealBet ? (bet?.totalGoals ?? null) : null,
+        createdAt: user.createdAt
+      };
+    });
+
+    // Sort: users with real bets first, then placeholders, then no records, then by name
+    paymentsData.sort((a, b) => {
+      if (a.hasBet && !b.hasBet) return -1;
+      if (!a.hasBet && b.hasBet) return 1;
+      if (a.isPlaceholder && !b.isPlaceholder) return -1;
+      if (!a.isPlaceholder && b.isPlaceholder) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    res.json({ 
+      payments: paymentsData,
+      weekInfo: {
+        weekNumber,
+        year
+      }
+    });
+  } catch (error) {
+    console.error('Get payments error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/codes
 // @desc    Get current access codes
 // @access  Admin

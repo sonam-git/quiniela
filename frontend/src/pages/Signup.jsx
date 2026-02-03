@@ -44,7 +44,7 @@ export default function Signup() {
     })
   }
 
-  const inputClassName = `w-full px-3 py-2 rounded-lg text-sm transition-colors
+  const inputClassName = `w-full px-3 py-2.5 rounded-lg text-sm transition-colors
     focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
     isDark 
       ? 'bg-dark-700 border border-dark-600 text-dark-100 placeholder-dark-400' 
@@ -52,154 +52,206 @@ export default function Signup() {
   }`
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 py-12 ${
-      isDark ? 'bg-dark-900' : 'bg-gray-50'
-    }`}>
-      <div className="w-full max-w-sm">
-        {/* Back to Home */}
-        <Link 
-          to="/" 
-          className={`inline-flex items-center gap-1.5 mb-6 text-sm font-medium transition-colors ${
-            isDark ? 'text-dark-400 hover:text-emerald-400' : 'text-gray-500 hover:text-emerald-600'
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Home
-        </Link>
-
-        {/* Header */}
-        <div className="text-center mb-4">
-                <div className=" rounded-xl mx-auto mb-4 flex items-center justify-center">
+    <div className={`min-h-screen flex ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
+      {/* Left Column - Branding (visible on lg screens) */}
+      <div className={`hidden lg:flex lg:w-1/2 xl:w-2/5 flex-col justify-center items-center px-12 ${
+        isDark 
+          ? 'bg-gradient-to-br from-dark-800 via-dark-900 to-emerald-950' 
+          : 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800'
+      }`}>
+        <div className="max-w-md text-center">
+          {/* Logo */}
+          <div className="mb-8">
             <img
               src="/quiniela-logo.png"
               alt="Quiniela Logo"
-              className="w-15 h-15"
+              className="w-32 h-32 mx-auto drop-shadow-2xl"
             />
           </div>
-          <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Create your account
+          
+          {/* Title */}
+          <h1 className="text-4xl font-bold text-white mb-4">
+            Quiniela Liga MX
           </h1>
-          <p className={`text-sm mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-            Join the Liga MX Quiniela Community
+          <p className={`text-lg ${isDark ? 'text-dark-300' : 'text-emerald-100'}`}>
+            The ultimate digital platform for Liga MX quiniela enthusiasts
           </p>
+          
+          {/* Features */}
+          <div className="mt-10 space-y-4">
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+              isDark ? 'bg-dark-700/50' : 'bg-white/10'
+            }`}>
+              <span className="text-2xl">⚽</span>
+              <span className="text-white text-left text-sm">Make predictions for Liga MX matches</span>
+            </div>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+              isDark ? 'bg-dark-700/50' : 'bg-white/10'
+            }`}>
+              <span className="text-2xl">🏆</span>
+              <span className="text-white text-left text-sm">Compete with friends for the top spot</span>
+            </div>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+              isDark ? 'bg-dark-700/50' : 'bg-white/10'
+            }`}>
+              <span className="text-2xl">📊</span>
+              <span className="text-white text-left text-sm">Track your performance in real-time</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Form Card */}
-        <div className={`rounded-lg border p-6 ${
-          isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
-        }`}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className={`block text-sm font-medium mb-1.5 ${
-                isDark ? 'text-dark-200' : 'text-gray-700'
-              }`}>
-                Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClassName}
-                placeholder="Your name"
-                required
+      {/* Right Column - Form */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm">
+          {/* Back to Home */}
+          <Link 
+            to="/" 
+            className={`inline-flex items-center gap-1.5 mb-6 text-sm font-medium transition-colors ${
+              isDark ? 'text-dark-400 hover:text-emerald-400' : 'text-gray-500 hover:text-emerald-600'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
+          </Link>
+
+          {/* Header (visible on mobile, hidden on lg) */}
+          <div className="text-center mb-6 lg:mb-4">
+            <div className="lg:hidden rounded-xl mx-auto mb-4 flex items-center justify-center">
+              <img
+                src="/quiniela-logo.png"
+                alt="Quiniela Logo"
+                className="w-16 h-16"
               />
             </div>
+            <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Create your account
+            </h1>
+            <p className={`text-sm mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+              <span className="lg:hidden">Join the Liga MX Quiniela Community</span>
+              <span className="hidden lg:inline">Fill in your details to get started</span>
+            </p>
+          </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-1.5 ${
-                isDark ? 'text-dark-200' : 'text-gray-700'
-              }`}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClassName}
-                placeholder="you@example.com"
-                required
-              />
-            </div>
+          {/* Form Card */}
+          <div className={`rounded-xl border p-6 ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-lg'
+          }`}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${
+                  isDark ? 'text-dark-200' : 'text-gray-700'
+                }`}>
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClassName}
+                  placeholder="Your name"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-1.5 ${
-                isDark ? 'text-dark-200' : 'text-gray-700'
-              }`}>
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={inputClassName}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${
+                  isDark ? 'text-dark-200' : 'text-gray-700'
+                }`}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClassName}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-1.5 ${
-                isDark ? 'text-dark-200' : 'text-gray-700'
-              }`}>
-                Confirm password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={inputClassName}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${
+                    isDark ? 'text-dark-200' : 'text-gray-700'
+                  }`}>
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputClassName}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-1.5 ${
-                isDark ? 'text-dark-200' : 'text-gray-700'
-              }`}>
-                Invite code
-              </label>
-              <input
-                type="text"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                className={inputClassName}
-                placeholder="Enter your invite code"
-                required
-              />
-              <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                You need a valid invite code to create an account
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${
+                    isDark ? 'text-dark-200' : 'text-gray-700'
+                  }`}>
+                    Confirm
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={inputClassName}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${
+                  isDark ? 'text-dark-200' : 'text-gray-700'
+                }`}>
+                  Invite code
+                </label>
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  className={inputClassName}
+                  placeholder="Enter your invite code"
+                  required
+                />
+                <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                  You need a valid invite code to create an account
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full py-2.5 px-4 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Creating account...
+                  </span>
+                ) : (
+                  'Create account'
+                )}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                Already have an account?{' '}
+                <Link to="/login" className="text-emerald-600 hover:text-emerald-500 font-medium">
+                  Sign in
+                </Link>
               </p>
             </div>
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full py-2 px-4 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Creating account...
-                </span>
-              ) : (
-                'Create account'
-              )}
-            </button>
-          </form>
-
-          <div className="mt-4 text-center">
-            <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              Already have an account?{' '}
-              <Link to="/login" className="text-emerald-600 hover:text-emerald-500 font-medium">
-                Sign in
-              </Link>
-            </p>
           </div>
         </div>
       </div>

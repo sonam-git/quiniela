@@ -77,7 +77,7 @@ router.get('/current', async (req, res) => {
     const weekNumber = getWeekNumber(now);
     const year = now.getFullYear();
 
-    const bets = await Bet.find({ weekNumber, year })
+    const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });
 
@@ -105,7 +105,8 @@ router.get('/:weekNumber/:year', async (req, res) => {
 
     const bets = await Bet.find({ 
       weekNumber: parseInt(weekNumber), 
-      year: parseInt(year) 
+      year: parseInt(year),
+      isPlaceholder: { $ne: true }
     })
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });

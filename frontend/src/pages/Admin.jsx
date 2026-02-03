@@ -90,6 +90,7 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
 export default function Admin() {
   const [users, setUsers] = useState([])
   const [bets, setBets] = useState([])
+  const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('users')
   const [codes, setCodes] = useState({ signupCode: '', adminCode: '' })
@@ -130,16 +131,18 @@ export default function Admin() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const [usersRes, betsRes, codesRes, announcementsRes] = await Promise.all([
+      const [usersRes, betsRes, paymentsRes, codesRes, announcementsRes] = await Promise.all([
         api.get('/admin/users'),
         api.get('/admin/bets'),
+        api.get('/admin/payments'),
         api.get('/admin/codes'),
         api.get('/admin/announcements')
       ])
       setUsers(usersRes.data.users)
       setBets(betsRes.data.bets)
+      setPayments(paymentsRes.data.payments || [])
       setCodes(codesRes.data)
-      setWeekInfo(betsRes.data.weekInfo || { weekNumber: 0, year: 0 })
+      setWeekInfo(paymentsRes.data.weekInfo || betsRes.data.weekInfo || { weekNumber: 0, year: 0 })
       setAnnouncements(announcementsRes.data.announcements || [])
     } catch (error) {
       toast.error('Failed to load admin data')
@@ -162,6 +165,17 @@ export default function Admin() {
       fetchData()
     } catch (error) {
       toast.error('Failed to update payment status')
+    }
+  }
+
+  const handleChangePaymentStatus = async (userId, newStatus) => {
+    try {
+      await api.patch(`/admin/users/${userId}/payment`, { status: newStatus })
+      const statusLabels = { paid: 'Paid', pending: 'Pending', na: 'N/A' }
+      toast.success(`Payment status updated to ${statusLabels[newStatus]}`)
+      fetchData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update payment status')
     }
   }
 
@@ -573,7 +587,7 @@ export default function Admin() {
             <div className="min-w-0">
               <p className={`text-xs font-medium truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Bets</p>
               <p className={`text-lg font-bold leading-tight ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                {bets.length}
+                {payments.filter(p => p.hasBet).length}
               </p>
             </div>
           </div>
@@ -589,7 +603,7 @@ export default function Admin() {
             <div className="min-w-0">
               <p className={`text-xs font-medium truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Paid</p>
               <p className={`text-lg font-bold leading-tight ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                {bets.filter(b => b.paid).length}
+                {payments.filter(p => p.paid).length}
               </p>
             </div>
           </div>
@@ -598,14 +612,14 @@ export default function Admin() {
             isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className={`w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 ${
-              isDark ? 'bg-red-900/30' : 'bg-red-50'
+              isDark ? 'bg-amber-900/30' : 'bg-amber-50'
             }`}>
               <span className="text-sm">⏳</span>
             </div>
             <div className="min-w-0">
               <p className={`text-xs font-medium truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Pending</p>
-              <p className={`text-lg font-bold leading-tight ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-                {bets.filter(b => !b.paid).length}
+              <p className={`text-lg font-bold leading-tight ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                {payments.filter(p => p.hasBet && !p.paid).length}
               </p>
             </div>
           </div>
@@ -773,115 +787,236 @@ export default function Admin() {
 
         {/* Payments Tab */}
         {activeTab === 'payments' && (
-          <div className={`rounded-xl border ${
-            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
+          <div className={`rounded-2xl border shadow-lg overflow-hidden ${
+            isDark ? 'bg-gradient-to-br from-dark-800 to-dark-900 border-dark-700' : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
           }`}>
-            <div className={`px-5 py-4 border-b flex items-center justify-between ${
-              isDark ? 'border-dark-700' : 'border-gray-200'
+            {/* Header */}
+            <div className={`px-6 py-5 border-b ${
+              isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-100 bg-white/80'
             }`}>
-              <h2 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                💳 Payment Records - Week {weekInfo.weekNumber}, {weekInfo.year}
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
-                }`}>
-                  ✅ {bets.filter(b => b.paid).length} Paid
-                </span>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'
-                }`}>
-                  ⏳ {bets.filter(b => !b.paid).length} Pending
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${
+                    isDark ? 'bg-gradient-to-br from-emerald-600 to-teal-700' : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                  } shadow-lg`}>
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Payment Records
+                    </h2>
+                    <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      Week {weekInfo.weekNumber}, {weekInfo.year} · Manage participant payments
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    isDark ? 'bg-blue-900/30 text-blue-400 border border-blue-800/50' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    {payments.filter(p => p.hasBet).length} Bets
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    isDark ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  }`}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    {payments.filter(p => p.paid).length} Paid
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    isDark ? 'bg-amber-900/30 text-amber-400 border border-amber-800/50' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    {payments.filter(p => p.hasBet && !p.paid).length} Pending
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Progress Bar */}
+            <div className={`px-6 py-3 ${isDark ? 'bg-dark-700/30' : 'bg-gray-50/50'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-xs font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                  Payment Collection Progress (Users with Bets)
+                </span>
+                <span className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                  {payments.filter(p => p.hasBet).length > 0 
+                    ? Math.round((payments.filter(p => p.paid).length / payments.filter(p => p.hasBet).length) * 100) 
+                    : 0}%
+                </span>
+              </div>
+              <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-dark-600' : 'bg-gray-200'}`}>
+                <div 
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                  style={{ 
+                    width: `${payments.filter(p => p.hasBet).length > 0 
+                      ? (payments.filter(p => p.paid).length / payments.filter(p => p.hasBet).length) * 100 
+                      : 0}%` 
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className={isDark ? 'bg-dark-700' : 'bg-gray-50'}>
-                    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase ${
-                      isDark ? 'text-dark-300' : 'text-gray-600'
-                    }`}>User</th>
-                    <th className={`px-4 py-3 text-center text-xs font-semibold uppercase ${
-                      isDark ? 'text-dark-300' : 'text-gray-600'
-                    }`}>Points</th>
-                    <th className={`px-4 py-3 text-center text-xs font-semibold uppercase ${
-                      isDark ? 'text-dark-300' : 'text-gray-600'
-                    }`}>Goals Pred.</th>
-                    <th className={`px-4 py-3 text-center text-xs font-semibold uppercase ${
-                      isDark ? 'text-dark-300' : 'text-gray-600'
-                    }`}>Payment</th>
-                    <th className={`px-4 py-3 text-center text-xs font-semibold uppercase ${
-                      isDark ? 'text-dark-300' : 'text-gray-600'
-                    }`}>Action</th>
+                  <tr className={isDark ? 'bg-dark-700/50' : 'bg-gray-50'}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
+                      isDark ? 'text-dark-300' : 'text-gray-500'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Username
+                      </div>
+                    </th>
+                    <th className={`px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider ${
+                      isDark ? 'text-dark-300' : 'text-gray-500'
+                    }`}>
+                      <div className="flex items-center justify-center gap-1">
+                        <span>💵</span> Payment Status
+                      </div>
+                    </th>
+                    <th className={`px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider ${
+                      isDark ? 'text-dark-300' : 'text-gray-500'
+                    }`}>
+                      <div className="flex items-center justify-center gap-1">
+                        <span>⚡</span> Action
+                      </div>
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
-                  {bets.length === 0 ? (
+                <tbody className="divide-y divide-dark-700/50">
+                  {payments.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className={`px-4 py-8 text-center ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        No bets found for this week
+                      <td colSpan={3} className="px-6 py-12">
+                        <div className="text-center">
+                          <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                            isDark ? 'bg-dark-700' : 'bg-gray-100'
+                          }`}>
+                            <span className="text-3xl">📭</span>
+                          </div>
+                          <p className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                            No users found
+                          </p>
+                          <p className={`text-xs mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                            Users will appear here once they register
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
-                    bets.map((bet) => (
+                    payments.map((payment) => (
                       <tr 
-                        key={bet._id} 
-                        className={`border-t ${
-                          bet.paid 
-                            ? isDark ? 'border-dark-700 bg-green-900/10' : 'border-gray-100 bg-green-50/50'
-                            : isDark ? 'border-dark-700 bg-red-900/10' : 'border-gray-100 bg-red-50/50'
+                        key={payment.userId} 
+                        className={`transition-all duration-200 ${
+                          payment.paymentStatus === 'paid'
+                            ? isDark 
+                              ? 'bg-emerald-900/10 hover:bg-emerald-900/20' 
+                              : 'bg-emerald-50/50 hover:bg-emerald-50'
+                            : payment.paymentStatus === 'pending'
+                              ? isDark 
+                                ? 'bg-amber-900/5 hover:bg-amber-900/15' 
+                                : 'bg-amber-50/30 hover:bg-amber-50/60'
+                              : isDark 
+                                ? 'bg-dark-800/50 hover:bg-dark-700/50' 
+                                : 'bg-gray-50/50 hover:bg-gray-100/50'
                         }`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white bg-gradient-to-br from-emerald-500 to-teal-600`}>
-                              {bet.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                            <div className="relative">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-md ${
+                                payment.paymentStatus === 'paid'
+                                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                                  : payment.paymentStatus === 'pending'
+                                    ? 'bg-gradient-to-br from-amber-500 to-orange-600'
+                                    : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                              }`}>
+                                {payment.name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                              {payment.paymentStatus === 'paid' && (
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800">
+                                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              )}
+                              {payment.isAdmin && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800">
+                                  <span className="text-[8px]">👑</span>
+                                </div>
+                              )}
                             </div>
                             <div>
-                              <span className={`font-medium block ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {bet.userId?.name || 'Unknown'}
-                              </span>
-                              <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                                {bet.userId?.email}
-                              </span>
+                              <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {payment.name || 'Unknown User'}
+                              </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold ${
-                            bet.totalPoints >= 7
-                              ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
-                              : bet.totalPoints >= 5
-                                ? isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'
-                                : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-700'
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
+                            payment.paymentStatus === 'na' || (!payment.hasBet && !payment.isPlaceholder && !payment.paid)
+                              ? isDark 
+                                ? 'bg-gray-800/50 text-gray-400 border border-gray-700/50' 
+                                : 'bg-gray-100 text-gray-500 border border-gray-200'
+                              : payment.paid
+                                ? isDark 
+                                  ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50' 
+                                  : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                : isDark 
+                                  ? 'bg-amber-900/40 text-amber-300 border border-amber-700/50' 
+                                  : 'bg-amber-100 text-amber-700 border border-amber-200'
                           }`}>
-                            {bet.totalPoints || 0}
+                            {payment.paymentStatus === 'na' || (!payment.hasBet && !payment.isPlaceholder && !payment.paid) ? (
+                              <>
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                N/A
+                              </>
+                            ) : payment.paid ? (
+                              <>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Paid
+                              </>
+                            ) : (
+                              <>
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                Pending
+                              </>
+                            )}
                           </span>
                         </td>
-                        <td className={`px-4 py-3 text-center ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                          {bet.totalGoals}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            bet.paid
-                              ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
-                              : isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {bet.paid ? '✅ Paid' : '⏳ Pending'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleTogglePayment(bet._id, bet.paid)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                              bet.paid
-                                ? isDark ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                : isDark ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        <td className="px-6 py-4 text-center">
+                          <select
+                            value={payment.paymentStatus || 'na'}
+                            onChange={(e) => handleChangePaymentStatus(payment.userId, e.target.value)}
+                            className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
+                              isDark 
+                                ? 'bg-dark-700 border border-dark-600 text-dark-100' 
+                                : 'bg-white border border-gray-300 text-gray-900'
                             }`}
                           >
-                            {bet.paid ? 'Mark Pending' : 'Mark Paid'}
-                          </button>
+                            <option value="na">N/A</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                          </select>
+                          {payment.hasBet && (
+                            <span className={`block text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                              ✓ Has bet
+                            </span>
+                          )}
+                          {payment.isPlaceholder && !payment.hasBet && (
+                            <span className={`block text-xs mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                              Payment only
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -889,6 +1024,38 @@ export default function Admin() {
                 </tbody>
               </table>
             </div>
+
+            {/* Footer Summary */}
+            {payments.length > 0 && (
+              <div className={`px-6 py-4 border-t ${
+                isDark ? 'border-dark-700 bg-dark-800/30' : 'border-gray-100 bg-gray-50/50'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      Total Users: {payments.length}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                      With Bets: {payments.filter(p => p.hasBet).length}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      Paid: {payments.filter(p => p.paid).length}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      Pending: {payments.filter(p => p.hasBet && !p.paid).length}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-gray-500"></span>
+                      No Bet: {payments.filter(p => !p.hasBet).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

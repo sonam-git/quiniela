@@ -33,7 +33,7 @@ export default function Instructions() {
       number: 5,
       icon: '💰',
       title: 'Pay the Entry Fee',
-      description: 'Pay the entry amount to the game administrator. Your prediction will show as "Pending Payment" until confirmed by the admin.'
+      description: 'Pay the entry amount to the game administrator. Your prediction will show as "Pending Payment" until confirmed by the admin. We collect reasonable fees to fund the prize pool and platform maintenance.'
     },
     {
       number: 6,

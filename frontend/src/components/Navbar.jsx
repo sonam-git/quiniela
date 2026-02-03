@@ -252,8 +252,6 @@ export default function Navbar() {
             <div className={`h-8 w-px mx-3 ${isDark ? 'bg-dark-600' : 'bg-gray-200'}`} />
             {user ? (
               <>
-               
-
                 {/* User Nav Links */}
                 <div className="flex items-center gap-1">
                   {isAdmin && (
@@ -331,6 +329,17 @@ export default function Navbar() {
                   <PrimaryButton to="/signup" icon={SignupIcon} isActive={isActive('/signup')} isDark={isDark}>
                     Get Started
                   </PrimaryButton>
+                             <button
+              onClick={toggleTheme}
+              className={`p-2.5 rounded-xl transition-all duration-200 ${
+                isDark 
+                  ? 'text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 hover:ring-1 hover:ring-amber-500/20' 
+                  : 'text-gray-500 hover:text-amber-500 hover:bg-amber-50 hover:ring-1 hover:ring-amber-200'
+              }`}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <SunIcon /> : <MoonIcon />}
+            </button>
                 </div>
               </>
             )}

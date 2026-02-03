@@ -129,7 +129,7 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             <span className="text-lg">⚽</span>
             <p className={`text-sm ${isDark ? 'text-dark-500' : 'text-gray-500'}`}>
-              © {currentYear} Quiniela. Developed by Sonam J Sherpa.
+              © {currentYear} All Rights Reserved Quiniela | Developed by Sonam J Sherpa
             </p>
           </div>
           

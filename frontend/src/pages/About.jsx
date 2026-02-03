@@ -58,7 +58,7 @@ export default function About() {
             <p>
               Quiniela was born out of a weekly tradition in a bustling workplace where a group of 
               Mexican friends shared more than just a shift—they shared a passion for football. 
-              Every week, the crew would gather to organize a friendly betting pool, meticulously 
+              Every week, the crew would gather to organize a friendly and fun Liga MX match prediction pool every week, meticulously 
               handwriting match schedules, predictions, and scores on sheets of paper.
             </p>
             <p>
@@ -81,7 +81,7 @@ export default function About() {
           
           <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
             <span className={`font-medium ${isDark ? 'text-dark-100' : 'text-gray-800'}`}>Sonam Sherpa</span>, 
-            a developer and a regular participant in these weekly bets, saw an opportunity to 
+            a developer and a regular participant in these weekly prediction games, saw an opportunity to 
             honor this tradition while removing the friction. Witnessing the effort his colleagues 
             put into maintaining the game by hand, Sonam decided to leverage his technical expertise 
             to build a digital home for the group.
@@ -115,7 +115,7 @@ export default function About() {
           
           <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
             Quiniela is a custom-built digital platform designed specifically for the workplace 
-            football community. It streamlines the entire experience:
+            football community for entertainment purposes. It streamlines the entire experience:
           </p>
 
           {/* Features */}
@@ -176,13 +176,6 @@ export default function About() {
               View Dashboard
             </Link>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className={`mt-10 pt-6 border-t text-center ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
-          <p className={`text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-            Developed by Sonam Sherpa. © 2026 Quiniela. All rights reserved.
-          </p>
         </div>
       </div>
     </div>

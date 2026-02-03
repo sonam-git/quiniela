@@ -19,6 +19,11 @@ const betSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  scheduleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Schedule',
+    required: false
+  },
   weekNumber: {
     type: Number,
     required: true
@@ -30,17 +35,24 @@ const betSchema = new mongoose.Schema({
   },
   totalGoals: {
     type: Number,
-    required: [true, 'Total goals prediction is required'],
-    min: [0, 'Total goals cannot be negative']
+    required: function() { return !this.isPlaceholder; },
+    min: [0, 'Total goals cannot be negative'],
+    default: 0
   },
   predictions: {
     type: [predictionSchema],
     validate: {
       validator: function(v) {
+        // Placeholder bets don't need 9 predictions
+        if (this.isPlaceholder) return true;
         return v.length === 9;
       },
       message: 'Must have exactly 9 match predictions'
     }
+  },
+  isPlaceholder: {
+    type: Boolean,
+    default: false
   },
   // Scoring fields
   totalPoints: {

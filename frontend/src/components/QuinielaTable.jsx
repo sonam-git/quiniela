@@ -107,13 +107,21 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
               isDark ? 'bg-amber-500/10 ring-1 ring-amber-500/20' : 'bg-amber-50 ring-1 ring-amber-200'
             }`}>
               <span className="text-base">🏆</span>
-              <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Leader:</span>
-              <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {bets[0]?.userId?.name || 'Unknown'}
-              </span>
-              <span className={`text-sm font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                {bets[0]?.totalPoints || 0} pts
-              </span>
+              {hasCompletedMatches && bets[0]?.totalPoints > 0 ? (
+                <>
+                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Leader:</span>
+                  <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {bets[0]?.userId?.name || 'Unknown'}
+                  </span>
+                  <span className={`text-sm font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                    {bets[0]?.totalPoints} pts
+                  </span>
+                </>
+              ) : (
+                <span className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                  Leader will display after the first game
+                </span>
+              )}
             </div>
           )}
         </div>

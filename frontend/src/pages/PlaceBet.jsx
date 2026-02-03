@@ -239,22 +239,32 @@ export default function PlaceBet() {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {existingBet ? 'Edit bet' : 'Place bet'}
-          </h1>
-          <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-            Make your predictions for this week's matches
-          </p>
-          
-          {countdown && (
-            <div className={`mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg ${
-              isDark 
-                ? 'bg-amber-900/30 border border-amber-800/50' 
-                : 'bg-amber-50 border border-amber-200'
-            }`}>
-              {/* Live indicator */}
+  
+          <div className="mb-6">
+            <h1 className={`text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {existingBet ? (
+                <>
+            <span role="img" aria-label="Edit" className="text-lg">✏️</span>
+            Edit bet
+                </>
+              ) : (
+                <>
+            <span role="img" aria-label="Place Bet" className="text-lg">🎯</span>
+            Place bet
+                </>
+              )}
+            </h1>
+            <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+              Make your predictions for this week's matches
+            </p>
+            
+            {countdown && (
+              <div className={`mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg ${
+                isDark 
+            ? 'bg-amber-900/30 border border-amber-800/50' 
+            : 'bg-amber-50 border border-amber-200'
+              }`}>
+                {/* Live indicator */}
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>

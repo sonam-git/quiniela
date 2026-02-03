@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-[calc(100vh-4rem)]">
         {/* Background gradient */}
         <div className={`absolute inset-0 ${
           isDark 
@@ -24,11 +24,11 @@ export default function Home() {
           }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Text Content */}
             <div className="text-center lg:text-left">
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8 ${
                 isDark 
                   ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25' 
                   : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
@@ -37,20 +37,33 @@ export default function Home() {
                 <span>Liga MX Clausura 2026</span>
               </div>
 
-              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 ${
+              <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1] ${
                 isDark ? 'text-white' : 'text-gray-900'
-              }`}>
-                Welcome to{' '}
-                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
-                  Quiniela
-                </span>
+              }`} style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+                {user ? (
+                  <>
+                    Welcome,{' '}
+                    <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                      {user.name || user.username || 'Friend'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Welcome to{' '}
+                    <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                      Quiniela
+                    </span>
+                  </>
+                )}
               </h1>
 
-              <p className={`text-lg sm:text-xl mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed ${
+              <p className={`text-lg sm:text-xl lg:text-2xl mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light ${
                 isDark ? 'text-dark-300' : 'text-gray-600'
               }`}>
-                The ultimate Liga MX prediction game! Predict match outcomes, compete with friends and family, 
-                and win weekly prizes. Join the excitement of Mexican football.
+                {user 
+                  ? "Ready to make your predictions? Place your bets and compete for weekly prizes!"
+                  : "The ultimate Liga MX prediction game. Predict match outcomes, compete with friends, and win weekly prizes."
+                }
               </p>
 
               {/* CTA Buttons */}
@@ -59,22 +72,22 @@ export default function Home() {
                   <>
                     <Link
                       to="/bet"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                       Place Your Bet
                     </Link>
                     <Link
                       to="/dashboard"
-                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 hover:-translate-y-1 ${
                         isDark 
-                          ? 'bg-dark-700/80 text-white ring-1 ring-dark-600 hover:bg-dark-600' 
-                          : 'bg-white text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50 shadow-md'
+                          ? 'bg-dark-700/80 text-white ring-1 ring-dark-600 hover:bg-dark-600 hover:ring-dark-500' 
+                          : 'bg-white text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50 shadow-lg hover:shadow-xl'
                       }`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                       View Standings
@@ -84,22 +97,22 @@ export default function Home() {
                   <>
                     <Link
                       to="/signup"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                       </svg>
-                      Join Now
+                      Get Started Free
                     </Link>
                     <Link
                       to="/login"
-                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 hover:-translate-y-1 ${
                         isDark 
-                          ? 'bg-dark-700/80 text-white ring-1 ring-dark-600 hover:bg-dark-600' 
-                          : 'bg-white text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50 shadow-md'
+                          ? 'bg-dark-700/80 text-white ring-1 ring-dark-600 hover:bg-dark-600 hover:ring-dark-500' 
+                          : 'bg-white text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50 shadow-lg hover:shadow-xl'
                       }`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                       </svg>
                       Sign In
@@ -109,44 +122,39 @@ export default function Home() {
               </div>
 
               {/* Stats */}
-              <div className={`mt-12 grid grid-cols-3 gap-6 pt-8 border-t ${
-                isDark ? 'border-dark-700/50' : 'border-gray-200'
+              <div className={`mt-14 grid grid-cols-3 gap-8 pt-10 border-t ${
+                isDark ? 'border-dark-700/50' : 'border-gray-200/80'
               }`}>
                 <div className="text-center lg:text-left">
-                  <div className={`text-2xl sm:text-3xl font-bold ${
+                  <div className={`text-3xl sm:text-4xl font-bold tracking-tight ${
                     isDark ? 'text-white' : 'text-gray-900'
                   }`}>9</div>
-                  <div className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Matches/Week</div>
+                  <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    Matches/Week
+                  </div>
                 </div>
                 <div className="text-center lg:text-left">
-                  <div className={`text-2xl sm:text-3xl font-bold ${
+                  <div className={`text-3xl sm:text-4xl font-bold tracking-tight ${
                     isDark ? 'text-white' : 'text-gray-900'
                   }`}>17</div>
-                  <div className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Weeks</div>
+                  <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    Weeks Total
+                  </div>
                 </div>
                 <div className="text-center lg:text-left">
-                  <div className="flex justify-center lg:justify-start">
-                    <svg
-                      className="w-8 h-8 text-emerald-500"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      viewBox="0 0 24 24"
-                    >
-                      <rect x="2" y="7" width="20" height="10" rx="2" fill="currentColor" opacity="0.1"/>
-                      <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" strokeWidth={2}/>
-                      <path d="M16 13a2 2 0 11-4 0 2 2 0 014 0z" stroke="currentColor" strokeWidth={2}/>
-                      <path d="M6 10h.01M18 14h.01" stroke="currentColor" strokeWidth={2} strokeLinecap="round"/>
-                    </svg>
+                  <div className={`text-3xl sm:text-4xl font-bold tracking-tight ${
+                    isDark ? 'text-emerald-400' : 'text-emerald-600'
+                  }`}>🏆</div>
+                  <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    Weekly Prizes
                   </div>
-                  <div className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Weekly Prizes</div>
                 </div>
               </div>
             </div>
 
             {/* Hero Image */}
             <div className="relative flex justify-center lg:justify-end">
-              <div className={`relative rounded-2xl overflow-hidden shadow-2xl ring-1 ${
+              <div className={`relative rounded-3xl overflow-hidden shadow-2xl ring-1 transform hover:scale-[1.02] transition-transform duration-500 ${
                 isDark ? 'shadow-emerald-500/10 ring-dark-700' : 'shadow-emerald-500/20 ring-gray-200'
               }`}>
                 <img
@@ -156,23 +164,23 @@ export default function Home() {
                 />
                 {/* Overlay gradient */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${
-                  isDark ? 'from-dark-900/40 to-transparent' : 'from-black/5 to-transparent'
+                  isDark ? 'from-dark-900/50 to-transparent' : 'from-black/10 to-transparent'
                 }`} />
 
                 {/* Floating Card */}
-                <div className={`absolute -bottom-4 -left-4 sm:left-4 px-4 py-3 rounded-xl shadow-xl backdrop-blur-sm ${
-                  isDark ? 'bg-dark-800/90 ring-1 ring-dark-700' : 'bg-white/95 ring-1 ring-gray-200'
+                <div className={`absolute bottom-6 left-6 right-6 sm:right-auto px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-md ${
+                  isDark ? 'bg-dark-800/90 ring-1 ring-dark-600' : 'bg-white/95 ring-1 ring-gray-200'
                 }`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg shadow-md">
-                      🏆
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xl shadow-lg">
+                      🎯
                     </div>
                     <div>
-                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      <p className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         Test Your Luck
                       </p>
-                      <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        Make your guess & see if fortune favors you!
+                      <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        Predict & win big!
                       </p>
                     </div>
                   </div>
@@ -182,62 +190,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className={`py-12 ${isDark ? 'bg-dark-800' : 'bg-emerald-600'}`}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ready to Join the Action?
-          </h2>
-          <p className={`text-lg mb-8 ${isDark ? 'text-dark-300' : 'text-emerald-100'}`}>
-            Start making predictions and compete for weekly prizes today!
-          </p>
-          {user ? (
-            <Link
-              to="/place-bet"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold bg-white text-emerald-600 hover:bg-gray-50 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Place Your Bet Now
-            </Link>
-          ) : (
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold bg-white text-emerald-600 hover:bg-gray-50 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-              Create Free Account
-            </Link>
-          )}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className={`py-8 ${isDark ? 'bg-dark-900 border-t border-dark-800' : 'bg-white border-t border-gray-200'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <img src="/quiniela-logo.png" alt="Quiniela" className="h-8 w-auto" />
-              <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Quiniela</span>
-            </div>
-            <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              © 2026 Quiniela. Liga MX Clausura 2026.
-            </p>
-            <div className="flex items-center gap-6">
-              <Link to="/instructions" className={`text-sm transition-colors ${isDark ? 'text-dark-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
-                How to Play
-              </Link>
-              <Link to="/about" className={`text-sm transition-colors ${isDark ? 'text-dark-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
-                About
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

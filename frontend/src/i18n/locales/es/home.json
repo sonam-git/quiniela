@@ -1,0 +1,24 @@
+{
+  "hero": {
+    "welcomeTo": "Bienvenido a",
+    "welcomeBack": "Bienvenido,",
+    "subtitle": "El juego de predicciones de Liga MX definitivo. Predice resultados, compite con amigos y gana premios semanales.",
+    "subtitleLoggedIn": "¿Listo para hacer tus predicciones? ¡Haz tu predicción y compite por premios semanales!"
+  },
+  "cta": {
+    "getStartedFree": "Comenzar Gratis",
+    "signIn": "Iniciar Sesión",
+    "prediction": "Predicción",
+    "standings": "Clasificación",
+    "admin": "Admin"
+  },
+  "stats": {
+    "matchesPerWeek": "Partidos / Semana",
+    "weeksTotal": "Semanas Totales",
+    "weeklyPrizes": "Premios Semanales"
+  },
+  "floatingCard": {
+    "testYourLuck": "Prueba Tu Suerte",
+    "predictAndWin": "¡Predice y gana!"
+  }
+}

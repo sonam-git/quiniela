@@ -1,5 +1,6 @@
 import { useState, useTransition } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import toast from 'react-hot-toast'
@@ -12,6 +13,7 @@ export default function Login() {
   const [isPending, startTransition] = useTransition()
   const { login } = useAuth()
   const { isDark } = useTheme()
+  const { t } = useTranslation('auth')
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -104,11 +106,11 @@ export default function Login() {
               />
             </div>
             <h1 className={`text-2xl font-brand ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              Sign in to Quiniela
+              {t('login.title')}
             </h1>
             <p className={`text-sm mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              <span className="lg:hidden">Liga MX digital platform for quiniela enthusiasts</span>
-              <span className="hidden lg:inline">Enter your credentials to access your account</span>
+              <span className="lg:hidden">{t('login.subtitleMobile')}</span>
+              <span className="hidden lg:inline">{t('login.subtitle')}</span>
             </p>
           </div>
 
@@ -121,7 +123,7 @@ export default function Login() {
                 <label className={`block text-sm font-medium mb-1.5 ${
                   isDark ? 'text-dark-200' : 'text-gray-700'
                 }`}>
-                  Email
+                  {t('login.email')}
                 </label>
                 <input
                   type="email"
@@ -142,7 +144,7 @@ export default function Login() {
                 <label className={`block text-sm font-medium mb-1.5 ${
                   isDark ? 'text-dark-200' : 'text-gray-700'
                 }`}>
-                  Password
+                  {t('login.password')}
                 </label>
                 <input
                   type="password"
@@ -171,7 +173,7 @@ export default function Login() {
                   <svg className={`w-3.5 h-3.5 transition-transform ${showAdminCode ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  Admin access
+                  {t('login.adminAccess')}
                 </button>
                 
                 {showAdminCode && (
@@ -186,10 +188,10 @@ export default function Login() {
                           ? 'bg-dark-700 border border-amber-800/50 text-dark-100 placeholder-dark-400' 
                           : 'bg-white border border-amber-300 text-gray-900 placeholder-gray-400'
                       }`}
-                      placeholder="Enter admin code (optional)"
+                      placeholder={t('login.adminCodePlaceholder')}
                     />
                     <p className={`text-xs mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-                      Leave empty for regular user login
+                      {t('login.adminCodeHint')}
                     </p>
                   </div>
                 )}
@@ -206,19 +208,19 @@ export default function Login() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Signing in...
+                    {t('login.signingIn')}
                   </span>
                 ) : (
-                  'Sign in'
+                  t('login.signIn')
                 )}
               </button>
             </form>
 
             <div className="mt-4 text-center">
               <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                Don't have an account?{' '}
+                {t('login.noAccount')}{' '}
                 <Link to="/signup" className="text-emerald-600 hover:text-emerald-500 font-medium">
-                  Sign up
+                  {t('login.signUp')}
                 </Link>
               </p>
             </div>

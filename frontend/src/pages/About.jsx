@@ -1,23 +1,25 @@
 import { useTheme } from '../context/ThemeContext'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 export default function About() {
   const { isDark } = useTheme()
+  const { t } = useTranslation('about')
 
   const features = [
     {
       icon: '📅',
-      title: 'Automated Schedules',
-      description: 'The app fetches the latest Mexican League matches automatically.'
+      title: t('features.automatedSchedules.title'),
+      description: t('features.automatedSchedules.description')
     },
     {
       icon: '🧮',
-      title: 'Precision Scoring',
-      description: 'Algorithm calculates points and manages tie-breakers instantly.'
+      title: t('features.precisionScoring.title'),
+      description: t('features.precisionScoring.description')
     },
     {
       icon: '📊',
-      title: 'Transparency',
+      title: t('features.transparency.title'),
       description: 'Real-time visibility into payment statuses and live standings.'
     }
   ]

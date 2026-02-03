@@ -1,5 +1,6 @@
 import { useState, useTransition } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import toast from 'react-hot-toast'
@@ -13,33 +14,34 @@ export default function Signup() {
   const [isPending, startTransition] = useTransition()
   const { signup } = useAuth()
   const { isDark } = useTheme()
+  const { t } = useTranslation('auth')
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!inviteCode.trim()) {
-      toast.error('Invite code is required')
+      toast.error(t('errors.inviteCodeRequired'))
       return
     }
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match')
+      toast.error(t('errors.passwordsMismatch'))
       return
     }
 
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters')
+      toast.error(t('errors.passwordTooShort'))
       return
     }
 
     startTransition(async () => {
       try {
         await signup(name, email, password, inviteCode)
-        toast.success('Account created successfully!')
+        toast.success(t('signup.success'))
         navigate('/')
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Signup failed')
+        toast.error(error.response?.data?.message || t('errors.signupFailed'))
       }
     })
   }

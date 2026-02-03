@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
@@ -26,6 +27,7 @@ export default function Dashboard() {
   })
   const { isDark } = useTheme()
   const { user } = useAuth()
+  const { t } = useTranslation('dashboard')
 
   const fetchData = useCallback(async () => {
     try {
@@ -826,6 +828,7 @@ export default function Dashboard() {
                 schedule={schedule} 
                 isSettled={isSettled}
                 hasStarted={lockStatus.hasStarted}
+                currentUserId={user?.id}
               />
             </div>
           </div>

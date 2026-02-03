@@ -1,0 +1,56 @@
+{
+  "title": {
+    "place": "Place Prediction",
+    "edit": "Edit Prediction"
+  },
+  "subtitle": "Make your predictions for this week's matches",
+  "weekInfo": "Week {{week}}, {{year}}",
+  "form": {
+    "selectPrediction": "Select your prediction for each match",
+    "homeWin": "Home",
+    "awayWin": "Away",
+    "draw": "Draw",
+    "totalGoals": "Total Goals Prediction",
+    "totalGoalsHint": "Predict the total number of goals across all {{count}} matches (tiebreaker)",
+    "goals": "goals"
+  },
+  "match": {
+    "vs": "vs",
+    "matchNumber": "Match {{number}}"
+  },
+  "status": {
+    "bettingOpen": "Betting is open",
+    "bettingClosed": "Betting is closed",
+    "locksAt": "Locks at {{time}}",
+    "locked": "Betting locked",
+    "hasStarted": "First match has started"
+  },
+  "payment": {
+    "title": "Payment Status",
+    "paid": "Paid",
+    "pending": "Pending - Contact admin to confirm payment",
+    "hint": "Your bet will be included in standings once payment is confirmed"
+  },
+  "submit": {
+    "place": "Submit Prediction",
+    "update": "Update Prediction",
+    "placing": "Submitting...",
+    "updating": "Updating..."
+  },
+  "success": {
+    "placed": "Prediction submitted successfully!",
+    "updated": "Prediction updated successfully!"
+  },
+  "errors": {
+    "noSchedule": "No schedule found for this week",
+    "loadFailed": "Failed to load schedule",
+    "submitFailed": "Failed to submit prediction",
+    "bettingClosed": "Betting is closed for this week",
+    "allPredictions": "Please make a prediction for all matches"
+  },
+  "locked": {
+    "title": "Betting Closed",
+    "message": "The first match has started. You can no longer place or update predictions for this week.",
+    "viewDashboard": "View Dashboard"
+  }
+}

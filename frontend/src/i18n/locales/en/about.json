@@ -1,0 +1,35 @@
+{
+  "title": "About Quiniela",
+  "subtitle": "A digital home for the workplace football community",
+  "story": {
+    "title": "Our Story",
+    "heading": "From Paper to Platform",
+    "p1": "Quiniela was born out of a weekly tradition in a bustling workplace where a group of Mexican friends shared more than just a shift—they shared a passion for football. Every week, the crew would gather to organize a friendly and fun Liga MX match prediction pool every week, meticulously handwriting match schedules, predictions, and scores on sheets of paper.",
+    "p2": "While the \"pen and paper\" method carried a certain nostalgic charm, it was prone to lost slips, handwriting disputes, and the tedious manual calculation of points."
+  },
+  "vision": {
+    "title": "The Vision",
+    "p1": "We dreamed of a solution that preserved the soul of our weekly tradition while embracing modern convenience. Thus, Quiniela was born—a digital platform that automates the once manual process while keeping the friendly, community-driven spirit intact.",
+    "p2": "Quiniela was designed by quiniela enthusiasts, for quiniela enthusiasts. It's not just an app; it's a digital continuation of the camaraderie we share on the work floor."
+  },
+  "features": {
+    "title": "What Makes Us Different",
+    "automatedSchedules": {
+      "title": "Automated Schedules",
+      "description": "The app fetches the latest Mexican League matches automatically."
+    },
+    "precisionScoring": {
+      "title": "Precision Scoring",
+      "description": "Algorithm calculates points and manages tie-breakers instantly."
+    },
+    "transparency": {
+      "title": "Transparency",
+      "description": "Real-time visibility into payment statuses and live standings."
+    }
+  },
+  "cta": {
+    "ready": "Ready to join?",
+    "getStarted": "Get Started",
+    "backHome": "Back to Home"
+  }
+}

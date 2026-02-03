@@ -1,0 +1,70 @@
+{
+  "title": "Mi Perfil",
+  "subtitle": "Ve y administra tus predicciones y detalles de cuenta",
+  "breadcrumb": {
+    "dashboard": "Tablero",
+    "profile": "Perfil"
+  },
+  "card": {
+    "memberSince": "Miembro desde {{date}}",
+    "admin": "Admin"
+  },
+  "stats": {
+    "title": "Estadísticas",
+    "totalBets": "Total Predicciones",
+    "avgPoints": "Puntos Prom",
+    "bestScore": "Mejor Puntaje",
+    "winRate": "Tasa de Victoria"
+  },
+  "currentBet": {
+    "title": "Predicción de la Semana",
+    "week": "Semana {{week}}",
+    "points": "Puntos",
+    "goals": "Goles Predichos",
+    "payment": "Pago",
+    "noBet": "Sin predicción aún",
+    "noBetMessage": "Haz tu predicción para los partidos de esta semana",
+    "placeBet": "Hacer Predicción",
+    "updateBet": "Actualizar Predicción"
+  },
+  "history": {
+    "title": "Historial de Predicciones",
+    "week": "Semana",
+    "points": "Puntos",
+    "goals": "Goles",
+    "rank": "Posición",
+    "status": "Estado",
+    "noHistory": "Sin historial de predicciones",
+    "noHistoryMessage": "Tus predicciones pasadas aparecerán aquí"
+  },
+  "account": {
+    "title": "Configuración de Cuenta",
+    "editProfile": "Editar Perfil",
+    "changePassword": "Cambiar Contraseña",
+    "deleteAccount": "Eliminar Cuenta"
+  },
+  "editModal": {
+    "title": "Editar Perfil",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "save": "Guardar Cambios",
+    "saving": "Guardando...",
+    "success": "¡Perfil actualizado exitosamente!"
+  },
+  "passwordModal": {
+    "title": "Cambiar Contraseña",
+    "current": "Contraseña Actual",
+    "new": "Nueva Contraseña",
+    "confirm": "Confirmar Nueva Contraseña",
+    "change": "Cambiar Contraseña",
+    "changing": "Cambiando...",
+    "success": "¡Contraseña cambiada exitosamente!"
+  },
+  "deleteModal": {
+    "title": "Eliminar Cuenta",
+    "warning": "Esta acción no se puede deshacer. Todos tus datos serán eliminados permanentemente.",
+    "confirm": "Escribe ELIMINAR para confirmar",
+    "delete": "Eliminar Mi Cuenta",
+    "deleting": "Eliminando..."
+  }
+}

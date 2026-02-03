@@ -1,0 +1,35 @@
+{
+  "title": "Acerca de Quiniela",
+  "subtitle": "Un hogar digital para la comunidad futbolera del trabajo",
+  "story": {
+    "title": "Nuestra Historia",
+    "heading": "Del Papel a la Plataforma",
+    "p1": "Quiniela nació de una tradición semanal en un lugar de trabajo donde un grupo de amigos mexicanos compartían más que solo un turno—compartían una pasión por el fútbol. Cada semana, el grupo se reunía para organizar un pool de predicciones de partidos de Liga MX amigable y divertido, escribiendo meticulosamente a mano los calendarios de partidos, predicciones y resultados en hojas de papel.",
+    "p2": "Aunque el método de \"lápiz y papel\" tenía cierto encanto nostálgico, era propenso a papeles perdidos, disputas por la letra y el tedioso cálculo manual de puntos."
+  },
+  "vision": {
+    "title": "La Visión",
+    "p1": "Soñamos con una solución que preservara el alma de nuestra tradición semanal mientras adoptaba la conveniencia moderna. Así nació Quiniela—una plataforma digital que automatiza el proceso antes manual mientras mantiene el espíritu amigable y comunitario intacto.",
+    "p2": "Quiniela fue diseñada por entusiastas de la quiniela, para entusiastas de la quiniela. No es solo una app; es una continuación digital de la camaradería que compartimos en el piso de trabajo."
+  },
+  "features": {
+    "title": "Lo Que Nos Hace Diferentes",
+    "automatedSchedules": {
+      "title": "Calendarios Automatizados",
+      "description": "La app obtiene los últimos partidos de Liga Mexicana automáticamente."
+    },
+    "precisionScoring": {
+      "title": "Puntuación Precisa",
+      "description": "El algoritmo calcula puntos y maneja desempates instantáneamente."
+    },
+    "transparency": {
+      "title": "Transparencia",
+      "description": "Visibilidad en tiempo real de estados de pago y clasificaciones en vivo."
+    }
+  },
+  "cta": {
+    "ready": "¿Listo para unirte?",
+    "getStarted": "Comenzar",
+    "backHome": "Volver al Inicio"
+  }
+}

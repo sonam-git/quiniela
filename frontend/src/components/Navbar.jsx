@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
@@ -104,6 +105,14 @@ const CloseIcon = () => (
   </svg>
 )
 
+const LanguageIcon = () => (
+  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" 
+    />
+  </svg>
+)
+
 const ChevronDownIcon = () => (
   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -180,6 +189,16 @@ export default function Navbar() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const { t, i18n } = useTranslation()
+
+  const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  
+  const toggleLanguage = (lang) => {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('language', lang)
+    setLangMenuOpen(false)
+  }
 
   // Handle scroll for shadow effect
   useEffect(() => {
@@ -238,13 +257,13 @@ export default function Navbar() {
               isDark ? 'bg-dark-700/40' : 'bg-gray-100/60'
             }`}>
               <NavLink to="/" icon={HomeIcon} isActive={isActive('/')} isDark={isDark}>
-                Home
+                {t('navbar.home')}
               </NavLink>
               <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark}>
-                About
+                {t('navbar.about')}
               </NavLink>
               <NavLink to="/instructions" icon={InstructionsIcon} isActive={isActive('/instructions')} isDark={isDark}>
-                How to Play
+                {t('navbar.how_to_play')}
               </NavLink>
             </div>
 
@@ -256,14 +275,14 @@ export default function Navbar() {
                 <div className="flex items-center gap-1">
                   {isAdmin && (
                     <AdminNavLink to="/admin" icon={AdminIcon} isActive={isActive('/admin')} isDark={isDark}>
-                      Admin
+                      {t('navbar.admin')}
                     </AdminNavLink>
                   )}
                     <NavLink to="/dashboard" icon={DashboardIcon} isActive={isActive('/dashboard')} isDark={isDark}>
-                    Dashboard
+                    {t('navbar.dashboard')}
                   </NavLink>
                   <PrimaryButton to="/place-bet" icon={BetIcon} isActive={isActive('/place-bet')} isDark={isDark}>
-                    Predict Now
+                    {t('navbar.predict_now')}
                   </PrimaryButton>
                 </div>
                 {/* User Profile */}
@@ -314,6 +333,47 @@ export default function Navbar() {
             >
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
+                  {/* Language Switcher */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setLangMenuOpen(!langMenuOpen)}
+                      className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-1 ${
+                        isDark 
+                          ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 hover:ring-1 hover:ring-blue-500/20' 
+                          : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50 hover:ring-1 hover:ring-blue-200'
+                      }`}
+                      title={t('common:language')}
+                    >
+                      <LanguageIcon />
+                      <span className="text-xs font-semibold uppercase">{currentLang}</span>
+                    </button>
+                    {langMenuOpen && (
+                      <div className={`absolute right-0 mt-2 w-32 rounded-lg shadow-lg py-1 z-50 ${
+                        isDark ? 'bg-dark-700 border border-dark-600' : 'bg-white border border-gray-200'
+                      }`}>
+                        <button
+                          onClick={() => toggleLanguage('en')}
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                            currentLang === 'en' 
+                              ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                              : isDark ? 'text-gray-300 hover:bg-dark-600' : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span>🇺🇸</span> English
+                        </button>
+                        <button
+                          onClick={() => toggleLanguage('es')}
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                            currentLang === 'es' 
+                              ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                              : isDark ? 'text-gray-300 hover:bg-dark-600' : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span>🇲🇽</span> Español
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
             ) : (
@@ -324,10 +384,10 @@ export default function Navbar() {
                 {/* Auth Links */}
                 <div className="flex items-center gap-2">
                   <NavLink to="/login" icon={LoginIcon} isActive={isActive('/login')} isDark={isDark}>
-                    Sign in
+                    {t('navbar.sign_in')}
                   </NavLink>
                   <PrimaryButton to="/signup" icon={SignupIcon} isActive={isActive('/signup')} isDark={isDark}>
-                    Get Started
+                    {t('navbar.get_started')}
                   </PrimaryButton>
                              <button
               onClick={toggleTheme}
@@ -340,6 +400,47 @@ export default function Navbar() {
             >
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
+                  {/* Language Switcher */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setLangMenuOpen(!langMenuOpen)}
+                      className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-1 ${
+                        isDark 
+                          ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 hover:ring-1 hover:ring-blue-500/20' 
+                          : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50 hover:ring-1 hover:ring-blue-200'
+                      }`}
+                      title={t('common:language')}
+                    >
+                      <LanguageIcon />
+                      <span className="text-xs font-semibold uppercase">{currentLang}</span>
+                    </button>
+                    {langMenuOpen && (
+                      <div className={`absolute right-0 mt-2 w-32 rounded-lg shadow-lg py-1 z-50 ${
+                        isDark ? 'bg-dark-700 border border-dark-600' : 'bg-white border border-gray-200'
+                      }`}>
+                        <button
+                          onClick={() => toggleLanguage('en')}
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                            currentLang === 'en' 
+                              ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                              : isDark ? 'text-gray-300 hover:bg-dark-600' : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span>🇺🇸</span> English
+                        </button>
+                        <button
+                          onClick={() => toggleLanguage('es')}
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                            currentLang === 'es' 
+                              ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                              : isDark ? 'text-gray-300 hover:bg-dark-600' : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span>🇲🇽</span> Español
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -347,6 +448,44 @@ export default function Navbar() {
 
           {/* Mobile controls */}
           <div className="lg:hidden flex items-center gap-2">
+            {/* Language Switcher - Mobile */}
+            <div className="relative">
+              <button
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                className={`p-2.5 rounded-xl transition-colors flex items-center gap-1 ${
+                  isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-dark-700' : 'text-gray-500 hover:text-blue-500 hover:bg-gray-100'
+                }`}
+              >
+                <LanguageIcon />
+                <span className="text-xs font-semibold uppercase">{currentLang}</span>
+              </button>
+              {langMenuOpen && (
+                <div className={`absolute right-0 mt-2 w-32 rounded-lg shadow-lg py-1 z-50 ${
+                  isDark ? 'bg-dark-700 border border-dark-600' : 'bg-white border border-gray-200'
+                }`}>
+                  <button
+                    onClick={() => toggleLanguage('en')}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                      currentLang === 'en' 
+                        ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                        : isDark ? 'text-gray-300 hover:bg-dark-600' : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>🇺🇸</span> English
+                  </button>
+                  <button
+                    onClick={() => toggleLanguage('es')}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                      currentLang === 'es' 
+                        ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                        : isDark ? 'text-gray-300 hover:bg-dark-600' : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>🇲🇽</span> Español
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               onClick={toggleTheme}
               className={`p-2.5 rounded-xl transition-colors ${
@@ -401,35 +540,35 @@ export default function Navbar() {
                     </span>
                   </div>
                   <span className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    View Profile →
+                    {t('navbar.view_profile')} →
                   </span>
                 </Link>
 
                 {/* Mobile Nav Links */}
                 <div className="space-y-1 px-1">
                   <NavLink to="/" icon={HomeIcon} isActive={isActive('/')} isDark={isDark} onClick={closeMobileMenu}>
-                    Home
+                    {t('navbar.home')}
                   </NavLink>
                   <NavLink to="/dashboard" icon={DashboardIcon} isActive={isActive('/dashboard')} isDark={isDark} onClick={closeMobileMenu}>
-                    Dashboard
+                    {t('navbar.dashboard')}
                   </NavLink>
                   {isAdmin && (
                     <AdminNavLink to="/admin" icon={AdminIcon} isActive={isActive('/admin')} isDark={isDark} onClick={closeMobileMenu}>
-                      Admin Panel
+                      {t('navbar.admin')}
                     </AdminNavLink>
                   )}
                   <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark} onClick={closeMobileMenu}>
-                    About
+                    {t('navbar.about')}
                   </NavLink>
                   <NavLink to="/instructions" icon={InstructionsIcon} isActive={isActive('/instructions')} isDark={isDark} onClick={closeMobileMenu}>
-                    How to Play
+                    {t('navbar.how_to_play')}
                   </NavLink>
                 </div>
 
                 {/* CTA Button */}
                 <div className="px-1 pt-2">
                   <PrimaryButton to="/place-bet" icon={BetIcon} isActive={isActive('/place-bet')} isDark={isDark} onClick={closeMobileMenu}>
-                    Place Bet
+                    {t('navbar.place_bet')}
                   </PrimaryButton>
                 </div>
 
@@ -445,22 +584,22 @@ export default function Navbar() {
                   }`}
                 >
                   <LogoutIcon />
-                  Sign out
+                  {t('navbar.sign_out')}
                 </button>
               </div>
             ) : (
               <div className="space-y-2 px-1">
                 <NavLink to="/" icon={HomeIcon} isActive={isActive('/')} isDark={isDark} onClick={closeMobileMenu}>
-                  Home
+                  {t('navbar.home')}
                 </NavLink>
                 <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark} onClick={closeMobileMenu}>
-                  About
+                  {t('navbar.about')}
                 </NavLink>
                 <NavLink to="/instructions" icon={InstructionsIcon} isActive={isActive('/instructions')} isDark={isDark} onClick={closeMobileMenu}>
-                  How to Play
+                  {t('navbar.how_to_play')}
                 </NavLink>
                 <NavLink to="/login" icon={LoginIcon} isActive={isActive('/login')} isDark={isDark} onClick={closeMobileMenu}>
-                  Sign in
+                  {t('navbar.sign_in')}
                 </NavLink>
                 
                 <div className="pt-2">
@@ -470,7 +609,7 @@ export default function Navbar() {
                     className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-emerald-500/25"
                   >
                     <SignupIcon />
-                    Get Started — It's Free
+                    {t('navbar.get_started')} — {t('navbar.its_free')}
                   </Link>
                 </div>
               </div>

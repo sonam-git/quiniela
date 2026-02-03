@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
 
-export default function QuinielaTable({ bets, schedule, isSettled, hasStarted }) {
+export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId }) {
   const { isDark } = useTheme()
   const [expandedCard, setExpandedCard] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
@@ -44,6 +44,18 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
   const findPrediction = (predictions, matchId) => {
     const pred = predictions.find(p => p.matchId === matchId)
     return pred ? pred.prediction : null
+  }
+
+  // Check if a bet belongs to the current user
+  const isCurrentUserBet = (bet) => {
+    // currentUserId comes from user.id (from auth context)
+    // bet.userId._id comes from MongoDB populated user
+    return currentUserId && (bet.userId?._id === currentUserId || bet.userId?.id === currentUserId)
+  }
+
+  // Determine if predictions should be visible for a bet
+  const canSeePredictions = (bet) => {
+    return hasStarted || isCurrentUserBet(bet)
   }
 
   // Empty state
@@ -294,20 +306,30 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
 
                   {/* Goals */}
                   <td className="px-3 py-3 text-center">
-                    <div className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-semibold ${
-                      isSettled && bet.goalDifference !== null 
-                        ? bet.goalDifference === 0 
-                          ? isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-                          : isDark ? 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
-                        : isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {bet.totalGoals}
-                      {isSettled && bet.goalDifference !== null && (
-                        <span className="text-xs opacity-75 ml-0.5">
-                          {bet.goalDifference === 0 ? '✓' : `±${bet.goalDifference}`}
-                        </span>
-                      )}
-                    </div>
+                    {canSeePredictions(bet) ? (
+                      <div className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-semibold ${
+                        isSettled && bet.goalDifference !== null 
+                          ? bet.goalDifference === 0 
+                            ? isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+                            : isDark ? 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+                          : isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {bet.totalGoals}
+                        {isSettled && bet.goalDifference !== null && (
+                          <span className="text-xs opacity-75 ml-0.5">
+                            {bet.goalDifference === 0 ? '✓' : `±${bet.goalDifference}`}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-semibold ${
+                        isDark ? 'bg-dark-700/50 text-dark-500' : 'bg-gray-100 text-gray-400'
+                      }`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </div>
+                    )}
                   </td>
 
                   {/* Match Predictions */}
@@ -315,33 +337,55 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
                     const prediction = findPrediction(bet.predictions, match._id)
                     return (
                       <td key={match._id} className="px-1.5 py-3 text-center">
-                        <div
-                          className={`inline-flex items-center justify-center w-9 h-8 rounded-lg text-xs font-bold transition-all ${getPredictionClass(prediction, match)}`}
-                          title={`${match.teamA} vs ${match.teamB}: ${
-                            prediction === 'teamA' ? 'Home wins (L)' :
-                            prediction === 'teamB' ? 'Away wins (V)' : 
-                            prediction === 'draw' ? 'Draw (E)' : 'No prediction'
-                          }${match.isCompleted ? ` • Result: ${match.scoreTeamA}-${match.scoreTeamB}` : ''}`}
-                        >
-                          {prediction ? getPredictionDisplay(prediction, match) : '-'}
-                        </div>
+                        {canSeePredictions(bet) ? (
+                          <div
+                            className={`inline-flex items-center justify-center w-9 h-8 rounded-lg text-xs font-bold transition-all ${getPredictionClass(prediction, match)}`}
+                            title={`${match.teamA} vs ${match.teamB}: ${
+                              prediction === 'teamA' ? 'Home wins (L)' :
+                              prediction === 'teamB' ? 'Away wins (V)' : 
+                              prediction === 'draw' ? 'Draw (E)' : 'No prediction'
+                            }${match.isCompleted ? ` • Result: ${match.scoreTeamA}-${match.scoreTeamB}` : ''}`}
+                          >
+                            {prediction ? getPredictionDisplay(prediction, match) : '-'}
+                          </div>
+                        ) : (
+                          <div
+                            className={`inline-flex items-center justify-center w-9 h-8 rounded-lg text-xs transition-all ${
+                              isDark ? 'bg-dark-700/50 text-dark-500' : 'bg-gray-100 text-gray-400'
+                            }`}
+                            title="Predictions hidden until first match starts"
+                          >
+                            🔒
+                          </div>
+                        )}
                       </td>
                     )
                   })}
 
                   {/* Points */}
                   <td className="px-4 py-3 text-center">
-                    <div className={`inline-flex items-center justify-center min-w-[44px] px-3 py-1.5 rounded-lg text-sm font-bold ${
-                      bet.totalPoints >= 7 
-                        ? isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/40' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-                        : bet.totalPoints >= 5 
-                          ? isDark ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/40' : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
-                          : bet.totalPoints >= 3 
-                            ? isDark ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/40' : 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
-                            : isDark ? 'bg-dark-700 text-white' : 'bg-gray-100 text-gray-900'
-                    }`}>
-                      {bet.totalPoints}
-                    </div>
+                    {canSeePredictions(bet) ? (
+                      <div className={`inline-flex items-center justify-center min-w-[44px] px-3 py-1.5 rounded-lg text-sm font-bold ${
+                        bet.totalPoints >= 7 
+                          ? isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/40' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+                          : bet.totalPoints >= 5 
+                            ? isDark ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/40' : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+                            : bet.totalPoints >= 3 
+                              ? isDark ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/40' : 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
+                              : isDark ? 'bg-dark-700 text-white' : 'bg-gray-100 text-gray-900'
+                      }`}>
+                        {bet.totalPoints}
+                      </div>
+                    ) : (
+                      <div 
+                        className={`inline-flex items-center justify-center min-w-[44px] px-3 py-1.5 rounded-lg text-sm ${
+                          isDark ? 'bg-dark-700/50 text-dark-500' : 'bg-gray-100 text-gray-400'
+                        }`}
+                        title="Points hidden until first match starts"
+                      >
+                        🔒
+                      </div>
+                    )}
                   </td>
 
                   {/* Payment Status */}
@@ -422,19 +466,32 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
                       </p>
                       {/* Mini Stats */}
                       <div className="flex items-center gap-2 mt-0.5">
-                        {hasCompletedMatches && (
+                        {canSeePredictions(bet) ? (
                           <>
-                            <span className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                              ✓{correctCount}
-                            </span>
-                            <span className={`text-xs font-medium ${isDark ? 'text-red-400' : 'text-red-500'}`}>
-                              ✗{wrongCount}
-                            </span>
+                            {hasCompletedMatches && (
+                              <>
+                                <span className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                  ✓{correctCount}
+                                </span>
+                                <span className={`text-xs font-medium ${isDark ? 'text-red-400' : 'text-red-500'}`}>
+                                  ✗{wrongCount}
+                                </span>
+                              </>
+                            )}
+                            {pendingCount > 0 && (
+                              <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>
+                                {pendingCount} left
+                              </span>
+                            )}
+                            {!hasStarted && isCurrentUserBet(bet) && (
+                              <span className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                (Your bet)
+                              </span>
+                            )}
                           </>
-                        )}
-                        {pendingCount > 0 && (
-                          <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>
-                            {pendingCount} left
+                        ) : (
+                          <span className={`text-xs flex items-center gap-1 ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>
+                            🔒 Hidden
                           </span>
                         )}
                       </div>
@@ -443,26 +500,35 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
                 </div>
 
                 {/* Points */}
-                <div className={`flex-shrink-0 px-3 py-2 rounded-xl text-center ${
-                  bet.totalPoints >= 7 
-                    ? isDark ? 'bg-emerald-500/20 ring-1 ring-emerald-500/40' : 'bg-emerald-100 ring-1 ring-emerald-200'
-                    : bet.totalPoints >= 5 
-                      ? isDark ? 'bg-amber-500/20 ring-1 ring-amber-500/40' : 'bg-amber-100 ring-1 ring-amber-200'
-                      : isDark ? 'bg-dark-700 ring-1 ring-dark-600' : 'bg-gray-100 ring-1 ring-gray-200'
-                }`}>
-                  <span className={`text-xl font-bold ${
+                {/* Points */}
+                {canSeePredictions(bet) ? (
+                  <div className={`flex-shrink-0 px-3 py-2 rounded-xl text-center ${
                     bet.totalPoints >= 7 
-                      ? isDark ? 'text-emerald-400' : 'text-emerald-700'
+                      ? isDark ? 'bg-emerald-500/20 ring-1 ring-emerald-500/40' : 'bg-emerald-100 ring-1 ring-emerald-200'
                       : bet.totalPoints >= 5 
-                        ? isDark ? 'text-amber-400' : 'text-amber-700'
-                        : isDark ? 'text-white' : 'text-gray-900'
+                        ? isDark ? 'bg-amber-500/20 ring-1 ring-amber-500/40' : 'bg-amber-100 ring-1 ring-amber-200'
+                        : isDark ? 'bg-dark-700 ring-1 ring-dark-600' : 'bg-gray-100 ring-1 ring-gray-200'
                   }`}>
-                    {bet.totalPoints}
-                  </span>
-                  <span className={`text-[10px] block font-medium -mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    pts
-                  </span>
-                </div>
+                    <span className={`text-xl font-bold ${
+                      bet.totalPoints >= 7 
+                        ? isDark ? 'text-emerald-400' : 'text-emerald-700'
+                        : bet.totalPoints >= 5 
+                          ? isDark ? 'text-amber-400' : 'text-amber-700'
+                          : isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {bet.totalPoints}
+                    </span>
+                    <span className={`text-[10px] block font-medium -mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      pts
+                    </span>
+                  </div>
+                ) : (
+                  <div className={`flex-shrink-0 px-3 py-2 rounded-xl text-center ${
+                    isDark ? 'bg-dark-700/50 ring-1 ring-dark-600' : 'bg-gray-100 ring-1 ring-gray-200'
+                  }`}>
+                    <span className="text-xl">🔒</span>
+                  </div>
+                )}
 
                 {/* Expand Icon */}
                 <svg 
@@ -490,85 +556,104 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted })
               {isExpanded && (
                 <div className={`px-4 pb-4 space-y-4 border-t ${isDark ? 'border-dark-700' : 'border-gray-100'}`}>
                   
-                  {/* Stats Row */}
-                  <div className="grid grid-cols-4 gap-2 pt-4">
-                    <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
-                      <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{bet.totalGoals}</p>
-                      <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Goals</p>
-                      {isSettled && bet.goalDifference !== null && (
-                        <p className={`text-xs mt-0.5 ${
-                          bet.goalDifference === 0 ? 'text-emerald-500' : isDark ? 'text-blue-400' : 'text-blue-600'
-                        }`}>
-                          {bet.goalDifference === 0 ? '✓ Exact' : `±${bet.goalDifference}`}
-                        </p>
-                      )}
-                    </div>
-                    <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                      <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{correctCount}</p>
-                      <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>Correct</p>
-                    </div>
-                    <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
-                      <p className={`text-lg font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{wrongCount}</p>
-                      <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-red-400/60' : 'text-red-600/60'}`}>Wrong</p>
-                    </div>
-                    <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
-                      <p className={`text-lg font-bold ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{pendingCount}</p>
-                      <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Pending</p>
-                    </div>
-                  </div>
-
-                  {/* Predictions Grid */}
-                  <div className={`rounded-lg overflow-hidden border ${isDark ? 'border-dark-600' : 'border-gray-200'}`}>
-                    <div className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide ${
-                      isDark ? 'bg-dark-700 text-dark-300' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      Match Predictions
-                    </div>
-                    <div className={`p-3 ${isDark ? 'bg-dark-700/30' : 'bg-gray-50/50'}`}>
-                      <div className="grid grid-cols-3 gap-2">
-                        {schedule.matches.map((match, matchIndex) => {
-                          const prediction = findPrediction(bet.predictions, match._id)
-                          const isCorrect = match.isCompleted && prediction === match.result
-                          const isWrong = match.isCompleted && prediction && prediction !== match.result
-                          
-                          return (
-                            <div 
-                              key={match._id} 
-                              className={`p-2.5 rounded-lg text-center transition-all ${
-                                isCorrect
-                                  ? isDark ? 'bg-emerald-500/15 ring-1 ring-emerald-500/40' : 'bg-emerald-100 ring-1 ring-emerald-200'
-                                  : isWrong
-                                    ? isDark ? 'bg-red-500/15 ring-1 ring-red-500/40' : 'bg-red-50 ring-1 ring-red-200'
-                                    : isDark ? 'bg-dark-600/50 ring-1 ring-dark-500' : 'bg-white ring-1 ring-gray-200'
-                              }`}
-                            >
-                              <div className={`text-[10px] font-semibold mb-1 ${
-                                isCorrect ? isDark ? 'text-emerald-400' : 'text-emerald-600'
-                                  : isWrong ? isDark ? 'text-red-400' : 'text-red-500'
-                                  : isDark ? 'text-dark-400' : 'text-gray-500'
-                              }`}>
-                                M{matchIndex + 1}
-                              </div>
-                              <div className={`text-sm font-bold ${
-                                isCorrect ? isDark ? 'text-emerald-400' : 'text-emerald-700'
-                                  : isWrong ? isDark ? 'text-red-400' : 'text-red-600'
-                                  : isDark ? 'text-white' : 'text-gray-900'
-                              }`}>
-                                {prediction ? getPredictionDisplay(prediction, match) : '-'}
-                              </div>
-                              {match.isCompleted && (
-                                <div className={`text-[9px] mt-0.5 ${
-                                  isCorrect ? 'text-emerald-500' : isWrong ? 'text-red-400' : ''
-                                }`}>
-                                  {isCorrect ? '✓' : isWrong ? '✗' : ''}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
+                  {canSeePredictions(bet) ? (
+                    <>
+                      {/* Stats Row */}
+                      <div className="grid grid-cols-4 gap-2 pt-4">
+                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
+                          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{bet.totalGoals}</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Goals</p>
+                          {isSettled && bet.goalDifference !== null && (
+                            <p className={`text-xs mt-0.5 ${
+                              bet.goalDifference === 0 ? 'text-emerald-500' : isDark ? 'text-blue-400' : 'text-blue-600'
+                            }`}>
+                              {bet.goalDifference === 0 ? '✓ Exact' : `±${bet.goalDifference}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                          <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{correctCount}</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>Correct</p>
+                        </div>
+                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
+                          <p className={`text-lg font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{wrongCount}</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-red-400/60' : 'text-red-600/60'}`}>Wrong</p>
+                        </div>
+                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
+                          <p className={`text-lg font-bold ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{pendingCount}</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Pending</p>
+                        </div>
                       </div>
+
+                      {/* Predictions Grid */}
+                      <div className={`rounded-lg overflow-hidden border ${isDark ? 'border-dark-600' : 'border-gray-200'}`}>
+                        <div className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide ${
+                          isDark ? 'bg-dark-700 text-dark-300' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          Match Predictions
+                        </div>
+                        <div className={`p-3 ${isDark ? 'bg-dark-700/30' : 'bg-gray-50/50'}`}>
+                          <div className="grid grid-cols-3 gap-2">
+                            {schedule.matches.map((match, matchIndex) => {
+                              const prediction = findPrediction(bet.predictions, match._id)
+                              const isCorrect = match.isCompleted && prediction === match.result
+                              const isWrong = match.isCompleted && prediction && prediction !== match.result
+                              
+                              return (
+                                <div 
+                                  key={match._id} 
+                                  className={`p-2.5 rounded-lg text-center transition-all ${
+                                    isCorrect
+                                      ? isDark ? 'bg-emerald-500/15 ring-1 ring-emerald-500/40' : 'bg-emerald-100 ring-1 ring-emerald-200'
+                                      : isWrong
+                                        ? isDark ? 'bg-red-500/15 ring-1 ring-red-500/40' : 'bg-red-50 ring-1 ring-red-200'
+                                        : isDark ? 'bg-dark-600/50 ring-1 ring-dark-500' : 'bg-white ring-1 ring-gray-200'
+                                  }`}
+                                >
+                                  <div className={`text-[10px] font-semibold mb-1 ${
+                                    isCorrect ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                                      : isWrong ? isDark ? 'text-red-400' : 'text-red-500'
+                                      : isDark ? 'text-dark-400' : 'text-gray-500'
+                                  }`}>
+                                    M{matchIndex + 1}
+                                  </div>
+                                  <div className={`text-sm font-bold ${
+                                    isCorrect ? isDark ? 'text-emerald-400' : 'text-emerald-700'
+                                      : isWrong ? isDark ? 'text-red-400' : 'text-red-600'
+                                      : isDark ? 'text-white' : 'text-gray-900'
+                                  }`}>
+                                    {prediction ? getPredictionDisplay(prediction, match) : '-'}
+                                  </div>
+                                  {match.isCompleted && (
+                                    <div className={`text-[9px] mt-0.5 ${
+                                      isCorrect ? 'text-emerald-500' : isWrong ? 'text-red-400' : ''
+                                    }`}>
+                                      {isCorrect ? '✓' : isWrong ? '✗' : ''}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* Hidden State - Before First Match */
+                    <div className={`pt-4 text-center py-8 rounded-lg ${isDark ? 'bg-dark-700/30' : 'bg-gray-50'}`}>
+                      <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
+                        isDark ? 'bg-dark-600' : 'bg-gray-100'
+                      }`}>
+                        <span className="text-3xl">🔒</span>
+                      </div>
+                      <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Predictions Hidden
+                      </h4>
+                      <p className={`text-xs max-w-xs mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        Other participants' predictions will be visible after the first match starts.
+                      </p>
                     </div>
-                  </div>
+                  )}
 
                   {/* Payment Status */}
                   <div className={`flex items-center justify-between p-3 rounded-lg ${

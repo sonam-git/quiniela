@@ -1,0 +1,61 @@
+{
+  "title": "Tablero",
+  "subtitle": "Liga MX · Semana {{week}}, {{year}}",
+  "tabs": {
+    "standings": "Clasificación",
+    "schedule": "Calendario"
+  },
+  "standings": {
+    "title": "Tabla de Posiciones",
+    "subtitle": "Rankings Semana {{week}}",
+    "rank": "Pos",
+    "player": "Jugador",
+    "points": "Puntos",
+    "goals": "Goles",
+    "diff": "Dif",
+    "payment": "Pago",
+    "noParticipants": "Sin predicciones para esta semana",
+    "beFirst": "¡Sé el primero en hacer tu predicción!"
+  },
+  "schedule": {
+    "title": "Calendario de Partidos",
+    "subtitle": "Jornada {{week}}",
+    "vs": "vs",
+    "match": "Partido",
+    "date": "Fecha",
+    "time": "Hora",
+    "result": "Resultado",
+    "tbd": "Por definir",
+    "noMatches": "Sin partidos programados",
+    "checkBack": "Vuelve más tarde para ver los partidos de esta semana"
+  },
+  "stats": {
+    "participants": "Participantes",
+    "matches": "Partidos",
+    "avgPoints": "Puntos Prom",
+    "topScore": "Mejor Puntaje"
+  },
+  "status": {
+    "bettingOpen": "Apuestas Abiertas",
+    "bettingClosed": "Apuestas Cerradas",
+    "settled": "Finalizado",
+    "inProgress": "En Progreso"
+  },
+  "cta": {
+    "placeBet": "Hacer Predicción",
+    "updateBet": "Actualizar Predicción",
+    "viewResults": "Ver Resultados"
+  },
+  "errors": {
+    "noSchedule": "Calendario No Disponible",
+    "noScheduleMessage": "El calendario para esta semana aún no ha sido creado. Por favor vuelve más tarde.",
+    "connectionError": "Error de Conexión",
+    "connectionErrorMessage": "No se puede conectar al servidor. Por favor verifica tu conexión a internet e intenta de nuevo.",
+    "loadError": "Error al Cargar Datos",
+    "loadErrorMessage": "Algo salió mal al cargar los datos. Por favor intenta de nuevo más tarde."
+  },
+  "announcements": {
+    "title": "Anuncios",
+    "dismiss": "Descartar"
+  }
+}

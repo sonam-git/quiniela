@@ -1,0 +1,70 @@
+{
+  "title": "My Profile",
+  "subtitle": "View and manage your predictions and account details",
+  "breadcrumb": {
+    "dashboard": "Dashboard",
+    "profile": "Profile"
+  },
+  "card": {
+    "memberSince": "Member since {{date}}",
+    "admin": "Admin"
+  },
+  "stats": {
+    "title": "Statistics",
+    "totalBets": "Total Bets",
+    "avgPoints": "Avg Points",
+    "bestScore": "Best Score",
+    "winRate": "Win Rate"
+  },
+  "currentBet": {
+    "title": "Current Week Prediction",
+    "week": "Week {{week}}",
+    "points": "Points",
+    "goals": "Goals Predicted",
+    "payment": "Payment",
+    "noBet": "No prediction placed yet",
+    "noBetMessage": "Place your prediction for this week's matches",
+    "placeBet": "Place Prediction",
+    "updateBet": "Update Prediction"
+  },
+  "history": {
+    "title": "Prediction History",
+    "week": "Week",
+    "points": "Points",
+    "goals": "Goals",
+    "rank": "Rank",
+    "status": "Status",
+    "noHistory": "No prediction history yet",
+    "noHistoryMessage": "Your past predictions will appear here"
+  },
+  "account": {
+    "title": "Account Settings",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account"
+  },
+  "editModal": {
+    "title": "Edit Profile",
+    "name": "Name",
+    "email": "Email",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "success": "Profile updated successfully!"
+  },
+  "passwordModal": {
+    "title": "Change Password",
+    "current": "Current Password",
+    "new": "New Password",
+    "confirm": "Confirm New Password",
+    "change": "Change Password",
+    "changing": "Changing...",
+    "success": "Password changed successfully!"
+  },
+  "deleteModal": {
+    "title": "Delete Account",
+    "warning": "This action cannot be undone. All your data will be permanently deleted.",
+    "confirm": "Type DELETE to confirm",
+    "delete": "Delete My Account",
+    "deleting": "Deleting..."
+  }
+}

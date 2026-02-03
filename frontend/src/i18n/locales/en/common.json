@@ -1,0 +1,74 @@
+{
+  "appName": "Quiniela",
+  "ligaMX": "Liga MX",
+  "year": "2026",
+  "language": "Language",
+  "navbar": {
+    "home": "Home",
+    "about": "About",
+    "how_to_play": "How to Play",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "profile": "Profile",
+    "sign_in": "Sign in",
+    "get_started": "Get Started",
+    "sign_out": "Sign out",
+    "predict_now": "Predict Now",
+    "place_bet": "Place Bet",
+    "view_profile": "View Profile",
+    "its_free": "It's Free"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "howToPlay": "How to Play",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "profile": "Profile",
+    "signIn": "Sign in",
+    "signUp": "Get Started",
+    "signOut": "Sign out",
+    "predictNow": "Predict Now"
+  },
+  "footer": {
+    "copyright": "© {{year}} Quiniela Liga MX. All rights reserved.",
+    "disclaimer": "This is a private prediction game for entertainment purposes only.",
+    "madeWith": "Made with",
+    "forFans": "for Liga MX fans"
+  },
+  "theme": {
+    "light": "Switch to light mode",
+    "dark": "Switch to dark mode"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "select": "Select Language"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "week": "Week",
+    "points": "Points",
+    "goals": "Goals",
+    "matches": "Matches",
+    "paid": "Paid",
+    "pending": "Pending",
+    "na": "N/A"
+  },
+  "status": {
+    "online": "Back online!",
+    "offline": "You are offline"
+  }
+}

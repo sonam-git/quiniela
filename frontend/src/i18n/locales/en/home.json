@@ -1,0 +1,24 @@
+{
+  "hero": {
+    "welcomeTo": "Welcome to",
+    "welcomeBack": "Welcome,",
+    "subtitle": "The ultimate Liga MX prediction game. Predict match outcomes, compete with friends, and win weekly prizes.",
+    "subtitleLoggedIn": "Ready to make your predictions? Place your prediction and compete for weekly prizes!"
+  },
+  "cta": {
+    "getStartedFree": "Get Started Free",
+    "signIn": "Sign In",
+    "prediction": "Prediction",
+    "standings": "Standings",
+    "admin": "Admin"
+  },
+  "stats": {
+    "matchesPerWeek": "Matches / Week",
+    "weeksTotal": "Weeks Total",
+    "weeklyPrizes": "Weekly Prizes"
+  },
+  "floatingCard": {
+    "testYourLuck": "Test Your Luck",
+    "predictAndWin": "Predict & win big!"
+  }
+}

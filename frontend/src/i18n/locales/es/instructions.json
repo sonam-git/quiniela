@@ -1,0 +1,49 @@
+{
+  "title": "Cómo Jugar Quiniela",
+  "subtitle": "Sigue estos simples pasos para unirte al juego de predicciones de Liga MX",
+  "steps": {
+    "step1": {
+      "title": "Regístrate para una Cuenta",
+      "description": "Crea tu cuenta de Quiniela haciendo clic en \"Registrarse\" en la barra de navegación. Ingresa tu nombre, correo electrónico, código de invitación y crea una contraseña para comenzar."
+    },
+    "step2": {
+      "title": "Ve el Tablero",
+      "description": "Una vez que inicies sesión, ve al Tablero para ver los partidos y calendario de la semana actual. Verás los 9 partidos de Liga MX para esa jornada junto con los horarios de los partidos."
+    },
+    "step3": {
+      "title": "Haz tus predicciones",
+      "description": "Haz clic en \"Predecir Ahora\" para hacer tus predicciones. Para cada uno de los 9 partidos, elige tu predicción: 🏠 Gana Local, ✈️ Gana Visitante, o E para Empate. También puedes actualizar tu predicción antes del primer partido. Una vez que el primer partido comienza no puedes cambiar tu predicción"
+    },
+    "step4": {
+      "title": "Predice Goles Totales",
+      "description": "Adivina el número total de goles que se anotarán en los 9 partidos de la semana. ¡Este es tu desempate si varios jugadores tienen los mismos puntos!"
+    },
+    "step5": {
+      "title": "Paga la Cuota de Entrada",
+      "description": "Paga la cantidad de entrada al administrador del juego. Tu predicción aparecerá como \"Pago Pendiente\" hasta que sea confirmada por el admin. Cobramos cuotas razonables para financiar el pozo de premios y mantenimiento de la plataforma."
+    },
+    "step6": {
+      "title": "Envía Tu Predicción",
+      "description": "Una vez que hayas hecho todas tus predicciones y tu pago esté confirmado, envía tu predicción antes de que comience el primer partido. ¡Las apuestas cierran cuando comienza el primer partido!"
+    },
+    "step7": {
+      "title": "Mira los Partidos",
+      "description": "Sigue los partidos durante la semana. La clasificación en el Tablero se actualiza conforme se completan los partidos, mostrando los puntos de todos en tiempo real."
+    },
+    "step8": {
+      "title": "Gana el Premio",
+      "description": "Después de que terminen todos los partidos, ¡el participante con más puntos gana! Si varios jugadores empatan en puntos, gana la predicción de goles totales más cercana. Si aún empatan, el premio se divide entre los ganadores."
+    }
+  },
+  "scoring": {
+    "title": "Sistema de Puntuación",
+    "correctPrediction": "+1 punto por cada predicción correcta de partido",
+    "tiebreaker": "Predicción de goles totales usada como desempate",
+    "winner": "Goles totales más cercanos gana en caso de empate"
+  },
+  "cta": {
+    "ready": "¿Listo para comenzar?",
+    "startPlaying": "Comenzar a Jugar",
+    "backHome": "Volver al Inicio"
+  }
+}

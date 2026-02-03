@@ -1,0 +1,116 @@
+{
+  "title": "Panel de Admin",
+  "subtitle": "Administra usuarios, pagos y configuración",
+  "tabs": {
+    "users": "Usuarios",
+    "payments": "Pagos",
+    "settings": "Configuración"
+  },
+  "stats": {
+    "users": "Usuarios",
+    "bets": "Apuestas",
+    "paid": "Pagados",
+    "pending": "Pendientes"
+  },
+  "users": {
+    "title": "Gestión de Usuarios",
+    "user": "Usuario",
+    "email": "Correo",
+    "role": "Rol",
+    "joined": "Registro",
+    "actions": "Acciones",
+    "admin": "Admin",
+    "you": "(Tú)",
+    "deleteUser": "Eliminar usuario",
+    "makeAdmin": "Hacer admin",
+    "removeAdmin": "Quitar admin"
+  },
+  "payments": {
+    "title": "Registro de Pagos",
+    "subtitle": "Semana {{week}}, {{year}} · Administra pagos de participantes",
+    "username": "Usuario",
+    "status": "Estado de Pago",
+    "action": "Acción",
+    "hasBet": "Tiene predicción",
+    "paymentOnly": "Solo pago",
+    "progress": "Progreso de Cobros (Usuarios con Predicciones)",
+    "totalUsers": "Total Usuarios",
+    "withBets": "Con Predicciones",
+    "noBet": "Sin Predicción",
+    "noUsers": "No se encontraron usuarios",
+    "noUsersMessage": "Los usuarios aparecerán aquí una vez que se registren"
+  },
+  "settings": {
+    "title": "Códigos de Acceso",
+    "subtitle": "Cambiar códigos solo afecta nuevos registros. Los usuarios existentes pueden seguir iniciando sesión normalmente.",
+    "signupCode": "Código de Invitación",
+    "signupCodeDesc": "Requerido para que nuevos usuarios creen una cuenta",
+    "adminCode": "Código de Admin",
+    "adminCodeDesc": "Usado durante inicio de sesión para obtener privilegios de admin (opcional)",
+    "changeCodes": "Cambiar Códigos",
+    "newSignupCode": "Nuevo Código de Registro (deja vacío para mantener actual)",
+    "newAdminCode": "Nuevo Código de Admin (deja vacío para mantener actual)",
+    "saveChanges": "Guardar Cambios",
+    "codesUpdated": "¡Códigos actualizados exitosamente!",
+    "importantNote": "Importante: Los cambios de código no afectan usuarios existentes",
+    "importantNoteDesc": "Los usuarios que ya se registraron pueden seguir iniciando sesión con su correo y contraseña. Solo los nuevos registros necesitarán el código actualizado."
+  },
+  "announcements": {
+    "title": "Anuncios",
+    "active": "activos",
+    "total": "total",
+    "newAnnouncement": "Nuevo Anuncio",
+    "new": "Nuevo",
+    "createTitle": "Crear Nuevo Anuncio",
+    "titleLabel": "Título",
+    "titlePlaceholder": "ej., Actualización Importante, Resultados Semana 5, etc.",
+    "messageLabel": "Mensaje",
+    "messagePlaceholder": "Escribe tu mensaje de anuncio aquí...",
+    "characters": "caracteres",
+    "publish": "Publicar",
+    "publishing": "Publicando...",
+    "live": "Activo",
+    "off": "Inactivo",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "noAnnouncements": "Sin anuncios aún",
+    "createFirst": "Crea tu primer anuncio para notificar a los usuarios",
+    "published": "¡Anuncio publicado exitosamente!",
+    "deleted": "Anuncio eliminado",
+    "activated": "Anuncio activado",
+    "deactivated": "Anuncio desactivado"
+  },
+  "dangerZone": {
+    "title": "Zona de Peligro",
+    "warning": "Estas acciones son irreversibles. Ten cuidado al usarlas.",
+    "deleteWarning": "Eliminar un usuario borrará todas sus apuestas y datos permanentemente",
+    "signupCodeWarning": "Cambiar el código de registro solo afecta nuevos registros (usuarios existentes no afectados)",
+    "adminCodeWarning": "Cambiar el código de admin afecta futuros inicios de sesión de admin",
+    "communicateCodes": "Asegúrate de comunicar los nuevos códigos a usuarios autorizados"
+  },
+  "modals": {
+    "confirmDeletion": "Confirmar Eliminación",
+    "deleteUserMessage": "¿Estás seguro de que deseas eliminar al usuario \"{{name}}\"? Esta acción no se puede deshacer.",
+    "deleteUser": "Eliminar Usuario",
+    "revokeAdmin": "Revocar Privilegios de Admin",
+    "grantAdmin": "Otorgar Privilegios de Admin",
+    "adminMessage": "¿Estás seguro de que deseas {{action}} privilegios de admin para \"{{name}}\"?",
+    "revoke": "revocar",
+    "grant": "otorgar",
+    "deleteAnnouncement": "Eliminar Anuncio",
+    "deleteAnnouncementMessage": "¿Estás seguro de que deseas eliminar este anuncio? Esta acción no se puede deshacer.",
+    "processing": "Procesando..."
+  },
+  "errors": {
+    "loadFailed": "Error al cargar datos de admin",
+    "deleteFailed": "Error al eliminar usuario",
+    "updateFailed": "Error al actualizar",
+    "paymentFailed": "Error al actualizar estado de pago"
+  },
+  "success": {
+    "userDeleted": "Usuario eliminado exitosamente",
+    "adminGranted": "Privilegios de admin otorgados a {{name}}",
+    "adminRevoked": "Privilegios de admin removidos de {{name}}",
+    "paymentUpdated": "Estado de pago actualizado a {{status}}"
+  }
+}

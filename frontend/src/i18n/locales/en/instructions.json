@@ -1,0 +1,49 @@
+{
+  "title": "How to Play Quiniela",
+  "subtitle": "Follow these simple steps to join the Liga MX prediction game",
+  "steps": {
+    "step1": {
+      "title": "Sign Up for an Account",
+      "description": "Create your Quiniela account by clicking \"Sign Up\" in the navigation bar. Enter your name, email, invitation code and create a password to get started."
+    },
+    "step2": {
+      "title": "View the Dashboard",
+      "description": "Once logged in, go to the Dashboard to see the current week's matches and schedule. You'll see all 9 Liga MX games for that jornada along with match times."
+    },
+    "step3": {
+      "title": "Place your predictions",
+      "description": "Click on \"Predict Now\" to make your predictions. For each of the 9 matches, choose your guess: 🏠 Home Win, ✈️ Away Win, or E for Draw. You can also update your prediction before the first game. Once the first game is started you cannot change your prediction"
+    },
+    "step4": {
+      "title": "Predict Total Goals",
+      "description": "Guess the total number of goals that will be scored across all 9 games for the week. This is your tiebreaker if multiple players have the same points!"
+    },
+    "step5": {
+      "title": "Pay the Entry Fee",
+      "description": "Pay the entry amount to the game administrator. Your prediction will show as \"Pending Payment\" until confirmed by the admin. We collect reasonable fees to fund the prize pool and platform maintenance."
+    },
+    "step6": {
+      "title": "Submit Your Prediction",
+      "description": "Once you've made all your predictions and your payment is confirmed, submit your prediction before the first match begins. Betting closes when the first game starts!"
+    },
+    "step7": {
+      "title": "Watch the Games",
+      "description": "Follow the matches throughout the week. The standings on the Dashboard update as games are completed, showing everyone's points in real-time."
+    },
+    "step8": {
+      "title": "Win the Prize",
+      "description": "After all games are finished, the participant with the highest points wins! If multiple players tie on points, the closest total goals prediction wins. If still tied, the prize is split between the winners."
+    }
+  },
+  "scoring": {
+    "title": "Scoring System",
+    "correctPrediction": "+1 point for each correct match prediction",
+    "tiebreaker": "Total goals prediction used as tiebreaker",
+    "winner": "Closest total goals wins in case of tie"
+  },
+  "cta": {
+    "ready": "Ready to start?",
+    "startPlaying": "Start Playing Now",
+    "backHome": "Back to Home"
+  }
+}

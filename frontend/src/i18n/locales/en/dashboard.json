@@ -1,0 +1,61 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Liga MX · Week {{week}}, {{year}}",
+  "tabs": {
+    "standings": "Standings",
+    "schedule": "Match Schedule"
+  },
+  "standings": {
+    "title": "Leaderboard",
+    "subtitle": "Week {{week}} Rankings",
+    "rank": "Rank",
+    "player": "Player",
+    "points": "Points",
+    "goals": "Goals",
+    "diff": "Diff",
+    "payment": "Payment",
+    "noParticipants": "No predictions yet for this week",
+    "beFirst": "Be the first to place your prediction!"
+  },
+  "schedule": {
+    "title": "Match Schedule",
+    "subtitle": "Week {{week}} Fixtures",
+    "vs": "vs",
+    "match": "Match",
+    "date": "Date",
+    "time": "Time",
+    "result": "Result",
+    "tbd": "TBD",
+    "noMatches": "No matches scheduled",
+    "checkBack": "Check back later for this week's fixtures"
+  },
+  "stats": {
+    "participants": "Participants",
+    "matches": "Matches",
+    "avgPoints": "Avg Points",
+    "topScore": "Top Score"
+  },
+  "status": {
+    "bettingOpen": "Betting Open",
+    "bettingClosed": "Betting Closed",
+    "settled": "Settled",
+    "inProgress": "In Progress"
+  },
+  "cta": {
+    "placeBet": "Place Prediction",
+    "updateBet": "Update Prediction",
+    "viewResults": "View Results"
+  },
+  "errors": {
+    "noSchedule": "No Schedule Available",
+    "noScheduleMessage": "The schedule for this week hasn't been created yet. Please check back later.",
+    "connectionError": "Connection Error",
+    "connectionErrorMessage": "Unable to connect to the server. Please check your internet connection and try again.",
+    "loadError": "Failed to Load Data",
+    "loadErrorMessage": "Something went wrong while loading the data. Please try again later."
+  },
+  "announcements": {
+    "title": "Announcements",
+    "dismiss": "Dismiss"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "title": "Admin Panel",
+  "subtitle": "Manage users, payments, and settings",
+  "tabs": {
+    "users": "Users",
+    "payments": "Payments",
+    "settings": "Settings"
+  },
+  "stats": {
+    "users": "Users",
+    "bets": "Bets",
+    "paid": "Paid",
+    "pending": "Pending"
+  },
+  "users": {
+    "title": "User Management",
+    "user": "User",
+    "email": "Email",
+    "role": "Role",
+    "joined": "Joined",
+    "actions": "Actions",
+    "admin": "Admin",
+    "you": "(You)",
+    "deleteUser": "Delete user",
+    "makeAdmin": "Make admin",
+    "removeAdmin": "Remove admin"
+  },
+  "payments": {
+    "title": "Payment Records",
+    "subtitle": "Week {{week}}, {{year}} · Manage participant payments",
+    "username": "Username",
+    "status": "Payment Status",
+    "action": "Action",
+    "hasBet": "Has bet",
+    "paymentOnly": "Payment only",
+    "progress": "Payment Collection Progress (Users with Bets)",
+    "totalUsers": "Total Users",
+    "withBets": "With Bets",
+    "noBet": "No Bet",
+    "noUsers": "No users found",
+    "noUsersMessage": "Users will appear here once they register"
+  },
+  "settings": {
+    "title": "Access Codes",
+    "subtitle": "Changing codes only affects new signups. Existing users can still login normally.",
+    "signupCode": "Signup Invite Code",
+    "signupCodeDesc": "Required for new users to create an account",
+    "adminCode": "Admin Access Code",
+    "adminCodeDesc": "Used during login to get admin privileges (optional)",
+    "changeCodes": "Change Codes",
+    "newSignupCode": "New Signup Code (leave empty to keep current)",
+    "newAdminCode": "New Admin Code (leave empty to keep current)",
+    "saveChanges": "Save Changes",
+    "codesUpdated": "Codes updated successfully!",
+    "importantNote": "Important: Code changes do not affect existing users",
+    "importantNoteDesc": "Users who have already signed up can continue to login with their email and password. Only new signups will need the updated invite code."
+  },
+  "announcements": {
+    "title": "Announcements",
+    "active": "active",
+    "total": "total",
+    "newAnnouncement": "New Announcement",
+    "new": "New",
+    "createTitle": "Create New Announcement",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g., Important Update, Week 5 Results, etc.",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Write your announcement message here...",
+    "characters": "characters",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "live": "Live",
+    "off": "Off",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "noAnnouncements": "No announcements yet",
+    "createFirst": "Create your first announcement to notify users",
+    "published": "Announcement published successfully!",
+    "deleted": "Announcement deleted",
+    "activated": "Announcement activated",
+    "deactivated": "Announcement deactivated"
+  },
+  "dangerZone": {
+    "title": "Danger Zone",
+    "warning": "These actions are irreversible. Be careful when using them.",
+    "deleteWarning": "Deleting a user will remove all their bets and data permanently",
+    "signupCodeWarning": "Changing the signup code only affects new user registrations (existing users unaffected)",
+    "adminCodeWarning": "Changing the admin code affects future admin logins",
+    "communicateCodes": "Make sure to communicate new codes to authorized users"
+  },
+  "modals": {
+    "confirmDeletion": "Confirm Deletion",
+    "deleteUserMessage": "Are you sure you want to delete user \"{{name}}\"? This action cannot be undone.",
+    "deleteUser": "Delete User",
+    "revokeAdmin": "Revoke Admin Privileges",
+    "grantAdmin": "Grant Admin Privileges",
+    "adminMessage": "Are you sure you want to {{action}} admin privileges for \"{{name}}\"?",
+    "revoke": "revoke",
+    "grant": "grant",
+    "deleteAnnouncement": "Delete Announcement",
+    "deleteAnnouncementMessage": "Are you sure you want to delete this announcement? This action cannot be undone.",
+    "processing": "Processing..."
+  },
+  "errors": {
+    "loadFailed": "Failed to load admin data",
+    "deleteFailed": "Failed to delete user",
+    "updateFailed": "Failed to update",
+    "paymentFailed": "Failed to update payment status"
+  },
+  "success": {
+    "userDeleted": "User deleted successfully",
+    "adminGranted": "Admin privileges granted for {{name}}",
+    "adminRevoked": "Admin privileges removed for {{name}}",
+    "paymentUpdated": "Payment status updated to {{status}}"
+  }
+}

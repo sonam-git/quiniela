@@ -1,0 +1,56 @@
+{
+  "title": {
+    "place": "Hacer Predicción",
+    "edit": "Editar Predicción"
+  },
+  "subtitle": "Haz tus predicciones para los partidos de esta semana",
+  "weekInfo": "Semana {{week}}, {{year}}",
+  "form": {
+    "selectPrediction": "Selecciona tu predicción para cada partido",
+    "homeWin": "Local",
+    "awayWin": "Visitante",
+    "draw": "Empate",
+    "totalGoals": "Predicción de Goles Totales",
+    "totalGoalsHint": "Predice el número total de goles en los {{count}} partidos (desempate)",
+    "goals": "goles"
+  },
+  "match": {
+    "vs": "vs",
+    "matchNumber": "Partido {{number}}"
+  },
+  "status": {
+    "bettingOpen": "Apuestas abiertas",
+    "bettingClosed": "Apuestas cerradas",
+    "locksAt": "Cierra a las {{time}}",
+    "locked": "Apuestas bloqueadas",
+    "hasStarted": "El primer partido ha comenzado"
+  },
+  "payment": {
+    "title": "Estado de Pago",
+    "paid": "Pagado",
+    "pending": "Pendiente - Contacta al admin para confirmar pago",
+    "hint": "Tu predicción se incluirá en la clasificación una vez confirmado el pago"
+  },
+  "submit": {
+    "place": "Enviar Predicción",
+    "update": "Actualizar Predicción",
+    "placing": "Enviando...",
+    "updating": "Actualizando..."
+  },
+  "success": {
+    "placed": "¡Predicción enviada exitosamente!",
+    "updated": "¡Predicción actualizada exitosamente!"
+  },
+  "errors": {
+    "noSchedule": "No se encontró calendario para esta semana",
+    "loadFailed": "Error al cargar calendario",
+    "submitFailed": "Error al enviar predicción",
+    "bettingClosed": "Las apuestas están cerradas para esta semana",
+    "allPredictions": "Por favor haz una predicción para todos los partidos"
+  },
+  "locked": {
+    "title": "Apuestas Cerradas",
+    "message": "El primer partido ha comenzado. Ya no puedes hacer o actualizar predicciones para esta semana.",
+    "viewDashboard": "Ver Tablero"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "appName": "Quiniela",
+  "ligaMX": "Liga MX",
+  "year": "2026",
+  "language": "Idioma",
+  "navbar": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "how_to_play": "Cómo Jugar",
+    "dashboard": "Tablero",
+    "admin": "Admin",
+    "profile": "Perfil",
+    "sign_in": "Iniciar Sesión",
+    "get_started": "Comenzar",
+    "sign_out": "Cerrar Sesión",
+    "predict_now": "Predecir Ahora",
+    "place_bet": "Hacer Apuesta",
+    "view_profile": "Ver Perfil",
+    "its_free": "Es Gratis"
+  },
+  "nav": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "howToPlay": "Cómo Jugar",
+    "dashboard": "Tablero",
+    "admin": "Admin",
+    "profile": "Perfil",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Comenzar",
+    "signOut": "Cerrar Sesión",
+    "predictNow": "Predecir Ahora"
+  },
+  "footer": {
+    "copyright": "© {{year}} Quiniela Liga MX. Todos los derechos reservados.",
+    "disclaimer": "Este es un juego de predicción privado solo para entretenimiento.",
+    "madeWith": "Hecho con",
+    "forFans": "para fans de la Liga MX"
+  },
+  "theme": {
+    "light": "Cambiar a modo claro",
+    "dark": "Cambiar a modo oscuro"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "select": "Seleccionar Idioma"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "yes": "Sí",
+    "no": "No",
+    "week": "Semana",
+    "points": "Puntos",
+    "goals": "Goles",
+    "matches": "Partidos",
+    "paid": "Pagado",
+    "pending": "Pendiente",
+    "na": "N/A"
+  },
+  "status": {
+    "online": "¡De vuelta en línea!",
+    "offline": "Estás desconectado"
+  }
+}

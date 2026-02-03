@@ -1,5 +1,6 @@
 import { useState, useEffect, useTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useTheme } from '../context/ThemeContext'
 import toast from 'react-hot-toast'
@@ -17,6 +18,7 @@ export default function PlaceBet() {
     lockoutTime: null
   })
   const { isDark } = useTheme()
+  const { t } = useTranslation('bet')
   const navigate = useNavigate()
 
   useEffect(() => {

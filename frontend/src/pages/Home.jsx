@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 
 export default function Home() {
   const { isDark } = useTheme()
   const { user } = useAuth()
+  const { t } = useTranslation('home')
 
   return (
     <div className={` ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
@@ -33,14 +35,14 @@ export default function Home() {
               }`}>
                 {user ? (
                   <>
-                    <span className="font-welcome">Welcome,</span>{' '}
+                    <span className="font-welcome">{t('hero.welcomeBack')}</span>{' '}
                     <span className="font-brand bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
                       {user.name || user.username || 'Friend'}
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="font-welcome">Welcome to</span>{' '}
+                    <span className="font-welcome">{t('hero.welcomeTo')}</span>{' '}
                     <span className="font-brand bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
                       Quiniela
                     </span>
@@ -52,8 +54,8 @@ export default function Home() {
                 isDark ? 'text-dark-300' : 'text-gray-600'
               }`}>
                 {user 
-                  ? "Ready to make your predictions? Place your prediction and compete for weekly prizes!"
-                  : "The ultimate Liga MX prediction game. Predict match outcomes, compete with friends, and win weekly prizes."
+                  ? t('hero.subtitleLoggedIn')
+                  : t('hero.subtitle')
                 }
               </p>
 
@@ -68,7 +70,7 @@ export default function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
-                      Admin
+                      {t('cta.admin')}
                     </Link>
                     <Link
                       to="/place-bet"
@@ -77,7 +79,7 @@ export default function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
-                      Prediction
+                      {t('cta.prediction')}
                     </Link>
                     <Link
                       to="/dashboard"
@@ -90,7 +92,7 @@ export default function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      Standing
+                      {t('cta.standings')}
                     </Link>
                   </>
                 ) : (
@@ -102,7 +104,7 @@ export default function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                       </svg>
-                      Get Started Free
+                      {t('cta.getStartedFree')}
                     </Link>
                     <Link
                       to="/login"
@@ -115,7 +117,7 @@ export default function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                       </svg>
-                      Sign In
+                      {t('cta.signIn')}
                     </Link>
                   </>
                 )}

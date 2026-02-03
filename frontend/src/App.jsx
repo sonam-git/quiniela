@@ -79,7 +79,7 @@ function AppContent() {
         : 'bg-gradient-to-br from-light-100 via-light-200 to-light-100'
     }`}>
       <Navbar />
-      <main className="pb-8">
+      <main>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

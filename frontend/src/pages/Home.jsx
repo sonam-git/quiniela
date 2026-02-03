@@ -7,9 +7,9 @@ export default function Home() {
   const { user } = useAuth()
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
+    <div className={` ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[calc(100vh-4rem)]">
+      <section className="relative overflow-hidden ">
         {/* Background gradient */}
         <div className={`absolute inset-0 ${
           isDark 
@@ -28,16 +28,7 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Text Content */}
             <div className="text-center lg:text-left">
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8 ${
-                isDark 
-                  ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25' 
-                  : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-              }`}>
-                <span>⚽</span>
-                <span>Liga MX Clausura 2026</span>
-              </div>
-
-              <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1] ${
+          <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1] ${
                 isDark ? 'text-white' : 'text-gray-900'
               }`} style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif" }}>
                 {user ? (
@@ -99,7 +90,7 @@ export default function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      Standings
+                      Standing
                     </Link>
                   </>
                 ) : (
@@ -131,7 +122,7 @@ export default function Home() {
               </div>
 
               {/* Stats */}
-              <div className={`mt-14 grid grid-cols-3 gap-8 pt-10 border-t ${
+              <div className={`mt-14 grid grid-cols-3 gap-8 border-t ${
                 isDark ? 'border-dark-700/50' : 'border-gray-200/80'
               }`}>
                 <div className="text-center lg:text-left">
@@ -139,7 +130,7 @@ export default function Home() {
                     isDark ? 'text-white' : 'text-gray-900'
                   }`}>9</div>
                   <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Matches/Week
+                    Matches / Week
                   </div>
                 </div>
                 <div className="text-center lg:text-left">
@@ -178,17 +169,17 @@ export default function Home() {
 
                 {/* Floating Card */}
                 <div className={`absolute bottom-6 left-6 right-6 sm:right-auto px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-md ${
-                  isDark ? 'bg-dark-800/90 ring-1 ring-dark-600' : 'bg-white/95 ring-1 ring-gray-200'
+                  isDark ? 'bg-transparent ring-1 ring-dark-600' : 'bg-transparent ring-1 ring-gray-200'
                 }`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xl shadow-lg">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">
                       🎯
                     </div>
                     <div>
-                      <p className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      <p className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-100'}`}>
                         Test Your Luck
                       </p>
-                      <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      <p className={`text-sm ${isDark ? 'text-yellow-100' : 'text-yellow-100'}`}>
                         Predict & win big!
                       </p>
                     </div>

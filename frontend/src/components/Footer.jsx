@@ -85,7 +85,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-                    Not a Gambling Platform
+                    Not for Gambling Platform and Commercial Purpose
                   </p>
                   <p className={`text-xs leading-relaxed ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
                     This is a friendly prediction game for entertainment purposes only among employers and friends. No big amount gambling is involved.

@@ -220,7 +220,7 @@ export default function Navbar() {
               />
             </div>
             <div className="flex flex-col">
-              <span className={`font-bold text-lg leading-tight tracking-tight ${
+              <span className={`font-brand text-3xl leading-tight ${
                 isDark ? 'text-white' : 'text-gray-900'
               }`}>Quiniela</span>
               <div className="flex items-center gap-1">

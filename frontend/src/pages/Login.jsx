@@ -47,7 +47,7 @@ export default function Login() {
           </div>
           
           {/* Title */}
-          <h1 className="text-4xl font-bold text-white mb-4">
+          <h1 className="font-brand text-5xl text-white mb-4">
             Quiniela Liga MX
           </h1>
           <p className={`text-lg ${isDark ? 'text-dark-300' : 'text-emerald-100'}`}>
@@ -103,7 +103,7 @@ export default function Login() {
                 className="w-16 h-16"
               />
             </div>
-            <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className={`text-2xl font-brand ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Sign in to Quiniela
             </h1>
             <p className={`text-sm mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>

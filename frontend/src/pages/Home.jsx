@@ -30,18 +30,18 @@ export default function Home() {
             <div className="text-center lg:text-left">
           <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1] ${
                 isDark ? 'text-white' : 'text-gray-900'
-              }`} style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+              }`}>
                 {user ? (
                   <>
-                    Welcome,{' '}
-                    <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                    <span className="font-welcome">Welcome,</span>{' '}
+                    <span className="font-brand bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
                       {user.name || user.username || 'Friend'}
                     </span>
                   </>
                 ) : (
                   <>
-                    Welcome to{' '}
-                    <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                    <span className="font-welcome">Welcome to</span>{' '}
+                    <span className="font-brand bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
                       Quiniela
                     </span>
                   </>

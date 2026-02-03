@@ -280,7 +280,7 @@ export default function Profile() {
 
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className={`text-2xl sm:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-2xl sm:text-3xl font-brand ${isDark ? 'text-white' : 'text-gray-900'}`}>
             My Profile
           </h1>
           <p className={`mt-1 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
@@ -319,7 +319,7 @@ export default function Profile() {
                 <div className="h-10"></div>
 
                 {/* User Info */}
-                <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : 'User'}
                 </h2>
                 

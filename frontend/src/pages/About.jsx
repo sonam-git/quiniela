@@ -28,7 +28,7 @@ export default function About() {
         
         {/* Hero */}
         <div className="text-center mb-10">
-          <h1 className={`text-2xl font-semibold mb-2 flex items-center justify-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-3xl font-brand mb-2 flex items-center justify-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <circle cx="12" cy="12" r="9" strokeWidth="2" />
               <path strokeWidth="2" d="M12 3v4M12 17v4M3 12h4M17 12h4M6.34 6.34l2.83 2.83M14.83 14.83l2.83 2.83M6.34 17.66l2.83-2.83M14.83 9.17l2.83-2.83" />

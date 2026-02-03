@@ -343,7 +343,7 @@ export default function Admin() {
               <span className="text-xl">⚙️</span>
             </div>
             <div>
-              <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`text-2xl font-brand ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Admin Panel
               </h1>
               <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>

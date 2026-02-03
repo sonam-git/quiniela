@@ -241,16 +241,16 @@ export default function PlaceBet() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
   
           <div className="mb-6">
-            <h1 className={`text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className={`text-2xl font-brand flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {existingBet ? (
                 <>
             <span role="img" aria-label="Edit" className="text-lg">✏️</span>
-            Edit bet
+            Edit Prediction
                 </>
               ) : (
                 <>
             <span role="img" aria-label="Place Bet" className="text-lg">🎯</span>
-            Place bet
+            Place Prediction
                 </>
               )}
             </h1>

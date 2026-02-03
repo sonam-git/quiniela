@@ -21,7 +21,7 @@ export default function Footer() {
                 className="h-10 w-10"
               />
               <div>
-                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <h3 className={`text-xl font-brand ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   Quiniela
                 </h3>
                 <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>

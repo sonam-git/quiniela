@@ -19,6 +19,20 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* UnifrakturCook font for brand headings */
+.font-brand {
+  font-family: "UnifrakturCook", cursive;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Satisfy font for welcome text */
+.font-welcome {
+  font-family: "Satisfy", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
 /* AWS-style typography */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;

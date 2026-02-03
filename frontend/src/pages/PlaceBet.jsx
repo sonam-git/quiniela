@@ -135,11 +135,24 @@ export default function PlaceBet() {
     
     if (diff <= 0) return null
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
     
-    return `${hours}h ${minutes}m`
+    return { days, hours, minutes, seconds }
   }
+
+  // Update countdown every second
+  const [countdown, setCountdown] = useState(null)
+  
+  useEffect(() => {
+    setCountdown(getTimeUntilLockout())
+    const timer = setInterval(() => {
+      setCountdown(getTimeUntilLockout())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [lockStatus.lockoutTime])
 
   if (loading) {
     return (
@@ -235,14 +248,52 @@ export default function PlaceBet() {
             Make your predictions for this week's matches
           </p>
           
-          {getTimeUntilLockout() && (
-            <div className={`mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${
+          {countdown && (
+            <div className={`mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg ${
               isDark 
-                ? 'bg-amber-900/30 text-amber-400 border border-amber-800/50' 
-                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                ? 'bg-amber-900/30 border border-amber-800/50' 
+                : 'bg-amber-50 border border-amber-200'
             }`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              Closes in {getTimeUntilLockout()}
+              {/* Live indicator */}
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              
+              <span className={`text-xs font-medium ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                Closes in
+              </span>
+
+              {/* Clock display */}
+              <div className="flex items-center gap-0.5">
+                {countdown.days > 0 && (
+                  <>
+                    <span className={`text-sm font-mono font-bold tabular-nums ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+                      {String(countdown.days).padStart(2, '0')}
+                    </span>
+                    <span className={`text-[9px] ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>d</span>
+                    <span className={`text-sm font-bold mx-0.5 ${isDark ? 'text-amber-600' : 'text-amber-400'}`}>:</span>
+                  </>
+                )}
+                <span className={`text-sm font-mono font-bold tabular-nums ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+                  {String(countdown.hours).padStart(2, '0')}
+                </span>
+                <span className={`text-[9px] ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>h</span>
+                <span className={`text-sm font-bold mx-0.5 animate-pulse ${isDark ? 'text-amber-600' : 'text-amber-400'}`}>:</span>
+                <span className={`text-sm font-mono font-bold tabular-nums ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+                  {String(countdown.minutes).padStart(2, '0')}
+                </span>
+                <span className={`text-[9px] ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>m</span>
+                <span className={`text-sm font-bold mx-0.5 animate-pulse ${isDark ? 'text-amber-600' : 'text-amber-400'}`}>:</span>
+                <span className={`text-sm font-mono font-bold tabular-nums ${
+                  countdown.hours === 0 && countdown.minutes < 10 
+                    ? 'text-red-500' 
+                    : isDark ? 'text-amber-300' : 'text-amber-800'
+                }`}>
+                  {String(countdown.seconds).padStart(2, '0')}
+                </span>
+                <span className={`text-[9px] ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>s</span>
+              </div>
             </div>
           )}
         </div>

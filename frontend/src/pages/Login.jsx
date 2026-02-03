@@ -123,23 +123,6 @@ export default function Login() {
             </p>
           </div>
         </div>
-
-        {/* Demo credentials */}
-        <div className={`mt-4 rounded-lg border p-4 ${
-          isDark ? 'bg-dark-800/50 border-dark-700' : 'bg-blue-50 border-blue-100'
-        }`}>
-          <div className="flex items-start gap-2">
-            <span className={`text-sm ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>ℹ️</span>
-            <div>
-              <p className={`text-xs font-medium mb-1 ${isDark ? 'text-dark-200' : 'text-blue-900'}`}>
-                Demo credentials
-              </p>
-              <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-blue-700'}`}>
-                carlos@example.com / password123
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )

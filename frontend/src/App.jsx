@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
 import Navbar from './components/Navbar'
+import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
@@ -48,10 +49,7 @@ function AppContent() {
       <Navbar />
       <main className="pb-8">
         <Routes>
-          <Route 
-            path="/" 
-            element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
-          />
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route 

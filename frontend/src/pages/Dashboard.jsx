@@ -16,6 +16,7 @@ export default function Dashboard() {
   })
   const [isSettled, setIsSettled] = useState(false)
   const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0 })
+  const [matchesExpanded, setMatchesExpanded] = useState(false)
   const { isDark } = useTheme()
 
   const fetchData = useCallback(async () => {
@@ -88,11 +89,23 @@ export default function Dashboard() {
     
     if (diff <= 0) return null
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
     
-    return `${hours}h ${minutes}m`
+    return { days, hours, minutes, seconds }
   }
+
+  // Update countdown every second
+  const [countdown, setCountdown] = useState(getTimeUntilLockout())
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(getTimeUntilLockout())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [lockStatus.lockoutTime])
 
   if (loading) {
     return (
@@ -233,14 +246,68 @@ export default function Dashboard() {
                   Betting closed
                 </span>
               ) : (
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  isDark 
-                    ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' 
-                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                }`}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Open {getTimeUntilLockout() && `· ${getTimeUntilLockout()}`}
-                </span>
+                <div className="flex items-center gap-3">
+                  {/* Live Status Indicator */}
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${
+                    isDark 
+                      ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' 
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  }`}>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    LIVE
+                  </span>
+
+                  {/* Countdown Clock */}
+                  {countdown && (
+                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg ${
+                      isDark 
+                        ? 'bg-dark-700 border border-dark-600' 
+                        : 'bg-white border border-gray-200 shadow-sm'
+                    }`}>
+                      <svg className={`w-3.5 h-3.5 mr-1 ${isDark ? 'text-dark-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {countdown.days > 0 && (
+                        <>
+                          <div className="text-center">
+                            <span className={`text-sm font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              {String(countdown.days).padStart(2, '0')}
+                            </span>
+                            <span className={`text-[9px] uppercase ml-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>d</span>
+                          </div>
+                          <span className={`text-sm font-bold ${isDark ? 'text-dark-500' : 'text-gray-300'}`}>:</span>
+                        </>
+                      )}
+                      <div className="text-center">
+                        <span className={`text-sm font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {String(countdown.hours).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[9px] uppercase ml-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>h</span>
+                      </div>
+                      <span className={`text-sm font-bold animate-pulse ${isDark ? 'text-dark-500' : 'text-gray-300'}`}>:</span>
+                      <div className="text-center">
+                        <span className={`text-sm font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {String(countdown.minutes).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[9px] uppercase ml-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>m</span>
+                      </div>
+                      <span className={`text-sm font-bold animate-pulse ${isDark ? 'text-dark-500' : 'text-gray-300'}`}>:</span>
+                      <div className="text-center">
+                        <span className={`text-sm font-mono font-bold tabular-nums ${
+                          countdown.hours === 0 && countdown.minutes < 10 
+                            ? 'text-red-500' 
+                            : isDark ? 'text-emerald-400' : 'text-emerald-600'
+                        }`}>
+                          {String(countdown.seconds).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[9px] uppercase ml-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>s</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
               {!lockStatus.isBettingLocked && (
@@ -301,75 +368,105 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Matches Section */}
-        {schedule && (
-          <div className={`rounded-lg border mb-6 ${
-            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
-          }`}>
-            <div className={`px-4 py-3 border-b ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
-              <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                This Week's Matches
-              </h2>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {schedule.matches.map((match, index) => (
-                  <div
-                    key={match._id}
-                    className={`p-3 rounded-lg border ${
-                      match.isCompleted
-                        ? isDark 
-                          ? 'border-emerald-800/50 bg-emerald-900/20' 
-                          : 'border-emerald-200 bg-emerald-50'
-                        : isDark 
-                          ? 'border-dark-600 bg-dark-700/50' 
-                          : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[10px] font-medium uppercase tracking-wide ${
-                        isDark ? 'text-dark-400' : 'text-gray-500'
-                      }`}>
-                        Match {index + 1}
-                      </span>
-                      {match.isCompleted && (
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                          isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          Final
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
-                        <span className="text-xs mr-1" title="Home">🏠</span>
-                        {match.teamA}
-                      </p>
-                      <p className={`text-[10px] my-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</p>
-                      <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
-                        <span className="text-xs mr-1" title="Away">✈️</span>
-                        {match.teamB}
-                      </p>
-                      {match.isCompleted ? (
-                        <p className={`text-lg font-bold mt-2 ${
-                          isDark ? 'text-emerald-400' : 'text-emerald-600'
-                        }`}>
-                          {match.scoreTeamA} – {match.scoreTeamB}
-                        </p>
-                      ) : (
-                        <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                          {formatDate(match.startTime)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+        {/* Matches Section - Collapsible */}
+          {schedule && (
+            <div className={`rounded-lg border mb-6 ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+            }`}>
+              <button
+                onClick={() => setMatchesExpanded(!matchesExpanded)}
+                className={`w-full px-4 py-3 flex items-center justify-between transition-colors ${
+            isDark ? 'hover:bg-dark-700/50' : 'hover:bg-gray-50'
+                } ${matchesExpanded ? (isDark ? 'border-b border-dark-700' : 'border-b border-gray-200') : ''}`}
+              >
+                <div className="flex items-center gap-2">
+            {/* Calendar Icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <rect x="3" y="7" width="18" height="14" rx="2" strokeWidth="2" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3v4M8 3v4M3 11h18" />
+            </svg>
+            <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              This Week's Matches
+            </h2>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {schedule.matches.filter(m => m.isCompleted).length}/{schedule.matches.length} completed
+            </span>
+                </div>
+                <svg
+            className={`w-5 h-5 transition-transform duration-200 ${
+              matchesExpanded ? 'rotate-180' : ''
+            } ${isDark ? 'text-dark-400' : 'text-gray-500'}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+                >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {matchesExpanded && (
+                <div className="p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {schedule.matches.map((match, index) => (
+              <div
+                key={match._id}
+                className={`p-3 rounded-lg border ${
+                  match.isCompleted
+              ? isDark 
+                ? 'border-emerald-800/50 bg-emerald-900/20' 
+                : 'border-emerald-200 bg-emerald-50'
+              : isDark 
+                ? 'border-dark-600 bg-dark-700/50' 
+                : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] font-medium uppercase tracking-wide ${
+              isDark ? 'text-dark-400' : 'text-gray-500'
+                  }`}>
+              Match {index + 1}
+                  </span>
+                  {match.isCompleted && (
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                Final
+              </span>
+                  )}
+                </div>
+                <div className="text-center">
+                  <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
+                    <span className="text-xs mr-1" title="Home">🏠</span>
+                    {match.teamA}
+                  </p>
+                  <p className={`text-[10px] my-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</p>
+                  <p className={`text-sm font-medium ${isDark ? 'text-dark-100' : 'text-gray-900'}`}>
+                    <span className="text-xs mr-1" title="Away">✈️</span>
+                    {match.teamB}
+                  </p>
+                  {match.isCompleted ? (
+                    <p className={`text-lg font-bold mt-2 ${
+                      isDark ? 'text-emerald-400' : 'text-emerald-600'
+                    }`}>
+                      {match.scoreTeamA} – {match.scoreTeamB}
+                    </p>
+                  ) : (
+                    <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      {formatDate(match.startTime)}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
         )}
+      </div>
+    )}
 
-        {/* Standings Section */}
+    {/* Standings Section */}
         {schedule && (
           <div className={`rounded-lg border ${
             isDark ? 'bg-dark-800 border-dark-700' : 'bg-gray-50 border-gray-200'

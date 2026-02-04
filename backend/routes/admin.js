@@ -501,6 +501,12 @@ router.post('/announcements', auth, adminAuth, async (req, res) => {
     await announcement.save();
     await announcement.populate('createdBy', 'name');
 
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('announcement:update', { action: 'create', announcementId: announcement._id });
+    }
+
     res.status(201).json({ 
       message: 'Announcement created successfully',
       announcement 
@@ -537,6 +543,12 @@ router.patch('/announcements/:id', auth, adminAuth, async (req, res) => {
     await announcement.save();
     await announcement.populate('createdBy', 'name');
 
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('announcement:update', { action: 'update', announcementId: announcement._id });
+    }
+
     res.json({ 
       message: 'Announcement updated successfully',
       announcement 
@@ -560,6 +572,12 @@ router.delete('/announcements/:id', auth, adminAuth, async (req, res) => {
     }
 
     await Announcement.findByIdAndDelete(id);
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('announcement:update', { action: 'delete', announcementId: id });
+    }
 
     res.json({ message: 'Announcement deleted successfully' });
   } catch (error) {

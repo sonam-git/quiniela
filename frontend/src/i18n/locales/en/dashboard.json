@@ -5,10 +5,26 @@
   "tryAgain": "Try Again",
   "howToPlay": "How to Play",
   "statsTab": "Stats",
+  "statsTabShort": "Stats",
   "weekStats": "Week {{week}} Statistics",
   "tabs": {
     "standings": "Standings",
-    "schedule": "Schedule"
+    "standingsShort": "Stand",
+    "schedule": "Schedule",
+    "scheduleShort": "Games",
+    "lastWeek": "Last Week",
+    "lastWeekShort": "Prev"
+  },
+  "lastWeek": {
+    "title": "Jornada {{week}} Results",
+    "finalResults": "Final Results",
+    "totalGoals": "Total Goals",
+    "matchesPlayed": "Matches",
+    "winner": "Winner",
+    "autoRemoveNotice": "This data will be automatically removed when the next week ends.",
+    "noDataTitle": "No Results Yet",
+    "noDataDescription": "Last week's results will appear here once the current jornada is completed. Results are available for one week after each jornada ends.",
+    "checkBackLater": "Check back after this week's matches are complete"
   },
   "standings": {
     "title": "Leaderboard",

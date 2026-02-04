@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -9,12 +11,13 @@ const scheduleRoutes = require('./routes/schedule');
 const resultsRoutes = require('./routes/results');
 const adminRoutes = require('./routes/admin');
 const announcementsRoutes = require('./routes/announcements');
+const { initScheduler } = require('./services/scheduler');
 
 const app = express();
+const server = http.createServer(app);
 
-// Middleware
 // Configure CORS for production
-const allowedOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || '*'; // Remove trailing slash if present
+const allowedOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || '*';
 const corsOptions = {
   origin: allowedOrigin,
   credentials: true,
@@ -22,12 +25,39 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
+
+// Initialize Socket.io with CORS
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigin === '*' ? '*' : [allowedOrigin, 'http://localhost:3000', 'http://localhost:3001'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(() => {
+    console.log('Connected to MongoDB');
+    // Initialize automatic schedule creator
+    initScheduler();
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
@@ -44,6 +74,7 @@ app.get('/api/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Socket.io enabled for real-time updates');
 });

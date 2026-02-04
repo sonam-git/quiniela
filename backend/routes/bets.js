@@ -139,6 +139,57 @@ router.get('/current', async (req, res) => {
   }
 });
 
+// @route   GET /api/bets/last-week
+// @desc    Get all bets for last week with final results
+// @access  Public
+router.get('/last-week', async (req, res) => {
+  try {
+    const now = new Date();
+    const currentWeek = getWeekNumber(now);
+    const currentYear = now.getFullYear();
+    
+    // Calculate last week
+    let lastWeek = currentWeek - 1;
+    let lastWeekYear = currentYear;
+    if (lastWeek < 1) {
+      lastWeek = 52;
+      lastWeekYear = currentYear - 1;
+    }
+
+    const schedule = await Schedule.findOne({ 
+      weekNumber: lastWeek, 
+      year: lastWeekYear 
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ 
+        message: 'No data found for last week',
+        weekNumber: lastWeek,
+        year: lastWeekYear
+      });
+    }
+
+    const bets = await Bet.find({ 
+      weekNumber: lastWeek, 
+      year: lastWeekYear,
+      isPlaceholder: { $ne: true }
+    })
+      .populate('userId', 'name email')
+      .sort({ totalPoints: -1, goalDifference: 1 });
+
+    res.json({
+      bets,
+      weekNumber: lastWeek,
+      year: lastWeekYear,
+      isSettled: schedule?.isSettled || false,
+      actualTotalGoals: schedule?.actualTotalGoals || null
+    });
+  } catch (error) {
+    console.error('Get last week bets error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/bets/:weekNumber/:year
 // @desc    Get all bets for a specific week
 // @access  Public
@@ -210,6 +261,12 @@ router.post('/', auth, async (req, res) => {
       bet.updatedAt = new Date();
       await bet.save();
       
+      // Emit real-time update
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('bets:update', { action: 'update', weekNumber, year });
+      }
+      
       return res.json({ 
         message: 'Bet updated successfully', 
         bet,
@@ -228,6 +285,12 @@ router.post('/', auth, async (req, res) => {
     });
 
     await bet.save();
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('bets:update', { action: 'create', weekNumber, year });
+    }
 
     res.status(201).json({ 
       message: 'Bet placed successfully', 
@@ -263,6 +326,12 @@ router.patch('/:betId/paid', auth, async (req, res) => {
 
     if (!bet) {
       return res.status(404).json({ message: 'Bet not found' });
+    }
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('bets:update', { action: 'paid', betId: bet._id });
     }
 
     res.json({ message: 'Paid status updated', bet });

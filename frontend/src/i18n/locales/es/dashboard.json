@@ -5,10 +5,26 @@
   "tryAgain": "Intentar de Nuevo",
   "howToPlay": "Cómo Jugar",
   "statsTab": "Estadísticas",
+  "statsTabShort": "Stats",
   "weekStats": "Estadísticas Semana {{week}}",
   "tabs": {
     "standings": "Clasificación",
-    "schedule": "Calendario"
+    "standingsShort": "Posic",
+    "schedule": "Calendario",
+    "scheduleShort": "Juegos",
+    "lastWeek": "Semana Pasada",
+    "lastWeekShort": "Ant"
+  },
+  "lastWeek": {
+    "title": "Resultados Jornada {{week}}",
+    "finalResults": "Resultados Finales",
+    "totalGoals": "Goles Totales",
+    "matchesPlayed": "Partidos",
+    "winner": "Ganador",
+    "autoRemoveNotice": "Estos datos se eliminarán automáticamente cuando termine la próxima semana.",
+    "noDataTitle": "Sin Resultados Aún",
+    "noDataDescription": "Los resultados de la semana pasada aparecerán aquí una vez que termine la jornada actual. Los resultados están disponibles por una semana después de cada jornada.",
+    "checkBackLater": "Vuelve después de que terminen los partidos de esta semana"
   },
   "standings": {
     "title": "Tabla de Posiciones",

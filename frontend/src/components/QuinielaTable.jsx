@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../context/ThemeContext'
 
-export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId }) {
+export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId, isLastWeek = false }) {
   const { isDark } = useTheme()
   const { t } = useTranslation('dashboard')
   const [expandedCard, setExpandedCard] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
+  
+  // For last week view, always show predictions (all games are completed)
+  const effectiveHasStarted = isLastWeek ? true : hasStarted
 
   // Map prediction to display text
   const getPredictionDisplay = (prediction, match) => {
@@ -57,7 +60,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
 
   // Determine if predictions should be visible for a bet
   const canSeePredictions = (bet) => {
-    return hasStarted || isCurrentUserBet(bet)
+    return effectiveHasStarted || isCurrentUserBet(bet)
   }
 
   // Empty state
@@ -549,7 +552,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                                 {pendingCount} {t('table.left')}
                               </span>
                             )}
-                            {!hasStarted && isCurrentUserBet(bet) && (
+                            {!effectiveHasStarted && isCurrentUserBet(bet) && (
                               <span className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                                 {t('table.yourBet')}
                               </span>

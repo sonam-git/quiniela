@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
+import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import QuinielaTable from '../components/QuinielaTable'
 import { BetIcon } from '../components/Navbar'
 
@@ -25,6 +26,13 @@ export default function Dashboard() {
     const saved = localStorage.getItem('dismissedAnnouncements')
     return saved ? JSON.parse(saved) : []
   })
+  
+  // Last week data
+  const [lastWeekSchedule, setLastWeekSchedule] = useState(null)
+  const [lastWeekBets, setLastWeekBets] = useState([])
+  const [lastWeekInfo, setLastWeekInfo] = useState({ weekNumber: 0, year: 0 })
+  const [hasLastWeekData, setHasLastWeekData] = useState(false)
+  
   const { isDark } = useTheme()
   const { user } = useAuth()
   const { t } = useTranslation('dashboard')
@@ -51,6 +59,25 @@ export default function Dashboard() {
         year: scheduleRes.data.year
       })
       setAnnouncements(announcementsRes.data.announcements || [])
+      
+      // Fetch last week data (optional - won't fail if not available)
+      try {
+        const [lastWeekScheduleRes, lastWeekBetsRes] = await Promise.all([
+          api.get('/schedule/last-week'),
+          api.get('/bets/last-week')
+        ])
+        
+        setLastWeekSchedule(lastWeekScheduleRes.data.schedule)
+        setLastWeekBets(lastWeekBetsRes.data.bets)
+        setLastWeekInfo({
+          weekNumber: lastWeekScheduleRes.data.weekNumber,
+          year: lastWeekScheduleRes.data.year
+        })
+        setHasLastWeekData(true)
+      } catch (lastWeekError) {
+        // Last week data not available - that's OK
+        setHasLastWeekData(false)
+      }
     } catch (error) {
       if (error.response?.status === 404) {
         setError({
@@ -76,8 +103,18 @@ export default function Dashboard() {
     }
   }, [])
 
+  // Real-time updates - refetch data when server emits events
+  useRealTimeUpdates({
+    onScheduleUpdate: fetchData,
+    onBetsUpdate: fetchData,
+    onResultsUpdate: fetchData,
+    onAnnouncementUpdate: fetchData,
+    onSettled: fetchData
+  })
+
   useEffect(() => {
     fetchData()
+    // Fallback polling every 60 seconds (in case socket disconnects)
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
@@ -469,7 +506,7 @@ export default function Dashboard() {
         {/* Tab Navigation */}
         {schedule && (
           <div className="mb-6">
-            <div className={`grid grid-cols-3 gap-2 p-1.5 rounded-xl ${
+            <div className={`grid grid-cols-4 gap-2 p-1.5 rounded-xl ${
               isDark ? 'bg-dark-800' : 'bg-gray-100'
             }`}>
               <button
@@ -487,8 +524,30 @@ export default function Dashboard() {
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <span>{t('tabs.standings')}</span>
+                <span className="hidden sm:inline">{t('tabs.standings')}</span>
+                <span className="sm:hidden">{t('tabs.standingsShort', t('tabs.standings'))}</span>
               </button>
+              
+              {/* Last Week Tab - Always shown */}
+              <button
+                onClick={() => setActiveTab('lastWeek')}
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'lastWeek'
+                    ? isDark
+                      ? 'bg-amber-600 text-white shadow-lg'
+                      : 'bg-white text-gray-900 shadow-md'
+                    : isDark
+                      ? 'text-dark-100 hover:text-yellow-300 hover:bg-dark-700/50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                }`}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="hidden sm:inline">{t('tabs.lastWeek', 'Last Week')}</span>
+                <span className="sm:hidden">{t('tabs.lastWeekShort', 'Prev')}</span>
+              </button>
+              
               <button
                 onClick={() => setActiveTab('matches')}
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
@@ -504,7 +563,8 @@ export default function Dashboard() {
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>{t('tabs.schedule')}</span>
+                <span className="hidden sm:inline">{t('tabs.schedule')}</span>
+                <span className="sm:hidden">{t('tabs.scheduleShort', t('tabs.schedule'))}</span>
               </button>
               <button
                 onClick={() => setActiveTab('stats')}
@@ -522,7 +582,8 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                 </svg>
-                <span>{t('statsTab')}</span>
+                <span className="hidden sm:inline">{t('statsTab')}</span>
+                <span className="sm:hidden">{t('statsTabShort', 'Stats')}</span>
               </button>
             </div>
           </div>
@@ -831,6 +892,119 @@ export default function Dashboard() {
                 currentUserId={user?.id}
               />
             </div>
+          </div>
+        )}
+
+        {/* Last Week Tab Content */}
+        {activeTab === 'lastWeek' && (
+          <div className={`rounded-xl border ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            {hasLastWeekData && lastWeekSchedule ? (
+              <>
+                {/* Header with data */}
+                <div className={`px-5 py-4 border-b flex items-center justify-between ${
+                  isDark ? 'border-dark-700' : 'border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      <span>📜</span> {t('lastWeek.title', { week: lastWeekInfo.weekNumber })}
+                    </h2>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {t('lastWeek.finalResults', 'Final Results')}
+                    </span>
+                  </div>
+                  <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    <span>👥</span> {lastWeekBets.length} participant{lastWeekBets.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                
+                {/* Last Week Summary Stats */}
+                <div className={`px-5 py-3 border-b flex flex-wrap items-center gap-4 ${
+                  isDark ? 'border-dark-700 bg-dark-700/30' : 'border-gray-100 bg-gray-50'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      {t('lastWeek.totalGoals', 'Total Goals')}:
+                    </span>
+                    <span className={`text-sm font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                      {lastWeekSchedule.actualTotalGoals ?? '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      {t('lastWeek.matchesPlayed', 'Matches Played')}:
+                    </span>
+                    <span className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                      {lastWeekSchedule.matches?.filter(m => m.isCompleted).length || 0}/{lastWeekSchedule.matches?.length || 0}
+                    </span>
+                  </div>
+                  {lastWeekBets.length > 0 && lastWeekBets[0].totalPoints !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        🏆 {t('lastWeek.winner', 'Winner')}:
+                      </span>
+                      <span className={`text-sm font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                        {lastWeekBets[0].userId?.name || 'Unknown'} ({lastWeekBets[0].totalPoints} pts)
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-4">
+                  <QuinielaTable 
+                    bets={lastWeekBets} 
+                    schedule={lastWeekSchedule} 
+                    isSettled={true}
+                    hasStarted={true}
+                    currentUserId={user?.id}
+                    isLastWeek={true}
+                  />
+                </div>
+                
+                {/* Info footer */}
+                <div className={`px-5 py-3 border-t ${
+                  isDark ? 'border-dark-700 bg-dark-700/20' : 'border-gray-100 bg-gray-50/50'
+                }`}>
+                  <p className={`text-xs text-center ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {t('lastWeek.autoRemoveNotice', 'This data will be automatically removed when the next week ends.')}
+                  </p>
+                </div>
+              </>
+            ) : (
+              /* Placeholder when no last week data */
+              <div className="p-8 text-center">
+                <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center ${
+                  isDark ? 'bg-dark-700' : 'bg-gray-100'
+                }`}>
+                  <svg className={`w-10 h-10 ${isDark ? 'text-dark-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                
+                <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('lastWeek.noDataTitle', 'No Results Yet')}
+                </h3>
+                
+                <p className={`text-sm mb-4 max-w-md mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                  {t('lastWeek.noDataDescription', 'Last week\'s results will appear here once the current jornada is completed. Results are available for one week after each jornada ends.')}
+                </p>
+                
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${
+                  isDark ? 'bg-dark-700 text-dark-300' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {t('lastWeek.checkBackLater', 'Check back after this week\'s matches are complete')}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

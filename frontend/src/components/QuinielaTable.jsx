@@ -175,17 +175,81 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
               <span className="text-xl">🏆</span>
               {hasCompletedMatches && bets[0]?.totalPoints > 0 ? (
                 <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-amber-400 to-amber-600`}>
-                    {bets[0]?.userId?.name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {bets[0]?.userId?.name || 'Unknown'}
-                    </p>
-                    <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                      {bets[0]?.totalPoints} {t('table.points')}
-                    </p>
-                  </div>
+                  {/* Check for ties - multiple winners with same points and goal difference */}
+                  {(() => {
+                    const leadPoints = bets[0]?.totalPoints
+                    const leadGoalDiff = bets[0]?.goalDifference
+                    // Find all users with the same points AND same goal difference
+                    const winners = bets.filter(b => 
+                      b.totalPoints === leadPoints && 
+                      (leadGoalDiff === null || b.goalDifference === leadGoalDiff)
+                    )
+                    const isTie = winners.length > 1 && isSettled
+                    
+                    if (isTie) {
+                      // Get winner names
+                      const winnerNames = winners.map(w => w.userId?.name || 'Unknown')
+                      const displayNames = winnerNames.length <= 3 
+                        ? winnerNames.join(' & ')
+                        : `${winnerNames.slice(0, 2).join(', ')} & ${winnerNames.length - 2} more`
+                      
+                      return (
+                        <div className="flex items-center gap-3">
+                          {/* Stacked avatars */}
+                          <div className="flex -space-x-2">
+                            {winners.slice(0, 3).map((winner, i) => (
+                              <div 
+                                key={winner._id}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-amber-400 to-amber-600 ring-2 ${
+                                  isDark ? 'ring-dark-800' : 'ring-white'
+                                }`}
+                                style={{ zIndex: 3 - i }}
+                                title={winner.userId?.name || 'Unknown'}
+                              >
+                                {winner.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                            ))}
+                            {winners.length > 3 && (
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                                isDark ? 'bg-dark-600 text-dark-300 ring-dark-800' : 'bg-gray-200 text-gray-600 ring-white'
+                              } ring-2`}>
+                                +{winners.length - 3}
+                              </div>
+                            )}
+                          </div>
+                          {/* Winner info */}
+                          <div>
+                            <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              🎉 {displayNames}
+                            </p>
+                            <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                              {leadPoints} {t('table.points')} • ±{leadGoalDiff ?? 0} {t('standings.goals') || 'goals'} (Tied!)
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    }
+                    
+                    // Single winner
+                    return (
+                      <>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-amber-400 to-amber-600`}>
+                          {bets[0]?.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div>
+                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {bets[0]?.userId?.name || 'Unknown'}
+                          </p>
+                          <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                            {bets[0]?.totalPoints} {t('table.points')}
+                            {isSettled && bets[0]?.goalDifference !== null && (
+                              <span className="ml-1 opacity-75">• ±{bets[0]?.goalDifference}</span>
+                            )}
+                          </p>
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               ) : (
                 <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
@@ -550,7 +614,14 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 <div className={`mx-4 mb-3 py-2.5 px-4 rounded-lg text-center text-sm font-bold ${
                   isDark ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/40' : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
                 }`}>
-                  {t('table.weekChampion')}
+                  {/* Check if there are multiple winners (tied) */}
+                  {(() => {
+                    const winnersCount = bets.filter(b => b.isWinner).length
+                    if (winnersCount > 1) {
+                      return `🏆 ${t('table.coChampion') || 'CO-CHAMPION'} 🏆`
+                    }
+                    return t('table.weekChampion')
+                  })()}
                 </div>
               )}
 

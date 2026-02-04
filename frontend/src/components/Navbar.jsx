@@ -183,7 +183,7 @@ const PrimaryButton = ({ to, icon: Icon, children, isActive, isDark, onClick }) 
 }
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, isDeveloper } = useAuth()
   const { toggleTheme, isDark } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
@@ -275,7 +275,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-1">
                   {isAdmin && (
                     <AdminNavLink to="/admin" icon={AdminIcon} isActive={isActive('/admin')} isDark={isDark}>
-                      {t('navbar.admin')}
+                      {isDeveloper ? 'Admin | Dev' : t('navbar.admin')}
                     </AdminNavLink>
                   )}
                     <NavLink to="/dashboard" icon={DashboardIcon} isActive={isActive('/dashboard')} isDark={isDark}>
@@ -554,7 +554,7 @@ export default function Navbar() {
                   </NavLink>
                   {isAdmin && (
                     <AdminNavLink to="/admin" icon={AdminIcon} isActive={isActive('/admin')} isDark={isDark} onClick={closeMobileMenu}>
-                      {t('navbar.admin')}
+                      {isDeveloper ? 'Admin | Dev' : t('navbar.admin')}
                     </AdminNavLink>
                   )}
                   <NavLink to="/about" icon={AboutIcon} isActive={isActive('/about')} isDark={isDark} onClick={closeMobileMenu}>

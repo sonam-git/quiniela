@@ -56,9 +56,23 @@ export function AuthProvider({ children }) {
   }
 
   const isAdmin = user?.isAdmin || false
+  const isDeveloper = user?.isDeveloper || false
+
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/auth/me')
+      startTransition(() => {
+        setUser(response.data.user)
+      })
+      return response.data.user
+    } catch (error) {
+      console.error('Failed to refresh user:', error)
+      return null
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isPending, isAdmin, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, isPending, isAdmin, isDeveloper, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -137,7 +137,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
 }
 
 export default function Profile() {
-  const { user } = useAuth()
+  const { user, isDeveloper, refreshUser } = useAuth()
   const { isDark } = useTheme()
   const navigate = useNavigate()
   
@@ -148,6 +148,51 @@ export default function Profile() {
   const [lockStatus, setLockStatus] = useState({ locked: false })
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  
+  // Developer upgrade state
+  const [showDevUpgrade, setShowDevUpgrade] = useState(false)
+  const [devCode, setDevCode] = useState('')
+  const [upgrading, setUpgrading] = useState(false)
+  const [devCodeError, setDevCodeError] = useState('')
+  const [devCodeAttempts, setDevCodeAttempts] = useState(() => {
+    const stored = localStorage.getItem('devCodeAttempts')
+    if (stored) {
+      const { count, lockedUntil } = JSON.parse(stored)
+      // Check if lock has expired
+      if (lockedUntil && Date.now() > lockedUntil) {
+        localStorage.removeItem('devCodeAttempts')
+        return 0
+      }
+      return count || 0
+    }
+    return 0
+  })
+  const [lockedUntil, setLockedUntil] = useState(() => {
+    const stored = localStorage.getItem('devCodeAttempts')
+    if (stored) {
+      const { lockedUntil } = JSON.parse(stored)
+      if (lockedUntil && Date.now() > lockedUntil) {
+        return null
+      }
+      return lockedUntil || null
+    }
+    return null
+  })
+  
+  const isDevCodeDisabled = devCodeAttempts >= 3 && lockedUntil && Date.now() < lockedUntil
+  
+  // Calculate remaining lock time
+  const getRemainingLockTime = () => {
+    if (!lockedUntil) return null
+    const remaining = lockedUntil - Date.now()
+    if (remaining <= 0) return null
+    const hours = Math.floor(remaining / (1000 * 60 * 60))
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    }
+    return `${minutes}m`
+  }
 
   useEffect(() => {
     fetchData()
@@ -186,6 +231,51 @@ export default function Profile() {
       toast.error(error.response?.data?.message || 'Failed to delete prediction')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleUpgradeToDeveloper = async () => {
+    if (!devCode.trim()) {
+      toast.error('Please enter the developer code')
+      return
+    }
+
+    if (isDevCodeDisabled) {
+      return
+    }
+    
+    try {
+      setUpgrading(true)
+      setDevCodeError('')
+      await api.post('/admin/upgrade-to-developer', { devCode: devCode.trim() })
+      toast.success('🎉 Successfully upgraded to developer!')
+      setShowDevUpgrade(false)
+      setDevCode('')
+      setDevCodeAttempts(0)
+      setLockedUntil(null)
+      localStorage.removeItem('devCodeAttempts')
+      // Refresh user data to get updated isDeveloper status
+      await refreshUser()
+    } catch (error) {
+      const newAttempts = devCodeAttempts + 1
+      setDevCodeAttempts(newAttempts)
+      
+      if (newAttempts >= 3) {
+        // Lock for 24 hours
+        const lockTime = Date.now() + (24 * 60 * 60 * 1000)
+        setLockedUntil(lockTime)
+        localStorage.setItem('devCodeAttempts', JSON.stringify({ count: newAttempts, lockedUntil: lockTime }))
+        setDevCodeError('Too many failed attempts. Try again in 24 hours.')
+        toast.error('Too many failed attempts. Input disabled for 24 hours.')
+      } else {
+        localStorage.setItem('devCodeAttempts', JSON.stringify({ count: newAttempts, lockedUntil: null }))
+        const remainingAttempts = 3 - newAttempts
+        setDevCodeError(`Invalid developer code. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`)
+        toast.error(error.response?.data?.message || 'Invalid developer code')
+      }
+      setDevCode('')
+    } finally {
+      setUpgrading(false)
     }
   }
 
@@ -413,6 +503,143 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+
+            {/* Developer Upgrade Section - Only show if not already a developer */}
+            {!isDeveloper && (
+              <div className={`rounded-xl border p-5 ${
+                isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
+              }`}>
+                <h3 className={`text-sm font-semibold uppercase tracking-wide mb-4 flex items-center gap-2 ${
+                  isDark ? 'text-dark-400' : 'text-gray-500'
+                }`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                  Developer Access
+                </h3>
+                
+                {!showDevUpgrade ? (
+                  <div>
+                    <p className={`text-sm mb-3 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      Have a developer code? Upgrade your account to get protected admin privileges.
+                    </p>
+                    <button
+                      onClick={() => setShowDevUpgrade(true)}
+                      className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                        isDark 
+                          ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/30' 
+                          : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+                      }`}
+                    >
+                      Enter Developer Code
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {isDevCodeDisabled ? (
+                      <div className={`p-3 rounded-lg text-sm ${
+                        isDark ? 'bg-red-900/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-600 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <span>🔒</span>
+                          <div>
+                            <span>Too many failed attempts.</span>
+                            {getRemainingLockTime() && (
+                              <span className="block text-xs mt-0.5 opacity-80">
+                                Try again in {getRemainingLockTime()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          type="password"
+                          value={devCode}
+                          onChange={(e) => {
+                            setDevCode(e.target.value)
+                            if (devCodeError) setDevCodeError('')
+                          }}
+                          placeholder="Enter developer code"
+                          disabled={isDevCodeDisabled}
+                          className={`w-full px-3 py-2 rounded-lg text-sm border transition-colors ${
+                            devCodeError
+                              ? isDark
+                                ? 'bg-dark-700 border-red-500 text-white placeholder-dark-400'
+                                : 'bg-white border-red-500 text-gray-900 placeholder-gray-400'
+                              : isDark 
+                                ? 'bg-dark-700 border-dark-600 text-white placeholder-dark-400 focus:border-purple-500' 
+                                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500'
+                          } focus:outline-none focus:ring-1 ${devCodeError ? 'focus:ring-red-500' : 'focus:ring-purple-500'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        />
+                        {devCodeError && (
+                          <p className={`text-xs ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                            {devCodeError}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setShowDevUpgrade(false)
+                          setDevCode('')
+                          setDevCodeError('')
+                        }}
+                        disabled={upgrading}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          isDark 
+                            ? 'bg-dark-700 text-dark-300 hover:bg-dark-600 border border-dark-600' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        } disabled:opacity-50`}
+                      >
+                        Cancel
+                      </button>
+                      {!isDevCodeDisabled && (
+                        <button
+                          onClick={handleUpgradeToDeveloper}
+                          disabled={upgrading || !devCode.trim()}
+                          className="flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {upgrading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              Upgrading...
+                            </>
+                          ) : (
+                            'Upgrade'
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Developer Badge - Show if user is a developer */}
+            {isDeveloper && (
+              <div className={`rounded-xl border p-5 ${
+                isDark ? 'bg-purple-900/20 border-purple-500/30' : 'bg-purple-50 border-purple-200'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isDark ? 'bg-purple-500/20' : 'bg-purple-100'
+                  }`}>
+                    <span className="text-xl">👨‍💻</span>
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-semibold ${isDark ? 'text-purple-300' : 'text-purple-800'}`}>
+                      Developer Account
+                    </h3>
+                    <p className={`text-xs ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+                      Protected admin privileges • Cannot be deleted or demoted
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Predictions */}

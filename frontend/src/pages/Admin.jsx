@@ -100,6 +100,12 @@ export default function Admin() {
   const [showCodeForm, setShowCodeForm] = useState(false)
   const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0 })
   
+  // Schedule/Matches state
+  const [schedule, setSchedule] = useState(null)
+  const [editingMatch, setEditingMatch] = useState(null)
+  const [matchScores, setMatchScores] = useState({ scoreTeamA: '', scoreTeamB: '' })
+  const [matchLoading, setMatchLoading] = useState(false)
+  
   // Announcement state
   const [announcements, setAnnouncements] = useState([])
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '' })
@@ -117,7 +123,7 @@ export default function Admin() {
     isLoading: false
   })
   
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, isDeveloper } = useAuth()
   const { isDark } = useTheme()
   const { t } = useTranslation('admin')
   const navigate = useNavigate()
@@ -133,26 +139,41 @@ export default function Admin() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const [usersRes, betsRes, paymentsRes, codesRes, announcementsRes] = await Promise.all([
+      
+      // Base requests for all admins
+      const baseRequests = [
         api.get('/admin/users'),
         api.get('/admin/bets'),
         api.get('/admin/payments'),
-        api.get('/admin/codes'),
-        api.get('/admin/announcements')
-      ])
+        api.get('/admin/announcements'),
+        api.get('/admin/schedule').catch(() => ({ data: { schedule: null } }))
+      ]
+      
+      const [usersRes, betsRes, paymentsRes, announcementsRes, scheduleRes] = await Promise.all(baseRequests)
+      
       setUsers(usersRes.data.users)
       setBets(betsRes.data.bets)
       setPayments(paymentsRes.data.payments || [])
-      setCodes(codesRes.data)
       setWeekInfo(paymentsRes.data.weekInfo || betsRes.data.weekInfo || { weekNumber: 0, year: 0 })
       setAnnouncements(announcementsRes.data.announcements || [])
+      setSchedule(scheduleRes.data.schedule)
+      
+      // Only fetch codes if user is a developer
+      if (isDeveloper) {
+        try {
+          const codesRes = await api.get('/admin/codes')
+          setCodes(codesRes.data)
+        } catch (error) {
+          console.log('Could not fetch codes - developer access required')
+        }
+      }
     } catch (error) {
       toast.error('Failed to load admin data')
       console.error(error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isDeveloper])
 
   useEffect(() => {
     if (isAdmin) {
@@ -309,6 +330,95 @@ export default function Admin() {
           fetchData()
         } catch (error) {
           toast.error('Failed to delete announcement')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
+        }
+      }
+    })
+  }
+
+  // Match score handlers
+  const handleEditMatch = (match) => {
+    setEditingMatch(match._id)
+    setMatchScores({
+      scoreTeamA: match.scoreTeamA !== null ? match.scoreTeamA.toString() : '',
+      scoreTeamB: match.scoreTeamB !== null ? match.scoreTeamB.toString() : ''
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMatch(null)
+    setMatchScores({ scoreTeamA: '', scoreTeamB: '' })
+  }
+
+  const handleSaveMatchScore = async (matchId) => {
+    if (matchScores.scoreTeamA === '' || matchScores.scoreTeamB === '') {
+      toast.error('Please enter both scores')
+      return
+    }
+
+    try {
+      setMatchLoading(true)
+      await api.patch(`/admin/schedule/match/${matchId}`, {
+        scoreTeamA: parseInt(matchScores.scoreTeamA),
+        scoreTeamB: parseInt(matchScores.scoreTeamB)
+      })
+      toast.success('Match score saved successfully')
+      setEditingMatch(null)
+      setMatchScores({ scoreTeamA: '', scoreTeamB: '' })
+      fetchData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save match score')
+    } finally {
+      setMatchLoading(false)
+    }
+  }
+
+  const handleResetMatchScore = async (matchId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset Match Score',
+      message: 'Are you sure you want to reset this match score? The match will be marked as not completed.',
+      confirmText: 'Reset Score',
+      confirmStyle: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isLoading: true }))
+        try {
+          await api.patch(`/admin/schedule/match/${matchId}/reset`)
+          toast.success('Match score reset successfully')
+          fetchData()
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Failed to reset match score')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
+        }
+      }
+    })
+  }
+
+  const handleSettleWeek = async () => {
+    const completedCount = schedule?.matches?.filter(m => m.isCompleted).length || 0
+    const totalMatches = schedule?.matches?.length || 9
+    
+    if (completedCount < totalMatches) {
+      toast.error(`Cannot settle - only ${completedCount}/${totalMatches} matches completed`)
+      return
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      title: 'Settle Week',
+      message: 'Are you sure you want to settle this week? This will calculate the total goals and finalize the results.',
+      confirmText: 'Settle Week',
+      confirmStyle: 'amber',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isLoading: true }))
+        try {
+          const response = await api.post('/admin/schedule/settle')
+          toast.success(`Week settled! Total goals: ${response.data.totalGoals}`)
+          fetchData()
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Failed to settle week')
         } finally {
           setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
         }
@@ -629,12 +739,12 @@ export default function Admin() {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className={`grid grid-cols-3 gap-2 p-1.5 rounded-xl ${
+          <div className={`grid grid-cols-4 gap-2 p-1.5 rounded-xl ${
             isDark ? 'bg-dark-800' : 'bg-gray-100'
           }`}>
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'users'
                   ? isDark
                     ? 'bg-emerald-600 text-white shadow-lg'
@@ -644,12 +754,27 @@ export default function Admin() {
                     : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              <span>👥</span>
-              <span>Users</span>
+              <span className="text-lg sm:text-base">👥</span>
+              <span className="text-[10px] sm:text-sm">Users</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('matches')}
+              className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'matches'
+                  ? isDark
+                    ? 'bg-emerald-600 text-white shadow-lg'
+                    : 'bg-white text-gray-900 shadow-md'
+                  : isDark
+                    ? 'text-dark-400 hover:text-white hover:bg-dark-700/50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+              }`}
+            >
+              <span className="text-lg sm:text-base">⚽</span>
+              <span className="text-[10px] sm:text-sm">Matches</span>
             </button>
             <button
               onClick={() => setActiveTab('payments')}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'payments'
                   ? isDark
                     ? 'bg-emerald-600 text-white shadow-lg'
@@ -659,12 +784,12 @@ export default function Admin() {
                     : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              <span>💳</span>
-              <span>Payments</span>
+              <span className="text-lg sm:text-base">💳</span>
+              <span className="text-[10px] sm:text-sm">Payments</span>
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'settings'
                   ? isDark
                     ? 'bg-emerald-600 text-white shadow-lg'
@@ -674,8 +799,8 @@ export default function Admin() {
                     : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              <span>🔐</span>
-              <span>Settings</span>
+              <span className="text-lg sm:text-base">🔐</span>
+              <span className="text-[10px] sm:text-sm">Settings</span>
             </button>
           </div>
         </div>
@@ -720,9 +845,11 @@ export default function Admin() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white ${
-                            u.isAdmin 
-                              ? 'bg-gradient-to-br from-amber-400 to-amber-600'
-                              : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                            u.isDeveloper
+                              ? 'bg-gradient-to-br from-purple-400 to-purple-600'
+                              : u.isAdmin 
+                                ? 'bg-gradient-to-br from-amber-400 to-amber-600'
+                                : 'bg-gradient-to-br from-emerald-500 to-teal-600'
                           }`}>
                             {u.name?.charAt(0)?.toUpperCase() || '?'}
                           </div>
@@ -736,11 +863,13 @@ export default function Admin() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          u.isAdmin
-                            ? isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'
-                            : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-600'
+                          u.isDeveloper
+                            ? isDark ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'
+                            : u.isAdmin
+                              ? isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'
+                              : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {u.isAdmin ? '👑 Admin' : 'User'}
+                          {u.isDeveloper ? '👨‍💻 Admin | Dev' : u.isAdmin ? '👑 Admin' : 'User'}
                         </span>
                       </td>
                       <td className={`px-4 py-3 text-center text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
@@ -748,7 +877,7 @@ export default function Admin() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
-                          {u._id !== user.id && (
+                          {u._id !== user.id && !u.isDeveloper && (
                             <>
                               <button
                                 onClick={() => handleToggleAdmin(u._id, u.isAdmin, u.name)}
@@ -777,12 +906,236 @@ export default function Admin() {
                               (You)
                             </span>
                           )}
+                          {u._id !== user.id && u.isDeveloper && (
+                            <span className={`text-xs ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+                              🔒 Protected
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Matches Tab */}
+        {activeTab === 'matches' && (
+          <div className={`rounded-2xl border shadow-lg overflow-hidden ${
+            isDark ? 'bg-gradient-to-br from-dark-800 to-dark-900 border-dark-700' : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
+          }`}>
+            {/* Header */}
+            <div className={`px-6 py-5 border-b ${
+              isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-100 bg-white/80'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${
+                    isDark ? 'bg-gradient-to-br from-emerald-600 to-teal-700' : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                  } shadow-lg`}>
+                    <span className="text-xl">⚽</span>
+                  </div>
+                  <div>
+                    <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Match Scores
+                    </h2>
+                    <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      Week {weekInfo.weekNumber} • {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9} completed
+                    </p>
+                  </div>
+                </div>
+                
+                {schedule && !schedule.isSettled && schedule.matches?.every(m => m.isCompleted) && (
+                  <button
+                    onClick={handleSettleWeek}
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors flex items-center gap-2"
+                  >
+                    <span>🏆</span>
+                    <span>Settle Week</span>
+                  </button>
+                )}
+                
+                {schedule?.isSettled && (
+                  <div className={`px-4 py-2 rounded-xl text-sm font-medium ${
+                    isDark ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-green-100 text-green-700 border border-green-200'
+                  }`}>
+                    ✅ Week Settled • Total Goals: {schedule.actualTotalGoals}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Matches List */}
+            <div className="p-4 sm:p-6">
+              {!schedule ? (
+                <div className={`text-center py-8 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                  <span className="text-4xl mb-3 block">📅</span>
+                  <p>No schedule found for this week</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {schedule.matches?.map((match, index) => (
+                    <div
+                      key={match._id}
+                      className={`rounded-xl border p-4 transition-all ${
+                        match.isCompleted
+                          ? isDark
+                            ? 'bg-dark-700/50 border-dark-600'
+                            : 'bg-gray-50 border-gray-200'
+                          : isDark
+                            ? 'bg-dark-800 border-dark-700 hover:border-dark-600'
+                            : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        {/* Match Number */}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          match.isCompleted
+                            ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                            : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <span className="text-sm font-bold">{index + 1}</span>
+                        </div>
+
+                        {/* Teams */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 text-right">
+                              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {match.teamA}
+                              </span>
+                              <span className={`ml-1 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>🏠</span>
+                            </div>
+                            
+                            {/* Score Display or Edit */}
+                            {editingMatch === match._id ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={matchScores.scoreTeamA}
+                                  onChange={(e) => setMatchScores(prev => ({ ...prev, scoreTeamA: e.target.value }))}
+                                  className={`w-12 h-10 text-center text-lg font-bold rounded-lg border ${
+                                    isDark
+                                      ? 'bg-dark-700 border-dark-600 text-white focus:border-emerald-500'
+                                      : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500'
+                                  } focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
+                                />
+                                <span className={`text-lg font-bold ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>-</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={matchScores.scoreTeamB}
+                                  onChange={(e) => setMatchScores(prev => ({ ...prev, scoreTeamB: e.target.value }))}
+                                  className={`w-12 h-10 text-center text-lg font-bold rounded-lg border ${
+                                    isDark
+                                      ? 'bg-dark-700 border-dark-600 text-white focus:border-emerald-500'
+                                      : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500'
+                                  } focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
+                                />
+                              </div>
+                            ) : (
+                              <div className={`px-4 py-2 rounded-lg min-w-[80px] text-center ${
+                                match.isCompleted
+                                  ? isDark ? 'bg-dark-600' : 'bg-gray-200'
+                                  : isDark ? 'bg-dark-700' : 'bg-gray-100'
+                              }`}>
+                                {match.isCompleted ? (
+                                  <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    {match.scoreTeamA} - {match.scoreTeamB}
+                                  </span>
+                                ) : (
+                                  <span className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>
+                                    vs
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className="flex-1 text-left">
+                              <span className={`ml-1 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>✈️</span>
+                              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {match.teamB}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Match Time */}
+                          <p className={`text-xs mt-1 text-center ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                            {new Date(match.startTime).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {editingMatch === match._id ? (
+                            <>
+                              <button
+                                onClick={handleCancelEdit}
+                                disabled={matchLoading}
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                  isDark
+                                    ? 'bg-dark-600 text-dark-300 hover:bg-dark-500'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                } disabled:opacity-50`}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => handleSaveMatchScore(match._id)}
+                                disabled={matchLoading}
+                                className="px-3 py-2 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 flex items-center gap-1"
+                              >
+                                {matchLoading ? (
+                                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                  <>
+                                    <span>💾</span>
+                                    <span>Save</span>
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEditMatch(match)}
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                  isDark
+                                    ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
+                                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                }`}
+                              >
+                                ✏️ Edit
+                              </button>
+                              {match.isCompleted && (
+                                <button
+                                  onClick={() => handleResetMatchScore(match._id)}
+                                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                    isDark
+                                      ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
+                                      : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                  }`}
+                                >
+                                  🔄 Reset
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -949,8 +1302,10 @@ export default function Admin() {
                                 </div>
                               )}
                               {payment.isAdmin && (
-                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800">
-                                  <span className="text-[8px]">👑</span>
+                                <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800 ${
+                                  payment.isDeveloper ? 'bg-purple-500' : 'bg-amber-500'
+                                }`}>
+                                  <span className="text-[8px]">{payment.isDeveloper ? '👨‍💻' : '👑'}</span>
                                 </div>
                               )}
                             </div>
@@ -1064,177 +1419,208 @@ export default function Admin() {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            {/* Current Codes */}
-            <div className={`rounded-xl border ${
-              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
-            }`}>
-              <div className={`px-5 py-4 border-b ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
-                <h2 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  🔐 Access Codes
-                </h2>
-                <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  Changing codes only affects new signups. Existing users can still login normally.
-                </p>
+            {/* Developer-only access check */}
+            {!isDeveloper ? (
+              /* Unauthorized Message for non-developers */
+              <div className={`rounded-xl border ${
+                isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
+              }`}>
+                <div className="p-8 sm:p-12 text-center">
+                  <div className={`w-16 h-16 rounded-xl mx-auto mb-4 flex items-center justify-center ${
+                    isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'
+                  }`}>
+                    <span className="text-3xl">🔒</span>
+                  </div>
+                  <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Access Restricted
+                  </h3>
+                  <p className={`text-sm mb-4 max-w-md mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    You are not authorized to access these settings. Only developers can view and modify access codes.
+                  </p>
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${
+                    isDark ? 'bg-dark-700 text-dark-300' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <span>👨‍💻</span>
+                    <span>Developer access required</span>
+                  </div>
+                </div>
               </div>
-              <div className="p-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className={`p-4 rounded-lg border ${
-                    isDark ? 'bg-dark-700/50 border-dark-600' : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">🎟️</span>
-                      <span className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                        Signup Invite Code
-                      </span>
-                    </div>
-                    <code className={`text-lg font-mono font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                      {codes.signupCode || 'QL2026'}
-                    </code>
-                    <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      Required for <strong>new users</strong> to create an account
-                    </p>
-                  </div>
-
-                  <div className={`p-4 rounded-lg border ${
-                    isDark ? 'bg-dark-700/50 border-dark-600' : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">👑</span>
-                      <span className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                        Admin Access Code
-                      </span>
-                    </div>
-                    <code className={`text-lg font-mono font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                      {codes.adminCode || 'QLADMIN2026'}
-                    </code>
-                    <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      Used during login to get admin privileges (optional)
-                    </p>
-                  </div>
-                </div>
-
-                {/* Info Banner */}
-                <div className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
-                  isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'
+            ) : (
+              /* Developer has access - show settings */
+              <>
+                {/* Current Codes */}
+                <div className={`rounded-xl border ${
+                  isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
                 }`}>
-                  <span className="text-blue-500 mt-0.5">ℹ️</span>
-                  <div>
-                    <p className={`text-xs font-medium ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
-                      Important: Code changes do not affect existing users
-                    </p>
-                    <p className={`text-xs mt-0.5 ${isDark ? 'text-blue-400/80' : 'text-blue-600'}`}>
-                      Users who have already signed up can continue to login with their email and password. 
-                      Only new signups will need the updated invite code.
+                  <div className={`px-5 py-4 border-b ${isDark ? 'border-dark-700' : 'border-gray-200'}`}>
+                    <h2 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      🔐 Access Codes
+                    </h2>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      Changing codes only affects new signups. Existing users can still login normally.
                     </p>
                   </div>
-                </div>
-
-                {/* Change Codes Form */}
-                {!showCodeForm ? (
-                  <button
-                    onClick={() => setShowCodeForm(true)}
-                    className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                      isDark 
-                        ? 'bg-dark-700 text-dark-200 hover:bg-dark-600 border border-dark-600' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                    }`}
-                  >
-                    ✏️ Change Codes
-                  </button>
-                ) : (
-                  <form onSubmit={handleUpdateCodes} className={`p-4 rounded-lg border ${
-                    isDark ? 'bg-dark-700/30 border-dark-600' : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      Update Access Codes
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${
-                          isDark ? 'text-dark-300' : 'text-gray-600'
-                        }`}>
-                          New Signup Code (leave empty to keep current)
-                        </label>
-                        <input
-                          type="text"
-                          value={newSignupCode}
-                          onChange={(e) => setNewSignupCode(e.target.value.toUpperCase())}
-                          className={`w-full px-3 py-2 rounded-lg text-sm font-mono ${
-                            isDark 
-                              ? 'bg-dark-700 border border-dark-600 text-dark-100' 
-                              : 'bg-white border border-gray-300 text-gray-900'
-                          }`}
-                          placeholder="e.g., QL2027"
-                        />
+                  <div className="p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className={`p-4 rounded-lg border ${
+                        isDark ? 'bg-dark-700/50 border-dark-600' : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">🎟️</span>
+                          <span className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                            Signup Invite Code
+                          </span>
+                        </div>
+                        <code className={`text-lg font-mono font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          {codes.signupCode || 'QL2026'}
+                        </code>
+                        <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          Required for <strong>new users</strong> to create an account
+                        </p>
                       </div>
-                      <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${
-                          isDark ? 'text-dark-300' : 'text-gray-600'
-                        }`}>
-                          New Admin Code (leave empty to keep current)
-                        </label>
-                        <input
-                          type="text"
-                          value={newAdminCode}
-                          onChange={(e) => setNewAdminCode(e.target.value.toUpperCase())}
-                          className={`w-full px-3 py-2 rounded-lg text-sm font-mono ${
-                            isDark 
-                              ? 'bg-dark-700 border border-dark-600 text-dark-100' 
-                              : 'bg-white border border-gray-300 text-gray-900'
-                          }`}
-                          placeholder="e.g., QLADMIN2027"
-                        />
+
+                      <div className={`p-4 rounded-lg border ${
+                        isDark ? 'bg-dark-700/50 border-dark-600' : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">👑</span>
+                          <span className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                            Admin Access Code
+                          </span>
+                        </div>
+                        <code className={`text-lg font-mono font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                          {codes.adminCode || 'QLADMIN2026'}
+                        </code>
+                        <p className={`text-xs mt-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          Used during login to get admin privileges (optional)
+                        </p>
                       </div>
                     </div>
-                    <div className="flex gap-3 mt-4">
+
+                    {/* Info Banner */}
+                    <div className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
+                      isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'
+                    }`}>
+                      <span className="text-blue-500 mt-0.5">ℹ️</span>
+                      <div>
+                        <p className={`text-xs font-medium ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                          Important: Code changes do not affect existing users
+                        </p>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-blue-400/80' : 'text-blue-600'}`}>
+                          Users who have already signed up can continue to login with their email and password. 
+                          Only new signups will need the updated invite code.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Change Codes Form */}
+                    {!showCodeForm ? (
                       <button
-                        type="button"
-                        onClick={() => {
-                          setShowCodeForm(false)
-                          setNewSignupCode('')
-                          setNewAdminCode('')
-                        }}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                        onClick={() => setShowCodeForm(true)}
+                        className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
                           isDark 
-                            ? 'bg-dark-600 text-dark-200 hover:bg-dark-500' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-dark-700 text-dark-200 hover:bg-dark-600 border border-dark-600' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                         }`}
                       >
-                        Cancel
+                        ✏️ Change Codes
                       </button>
-                      <button
-                        type="submit"
-                        className="flex-1 py-2 px-4 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            </div>
+                    ) : (
+                      <form onSubmit={handleUpdateCodes} className={`p-4 rounded-lg border ${
+                        isDark ? 'bg-dark-700/30 border-dark-600' : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Update Access Codes
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className={`block text-xs font-medium mb-1.5 ${
+                              isDark ? 'text-dark-300' : 'text-gray-600'
+                            }`}>
+                              New Signup Code (leave empty to keep current)
+                            </label>
+                            <input
+                              type="text"
+                              value={newSignupCode}
+                              onChange={(e) => setNewSignupCode(e.target.value.toUpperCase())}
+                              className={`w-full px-3 py-2 rounded-lg text-sm font-mono ${
+                                isDark 
+                                  ? 'bg-dark-700 border border-dark-600 text-dark-100' 
+                                  : 'bg-white border border-gray-300 text-gray-900'
+                              }`}
+                              placeholder="e.g., QL2027"
+                            />
+                          </div>
+                          <div>
+                            <label className={`block text-xs font-medium mb-1.5 ${
+                              isDark ? 'text-dark-300' : 'text-gray-600'
+                            }`}>
+                              New Admin Code (leave empty to keep current)
+                            </label>
+                            <input
+                              type="text"
+                              value={newAdminCode}
+                              onChange={(e) => setNewAdminCode(e.target.value.toUpperCase())}
+                              className={`w-full px-3 py-2 rounded-lg text-sm font-mono ${
+                                isDark 
+                                  ? 'bg-dark-700 border border-dark-600 text-dark-100' 
+                                  : 'bg-white border border-gray-300 text-gray-900'
+                              }`}
+                              placeholder="e.g., QLADMIN2027"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-3 mt-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCodeForm(false)
+                              setNewSignupCode('')
+                              setNewAdminCode('')
+                            }}
+                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                              isDark 
+                                ? 'bg-dark-600 text-dark-200 hover:bg-dark-500' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="flex-1 py-2 px-4 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                          >
+                            Save Changes
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </div>
 
-            {/* Danger Zone */}
-            <div className={`rounded-xl border ${
-              isDark ? 'bg-red-900/10 border-red-800/50' : 'bg-red-50 border-red-200'
-            }`}>
-              <div className={`px-5 py-4 border-b ${isDark ? 'border-red-800/50' : 'border-red-200'}`}>
-                <h2 className={`text-base font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>
-                  ⚠️ Danger Zone
-                </h2>
-              </div>
-              <div className="p-5">
-                <p className={`text-sm mb-4 ${isDark ? 'text-red-300' : 'text-red-600'}`}>
-                  These actions are irreversible. Be careful when using them.
-                </p>
-                <ul className={`text-xs space-y-2 ${isDark ? 'text-red-400/80' : 'text-red-500'}`}>
-                  <li>• Deleting a user will remove all their bets and data permanently</li>
-                  <li>• Changing the <strong>signup code</strong> only affects new user registrations (existing users unaffected)</li>
-                  <li>• Changing the <strong>admin code</strong> affects future admin logins</li>
-                  <li>• Make sure to communicate new codes to authorized users</li>
-                </ul>
-              </div>
-            </div>
+                {/* Danger Zone */}
+                <div className={`rounded-xl border ${
+                  isDark ? 'bg-red-900/10 border-red-800/50' : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className={`px-5 py-4 border-b ${isDark ? 'border-red-800/50' : 'border-red-200'}`}>
+                    <h2 className={`text-base font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>
+                      ⚠️ Danger Zone
+                    </h2>
+                  </div>
+                  <div className="p-5">
+                    <p className={`text-sm mb-4 ${isDark ? 'text-red-300' : 'text-red-600'}`}>
+                      These actions are irreversible. Be careful when using them.
+                    </p>
+                    <ul className={`text-xs space-y-2 ${isDark ? 'text-red-400/80' : 'text-red-500'}`}>
+                      <li>• Deleting a user will remove all their bets and data permanently</li>
+                      <li>• Changing the <strong>signup code</strong> only affects new user registrations (existing users unaffected)</li>
+                      <li>• Changing the <strong>admin code</strong> affects future admin logins</li>
+                      <li>• Make sure to communicate new codes to authorized users</li>
+                    </ul>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

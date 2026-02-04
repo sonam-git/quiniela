@@ -40,6 +40,20 @@ router.get('/current', async (req, res) => {
     const isBettingLocked = now >= lockoutTime;
     const hasStarted = now >= firstMatchTime;
 
+    // Calculate actual total goals from completed matches (live update)
+    if (!schedule.isSettled) {
+      const liveGoals = schedule.matches.reduce((sum, match) => {
+        if (match.isCompleted) {
+          return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+        }
+        return sum;
+      }, 0);
+      
+      // Update the schedule object for response (not saving to DB until settled)
+      schedule = schedule.toObject();
+      schedule.actualTotalGoals = liveGoals;
+    }
+
     res.json({
       schedule,
       weekNumber,

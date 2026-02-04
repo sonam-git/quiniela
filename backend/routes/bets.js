@@ -69,7 +69,7 @@ router.get('/my/current', auth, async (req, res) => {
 });
 
 // @route   GET /api/bets/current
-// @desc    Get all bets for the current week
+// @desc    Get all bets for the current week with live points calculation
 // @access  Public
 router.get('/current', async (req, res) => {
   try {
@@ -77,18 +77,61 @@ router.get('/current', async (req, res) => {
     const weekNumber = getWeekNumber(now);
     const year = now.getFullYear();
 
-    const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
-      .populate('userId', 'name email')
-      .sort({ totalPoints: -1, goalDifference: 1 });
-
     const schedule = await Schedule.findOne({ weekNumber, year });
+    
+    let bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
+      .populate('userId', 'name email');
+
+    // Calculate live points and goal differences if not settled yet
+    if (schedule && !schedule.isSettled) {
+      const actualTotalGoals = schedule.matches.reduce((sum, match) => {
+        if (match.isCompleted) {
+          return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+        }
+        return sum;
+      }, 0);
+
+      // Update each bet's live stats
+      for (const bet of bets) {
+        let livePoints = 0;
+
+        for (const prediction of bet.predictions) {
+          const match = schedule.matches.id(prediction.matchId);
+          if (match && match.isCompleted && match.result === prediction.prediction) {
+            livePoints += 1;
+          }
+        }
+
+        // Calculate goal difference (only meaningful when all matches complete)
+        const allCompleted = schedule.matches.every(m => m.isCompleted);
+        const goalDifference = allCompleted 
+          ? Math.abs(bet.totalGoals - actualTotalGoals)
+          : null;
+
+        bet.totalPoints = livePoints;
+        bet.goalDifference = goalDifference;
+      }
+    }
+
+    // Sort by points (desc), then by goal difference (asc - closest wins)
+    bets.sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      // If goalDifference is null, put at the end
+      if (a.goalDifference === null && b.goalDifference === null) return 0;
+      if (a.goalDifference === null) return 1;
+      if (b.goalDifference === null) return -1;
+      return a.goalDifference - b.goalDifference;
+    });
 
     res.json({
       bets,
       weekNumber,
       year,
       isSettled: schedule?.isSettled || false,
-      allMatchesCompleted: schedule?.allMatchesCompleted || false
+      allMatchesCompleted: schedule?.allMatchesCompleted || false,
+      actualTotalGoals: schedule?.actualTotalGoals || null
     });
   } catch (error) {
     console.error('Get bets error:', error);

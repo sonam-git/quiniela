@@ -44,5 +44,24 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
+// Developer middleware - must be used after auth middleware
+const developerAuth = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!req.user.isDeveloper) {
+      return res.status(403).json({ message: 'Access denied. Developer privileges required.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Developer auth middleware error:', error.message);
+    res.status(403).json({ message: 'Access denied' });
+  }
+};
+
 module.exports = auth;
 module.exports.adminAuth = adminAuth;
+module.exports.developerAuth = developerAuth;

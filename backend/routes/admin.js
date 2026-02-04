@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
-const { adminAuth } = require('../middleware/auth');
+const { adminAuth, developerAuth } = require('../middleware/auth');
 const User = require('../models/User');
 const Bet = require('../models/Bet');
 const Schedule = require('../models/Schedule');
@@ -8,9 +8,10 @@ const Announcement = require('../models/Announcement');
 
 const router = express.Router();
 
-// Store codes in memory (in production, use environment variables or database)
+// Load codes from environment variables with fallbacks
 let SIGNUP_CODE = process.env.SIGNUP_CODE || 'QL2026';
 let ADMIN_CODE = process.env.ADMIN_CODE || 'QLADMIN2026';
+const DEV_CODE = process.env.DEV_CODE || 'DEV2026'; // Developer code - cannot be changed at runtime
 
 // Export codes for use in auth routes
 const getCodes = () => ({ SIGNUP_CODE, ADMIN_CODE });
@@ -52,6 +53,11 @@ router.delete('/users/:userId', auth, adminAuth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Prevent deleting developer accounts
+    if (user.isDeveloper) {
+      return res.status(403).json({ message: 'Cannot delete developer accounts. Developer accounts are protected.' });
+    }
+
     // Delete all bets by this user
     await Bet.deleteMany({ userId });
 
@@ -83,6 +89,11 @@ router.patch('/users/:userId/admin', auth, adminAuth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Prevent demoting developer accounts
+    if (user.isDeveloper && !isAdmin) {
+      return res.status(403).json({ message: 'Cannot remove admin privileges from developer accounts. Developer accounts are protected.' });
+    }
+
     user.isAdmin = isAdmin;
     await user.save();
 
@@ -97,6 +108,46 @@ router.patch('/users/:userId/admin', auth, adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Toggle admin error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/upgrade-to-developer
+// @desc    Upgrade current user to developer status using DEV code
+// @access  Admin (with DEV code)
+router.post('/upgrade-to-developer', auth, async (req, res) => {
+  try {
+    const { devCode } = req.body;
+
+    if (!devCode || devCode !== DEV_CODE) {
+      return res.status(403).json({ message: 'Invalid developer code' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isDeveloper) {
+      return res.status(400).json({ message: 'User is already a developer' });
+    }
+
+    user.isDeveloper = true;
+    user.isAdmin = true;
+    await user.save();
+
+    res.json({ 
+      message: 'Successfully upgraded to developer status',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isDeveloper: user.isDeveloper
+      }
+    });
+  } catch (error) {
+    console.error('Upgrade to developer error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -318,6 +369,7 @@ router.get('/payments', auth, adminAuth, async (req, res) => {
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        isDeveloper: user.isDeveloper,
         hasBet: hasRealBet,
         isPlaceholder,
         betId: bet?._id || null,
@@ -353,8 +405,8 @@ router.get('/payments', auth, adminAuth, async (req, res) => {
 
 // @route   GET /api/admin/codes
 // @desc    Get current access codes
-// @access  Admin
-router.get('/codes', auth, adminAuth, async (req, res) => {
+// @access  Developer only
+router.get('/codes', auth, developerAuth, async (req, res) => {
   try {
     res.json({
       signupCode: SIGNUP_CODE,
@@ -368,8 +420,8 @@ router.get('/codes', auth, adminAuth, async (req, res) => {
 
 // @route   PATCH /api/admin/codes
 // @desc    Update access codes
-// @access  Admin
-router.patch('/codes', auth, adminAuth, async (req, res) => {
+// @access  Developer only
+router.patch('/codes', auth, developerAuth, async (req, res) => {
   try {
     const { signupCode, adminCode } = req.body;
 
@@ -512,6 +564,248 @@ router.delete('/announcements/:id', auth, adminAuth, async (req, res) => {
     res.json({ message: 'Announcement deleted successfully' });
   } catch (error) {
     console.error('Delete announcement error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Helper to get week number
+const getWeekNumber = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return weekNumber;
+};
+
+// @route   GET /api/admin/schedule
+// @desc    Get current week's schedule for admin
+// @access  Admin
+router.get('/schedule', auth, adminAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const weekNumber = getWeekNumber(now);
+    const year = now.getFullYear();
+
+    let schedule = await Schedule.findOne({ weekNumber, year });
+
+    if (!schedule) {
+      return res.status(404).json({ 
+        message: 'No schedule found for this week',
+        weekNumber,
+        year
+      });
+    }
+
+    res.json({ 
+      schedule,
+      weekNumber,
+      year
+    });
+  } catch (error) {
+    console.error('Get schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PATCH /api/admin/schedule/match/:matchId
+// @desc    Update a single match score
+// @access  Admin
+router.patch('/schedule/match/:matchId', auth, adminAuth, async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    const { scoreTeamA, scoreTeamB } = req.body;
+
+    // Validate scores
+    if (scoreTeamA === undefined || scoreTeamB === undefined) {
+      return res.status(400).json({ message: 'Both scores are required' });
+    }
+
+    const scoreA = parseInt(scoreTeamA);
+    const scoreB = parseInt(scoreTeamB);
+
+    if (isNaN(scoreA) || isNaN(scoreB) || scoreA < 0 || scoreB < 0) {
+      return res.status(400).json({ message: 'Scores must be non-negative numbers' });
+    }
+
+    // Find the schedule containing this match
+    const schedule = await Schedule.findOne({ 'matches._id': matchId });
+    
+    if (!schedule) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+
+    // Find and update the specific match
+    const match = schedule.matches.id(matchId);
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found in schedule' });
+    }
+
+    match.scoreTeamA = scoreA;
+    match.scoreTeamB = scoreB;
+    match.isCompleted = true;
+
+    // Determine result
+    if (scoreA > scoreB) {
+      match.result = 'teamA';
+    } else if (scoreB > scoreA) {
+      match.result = 'teamB';
+    } else {
+      match.result = 'draw';
+    }
+
+    await schedule.save();
+
+    res.json({ 
+      message: 'Match score updated successfully',
+      match,
+      schedule
+    });
+  } catch (error) {
+    console.error('Update match score error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PATCH /api/admin/schedule/match/:matchId/reset
+// @desc    Reset a match score (mark as not completed)
+// @access  Admin
+router.patch('/schedule/match/:matchId/reset', auth, adminAuth, async (req, res) => {
+  try {
+    const { matchId } = req.params;
+
+    const schedule = await Schedule.findOne({ 'matches._id': matchId });
+    
+    if (!schedule) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+
+    const match = schedule.matches.id(matchId);
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found in schedule' });
+    }
+
+    match.scoreTeamA = null;
+    match.scoreTeamB = null;
+    match.result = null;
+    match.isCompleted = false;
+
+    await schedule.save();
+
+    res.json({ 
+      message: 'Match score reset successfully',
+      match,
+      schedule
+    });
+  } catch (error) {
+    console.error('Reset match score error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/schedule/settle
+// @desc    Settle the week (calculate total goals, determine winners with tiebreaker)
+// @access  Admin
+router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const weekNumber = getWeekNumber(now);
+    const year = now.getFullYear();
+
+    const schedule = await Schedule.findOne({ weekNumber, year });
+    
+    if (!schedule) {
+      return res.status(404).json({ message: 'No schedule found for this week' });
+    }
+
+    // Check if all matches are completed
+    const allCompleted = schedule.matches.every(m => m.isCompleted);
+    if (!allCompleted) {
+      return res.status(400).json({ 
+        message: 'Cannot settle week - not all matches are completed',
+        completedCount: schedule.matches.filter(m => m.isCompleted).length,
+        totalMatches: schedule.matches.length
+      });
+    }
+
+    // Calculate total goals
+    const actualTotalGoals = schedule.matches.reduce((sum, match) => {
+      return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+    }, 0);
+
+    schedule.actualTotalGoals = actualTotalGoals;
+
+    // Get all bets for this week (exclude placeholders)
+    const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
+
+    // Calculate points and goal difference for each bet
+    for (const bet of bets) {
+      let totalPoints = 0;
+
+      // Calculate points for correct predictions
+      for (const prediction of bet.predictions) {
+        const match = schedule.matches.id(prediction.matchId);
+        if (match && match.isCompleted && match.result === prediction.prediction) {
+          totalPoints += 1;
+        }
+      }
+
+      // Calculate goal difference (how close their prediction was)
+      const goalDifference = Math.abs(bet.totalGoals - actualTotalGoals);
+
+      bet.totalPoints = totalPoints;
+      bet.goalDifference = goalDifference;
+      bet.isWinner = false; // Reset, will be set after sorting
+
+      await bet.save();
+    }
+
+    // Sort bets: by points (desc), then by goal difference (asc - closest wins)
+    const sortedBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
+      .sort({ totalPoints: -1, goalDifference: 1 });
+
+    // Determine winners with tie-breaker logic
+    if (sortedBets.length > 0) {
+      const topBet = sortedBets[0];
+      
+      // Mark all bets with the same points AND goal difference as winners
+      for (const bet of sortedBets) {
+        if (bet.totalPoints === topBet.totalPoints && 
+            bet.goalDifference === topBet.goalDifference) {
+          bet.isWinner = true;
+          await bet.save();
+        } else {
+          // Once we find someone with different stats, stop
+          break;
+        }
+      }
+    }
+
+    // Mark schedule as settled
+    schedule.isSettled = true;
+    await schedule.save();
+
+    // Get final results with user info
+    const finalBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
+      .populate('userId', 'name email')
+      .sort({ totalPoints: -1, goalDifference: 1 });
+
+    const winners = finalBets.filter(b => b.isWinner);
+
+    res.json({ 
+      message: 'Week settled successfully',
+      schedule,
+      actualTotalGoals,
+      winners: winners.map(w => ({
+        name: w.userId?.name,
+        points: w.totalPoints,
+        goalDifference: w.goalDifference,
+        predictedGoals: w.totalGoals
+      })),
+      bets: finalBets
+    });
+  } catch (error) {
+    console.error('Settle week error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

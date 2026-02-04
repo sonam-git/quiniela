@@ -18,6 +18,9 @@ const getCodes = () => {
   }
 };
 
+// Developer code from environment variable
+const DEV_CODE = process.env.DEV_CODE || 'DEV2026';
+
 // @route   POST /api/auth/signup
 // @desc    Register a new user
 // @access  Public
@@ -26,8 +29,11 @@ router.post('/signup', async (req, res) => {
     const { name, email, password, inviteCode } = req.body;
     const { SIGNUP_CODE } = getCodes();
 
-    // Validate invite code
-    if (!inviteCode || inviteCode !== SIGNUP_CODE) {
+    // Check if using developer code
+    const isDeveloperSignup = inviteCode === DEV_CODE;
+
+    // Validate invite code (accept either signup code or dev code)
+    if (!inviteCode || (inviteCode !== SIGNUP_CODE && inviteCode !== DEV_CODE)) {
       return res.status(400).json({ message: 'Invalid invite code. Please enter a valid code to sign up.' });
     }
 
@@ -37,8 +43,14 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Create new user
-    const user = new User({ name, email, password });
+    // Create new user - if using DEV code, make them developer AND admin
+    const user = new User({ 
+      name, 
+      email, 
+      password,
+      isAdmin: isDeveloperSignup,
+      isDeveloper: isDeveloperSignup
+    });
     await user.save();
 
     // Generate JWT
@@ -49,13 +61,14 @@ router.post('/signup', async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'User created successfully',
+      message: isDeveloperSignup ? 'Developer account created successfully' : 'User created successfully',
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        isAdmin: user.isAdmin
+        isAdmin: user.isAdmin,
+        isDeveloper: user.isDeveloper
       }
     });
   } catch (error) {
@@ -110,7 +123,7 @@ router.post('/login', async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: user._id, isAdmin: isAdminSession || user.isAdmin },
+      { userId: user._id, isAdmin: isAdminSession || user.isAdmin, isDeveloper: user.isDeveloper },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -122,7 +135,8 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isAdmin: isAdminSession || user.isAdmin
+        isAdmin: isAdminSession || user.isAdmin,
+        isDeveloper: user.isDeveloper || false
       }
     });
   } catch (error) {
@@ -140,7 +154,8 @@ router.get('/me', auth, async (req, res) => {
       id: req.user._id,
       name: req.user.name,
       email: req.user.email,
-      isAdmin: req.user.isAdmin || false
+      isAdmin: req.user.isAdmin || false,
+      isDeveloper: req.user.isDeveloper || false
     }
   });
 });

@@ -54,7 +54,7 @@ export default function Signup() {
   }`
 
   return (
-    <div className={`min-h-screen flex ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
+    <div className={`flex ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
       {/* Left Column - Branding (visible on lg screens) */}
       <div className={`hidden lg:flex lg:w-1/2 xl:w-2/5 flex-col justify-center items-center px-12 ${
         isDark 

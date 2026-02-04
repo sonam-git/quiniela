@@ -254,10 +254,11 @@ router.post('/', auth, async (req, res) => {
     });
 
     if (bet) {
-      // Update existing bet
+      // Update existing bet - DO NOT update payment status (only admin can change it)
       bet.totalGoals = totalGoals;
       bet.predictions = predictions;
-      bet.paid = paid || false;
+      // Keep existing paid status - users cannot change payment after initial submission
+      // bet.paid stays unchanged
       bet.updatedAt = new Date();
       await bet.save();
       

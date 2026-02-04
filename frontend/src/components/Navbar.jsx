@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import api from '../services/api'
 
 // Icon Components - Clean, modern style
 const SunIcon = () => (
@@ -190,6 +191,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const [hasBet, setHasBet] = useState(false)
   const { t, i18n } = useTranslation()
 
   const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
@@ -199,6 +201,23 @@ export default function Navbar() {
     localStorage.setItem('language', lang)
     setLangMenuOpen(false)
   }
+
+  // Check if user has a bet for the current week
+  useEffect(() => {
+    const checkBet = async () => {
+      if (!user) {
+        setHasBet(false)
+        return
+      }
+      try {
+        const response = await api.get('/bets/my/current')
+        setHasBet(!!response.data.bet)
+      } catch {
+        setHasBet(false)
+      }
+    }
+    checkBet()
+  }, [user, location.pathname]) // Re-check when navigating
 
   // Handle scroll for shadow effect
   useEffect(() => {
@@ -282,7 +301,7 @@ export default function Navbar() {
                     {t('navbar.dashboard')}
                   </NavLink>
                   <PrimaryButton to="/place-bet" icon={BetIcon} isActive={isActive('/place-bet')} isDark={isDark}>
-                    {t('navbar.predict_now')}
+                    {hasBet ? t('navbar.edit_prediction') : t('navbar.predict_now')}
                   </PrimaryButton>
                 </div>
                 {/* User Profile */}
@@ -568,7 +587,7 @@ export default function Navbar() {
                 {/* CTA Button */}
                 <div className="px-1 pt-2">
                   <PrimaryButton to="/place-bet" icon={BetIcon} isActive={isActive('/place-bet')} isDark={isDark} onClick={closeMobileMenu}>
-                    {t('navbar.place_bet')}
+                    {hasBet ? t('navbar.edit_prediction') : t('navbar.predict_now')}
                   </PrimaryButton>
                 </div>
 

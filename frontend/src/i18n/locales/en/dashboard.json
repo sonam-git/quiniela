@@ -70,7 +70,8 @@
   },
   "cta": {
     "placeBet": "Predict Now",
-    "updateBet": "Update",
+    "updateBet": "Edit Prediction",
+    "updateBetShort": "Update",
     "viewResults": "View Results"
   },
   "errors": {

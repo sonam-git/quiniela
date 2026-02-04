@@ -39,7 +39,8 @@
     "pending": "Pending - Contact admin to confirm payment",
     "hint": "Your bet will be included in standings once payment is confirmed",
     "pendingMessage": "Payment required before first match. Without payment, you cannot claim the prize.",
-    "paidMessage": "Payment confirmed! You are officially participating."
+    "paidMessage": "Payment confirmed! You are officially participating.",
+    "adminOnlyChange": "Payment status can only be changed by an admin"
   },
   "submit": {
     "place": "Submit Prediction",
@@ -58,6 +59,13 @@
     "bettingClosed": "Betting is closed for this week",
     "allPredictions": "Please make a prediction for all matches",
     "invalidGoals": "Please enter a valid total goals prediction"
+  },
+  "validation": {
+    "missingPredictionsTitle": "Missing Predictions",
+    "missingPredictionsMessage": "Please select a prediction for all matches before submitting:",
+    "invalidGoalsTitle": "Total Goals Required",
+    "invalidGoalsMessage": "Please enter a valid total goals prediction (must be greater than 0). This number is used as a tiebreaker when players have the same points.",
+    "gotIt": "Got it, I'll fix it"
   },
   "locked": {
     "title": "Betting Closed",

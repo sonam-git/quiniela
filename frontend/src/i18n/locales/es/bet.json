@@ -39,7 +39,8 @@
     "pending": "Pendiente - Contacta al admin para confirmar pago",
     "hint": "Tu predicción se incluirá en la clasificación una vez confirmado el pago",
     "pendingMessage": "Pago requerido antes del primer partido. Sin pago, no puedes reclamar el premio.",
-    "paidMessage": "¡Pago confirmado! Estás participando oficialmente."
+    "paidMessage": "¡Pago confirmado! Estás participando oficialmente.",
+    "adminOnlyChange": "Solo un administrador puede cambiar el estado de pago"
   },
   "submit": {
     "place": "Enviar Predicción",
@@ -58,6 +59,13 @@
     "bettingClosed": "Las apuestas están cerradas para esta semana",
     "allPredictions": "Por favor haz una predicción para todos los partidos",
     "invalidGoals": "Por favor ingresa una predicción de goles válida"
+  },
+  "validation": {
+    "missingPredictionsTitle": "Predicciones Faltantes",
+    "missingPredictionsMessage": "Por favor selecciona una predicción para todos los partidos antes de enviar:",
+    "invalidGoalsTitle": "Goles Totales Requeridos",
+    "invalidGoalsMessage": "Por favor ingresa una predicción de goles totales válida (debe ser mayor que 0). Este número se usa como desempate cuando los jugadores tienen los mismos puntos.",
+    "gotIt": "Entendido, lo arreglaré"
   },
   "locked": {
     "title": "Apuestas Cerradas",

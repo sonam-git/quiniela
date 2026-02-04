@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -124,6 +124,10 @@ export default function Admin() {
     isLoading: false
   })
   
+  // Ref to track pending changes to avoid duplicate updates from socket events
+  // Maps userId to timestamp of when the change was initiated
+  const pendingChangesRef = useRef(new Map())
+  
   const { user, isAdmin, isDeveloper } = useAuth()
   const { isDark } = useTheme()
   const { t } = useTranslation('admin')
@@ -183,8 +187,39 @@ export default function Admin() {
   }, [isAdmin, fetchData])
 
   // Real-time updates for admin panel
-  const handleRealTimeUpdate = useCallback(() => {
+  const handleRealTimeUpdate = useCallback((data) => {
     if (isAdmin) {
+      // For payment updates, update only the affected row
+      if (data?.action === 'update' && data?.userId) {
+        // Check if this is a pending change we initiated (skip to avoid double-update)
+        const pendingChange = pendingChangesRef.current.get(data.userId)
+        if (pendingChange) {
+          const timeSinceChange = Date.now() - pendingChange.timestamp
+          // If the change was made within the last 5 seconds by this admin, skip
+          if (timeSinceChange < 5000 && pendingChange.status === data.status) {
+            console.log('Skipping socket update for pending change:', data.userId)
+            // Clean up the pending change
+            pendingChangesRef.current.delete(data.userId)
+            return
+          }
+        }
+        
+        // Update payments state locally for changes from other admins
+        // Note: payments use `userId` field (not `id`)
+        setPayments(prev => prev.map(p => {
+          if (p.userId === data.userId || p.userId?.toString() === data.userId) {
+            return { 
+              ...p, 
+              paid: data.status === 'paid',
+              paymentStatus: data.status,
+              hasBet: data.status !== 'na'
+            }
+          }
+          return p
+        }))
+        return
+      }
+      // For other updates, refetch all data
       fetchData()
     }
   }, [isAdmin, fetchData])
@@ -201,21 +236,75 @@ export default function Admin() {
 
   const handleTogglePayment = async (betId, currentStatus) => {
     try {
-      await api.patch(`/admin/bets/${betId}/payment`, { paid: !currentStatus })
-      toast.success(`Payment status updated to ${!currentStatus ? 'Paid' : 'Pending'}`)
-      fetchData()
+      const newStatus = !currentStatus
+      
+      // Optimistically update the UI
+      setBets(prev => prev.map(b => 
+        b._id === betId ? { ...b, paid: newStatus } : b
+      ))
+      setPayments(prev => prev.map(p => 
+        p.betId === betId ? { ...p, paid: newStatus, paymentStatus: newStatus ? 'paid' : 'pending' } : p
+      ))
+      
+      await api.patch(`/admin/bets/${betId}/payment`, { paid: newStatus })
+      toast.success(`Payment status updated to ${newStatus ? 'Paid' : 'Pending'}`)
     } catch (error) {
+      // Revert on error
+      setBets(prev => prev.map(b => 
+        b._id === betId ? { ...b, paid: currentStatus } : b
+      ))
+      setPayments(prev => prev.map(p => 
+        p.betId === betId ? { ...p, paid: currentStatus, paymentStatus: currentStatus ? 'paid' : 'pending' } : p
+      ))
       toast.error('Failed to update payment status')
     }
   }
 
   const handleChangePaymentStatus = async (userId, newStatus) => {
+    // Find the current payment data for this user to enable rollback
+    // Note: payments use `userId` field (not `id`)
+    const currentPayment = payments.find(p => p.userId === userId || p.userId?.toString() === userId)
+    const previousStatus = currentPayment?.paymentStatus || 'na'
+    
     try {
+      // Record this as a pending change to prevent socket event from overwriting
+      pendingChangesRef.current.set(userId, {
+        status: newStatus,
+        timestamp: Date.now()
+      })
+      
+      // Optimistically update the UI
+      setPayments(prev => prev.map(p => {
+        if (p.userId === userId || p.userId?.toString() === userId) {
+          return { 
+            ...p, 
+            paid: newStatus === 'paid',
+            paymentStatus: newStatus,
+            hasBet: newStatus !== 'na'
+          }
+        }
+        return p
+      }))
+      
       await api.patch(`/admin/users/${userId}/payment`, { status: newStatus })
       const statusLabels = { paid: 'Paid', pending: 'Pending', na: 'N/A' }
       toast.success(`Payment status updated to ${statusLabels[newStatus]}`)
-      fetchData()
     } catch (error) {
+      // Remove pending change on error
+      pendingChangesRef.current.delete(userId)
+      
+      // Revert on error
+      setPayments(prev => prev.map(p => {
+        if (p.userId === userId || p.userId?.toString() === userId) {
+          return { 
+            ...p, 
+            paid: previousStatus === 'paid',
+            paymentStatus: previousStatus,
+            hasBet: previousStatus !== 'na'
+          }
+        }
+        return p
+      }))
       toast.error(error.response?.data?.message || 'Failed to update payment status')
     }
   }

@@ -6,6 +6,79 @@ import { useTheme } from '../context/ThemeContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import toast from 'react-hot-toast'
 
+// Validation Modal Component
+function ValidationModal({ isOpen, onClose, title, message, items, isDark, buttonText }) {
+  if (!isOpen) return null
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className={`relative w-full max-w-md rounded-2xl shadow-2xl transform transition-all ${
+        isDark ? 'bg-dark-800 border border-dark-700' : 'bg-white'
+      }`}>
+        <div className="p-6">
+          {/* Icon */}
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${
+            isDark ? 'bg-amber-900/30' : 'bg-amber-100'
+          }`}>
+            <span className="text-3xl">⚠️</span>
+          </div>
+          
+          {/* Title */}
+          <h3 className={`text-lg font-semibold text-center mb-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
+            {title}
+          </h3>
+          
+          {/* Message */}
+          <p className={`text-sm text-center mb-4 ${
+            isDark ? 'text-dark-300' : 'text-gray-600'
+          }`}>
+            {message}
+          </p>
+          
+          {/* Items list (missing matches) */}
+          {items && items.length > 0 && (
+            <div className={`max-h-40 overflow-y-auto rounded-lg p-3 mb-4 ${
+              isDark ? 'bg-dark-700/50' : 'bg-gray-50'
+            }`}>
+              <ul className="space-y-2">
+                {items.map((item, index) => (
+                  <li key={index} className={`flex items-center gap-2 text-sm ${
+                    isDark ? 'text-dark-200' : 'text-gray-700'
+                  }`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                      isDark ? 'bg-amber-900/50 text-amber-300' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      !
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 px-4 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+          >
+            {buttonText || "Got it, I'll fix it"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PlaceBet() {
   const [schedule, setSchedule] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -17,6 +90,12 @@ export default function PlaceBet() {
   const [lockStatus, setLockStatus] = useState({
     isBettingLocked: false,
     lockoutTime: null
+  })
+  const [validationModal, setValidationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    items: []
   })
   const { isDark } = useTheme()
   const { t } = useTranslation('bet')
@@ -102,17 +181,34 @@ export default function PlaceBet() {
 
     if (!schedule) return
 
+    // Check for missing predictions
     const missingPredictions = schedule.matches.filter(
       match => !predictions[match._id]
     )
 
     if (missingPredictions.length > 0) {
-      toast.error(t('errors.allPredictions'))
+      const missingItems = missingPredictions.map((match, index) => {
+        const matchIndex = schedule.matches.findIndex(m => m._id === match._id) + 1
+        return `Match ${matchIndex}: ${match.teamA} vs ${match.teamB}`
+      })
+      
+      setValidationModal({
+        isOpen: true,
+        title: t('validation.missingPredictionsTitle', 'Missing Predictions'),
+        message: t('validation.missingPredictionsMessage', 'Please select a prediction for all matches before submitting.'),
+        items: missingItems
+      })
       return
     }
 
-    if (!totalGoals || parseInt(totalGoals) < 0) {
-      toast.error(t('errors.invalidGoals'))
+    // Check for valid total goals (must be entered and > 0, since 0 goals across 9 matches is unrealistic)
+    if (totalGoals === '' || totalGoals === undefined || parseInt(totalGoals) <= 0) {
+      setValidationModal({
+        isOpen: true,
+        title: t('validation.invalidGoalsTitle', 'Total Goals Required'),
+        message: t('validation.invalidGoalsMessage', 'Please enter a valid total goals prediction (must be greater than 0). This is used as a tiebreaker.'),
+        items: []
+      })
       return
     }
 
@@ -135,6 +231,10 @@ export default function PlaceBet() {
         toast.error(error.response?.data?.message || t('errors.submitFailed'))
       }
     })
+  }
+
+  const closeValidationModal = () => {
+    setValidationModal(prev => ({ ...prev, isOpen: false }))
   }
 
   const formatDate = (dateString) => {
@@ -488,56 +588,97 @@ export default function PlaceBet() {
             </div>
           </div>
 
-          {/* Payment Status */}
-          <div className={`rounded-lg border p-4 ${
-            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
-          }`}>
-            <label className={`block text-sm font-medium mb-3 ${
-              isDark ? 'text-dark-200' : 'text-gray-700'
+          {/* Payment Status - Only show for first-time bets */}
+          {!existingBet ? (
+            <div className={`rounded-lg border p-4 ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
             }`}>
-              {t('payment.title')}
-            </label>
-            
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <button
-                type="button"
-                onClick={() => setPaymentStatus('paid')}
-                className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                  paymentStatus === 'paid'
-                    ? 'bg-blue-600 text-white'
-                    : isDark 
-                      ? 'bg-dark-700 border border-dark-600 text-dark-200 hover:border-dark-500' 
-                      : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                ✓ {t('payment.paid')} ($20)
-              </button>
+              <label className={`block text-sm font-medium mb-3 ${
+                isDark ? 'text-dark-200' : 'text-gray-700'
+              }`}>
+                {t('payment.title')}
+              </label>
+              
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setPaymentStatus('paid')}
+                  className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                    paymentStatus === 'paid'
+                      ? 'bg-blue-600 text-white'
+                      : isDark 
+                        ? 'bg-dark-700 border border-dark-600 text-dark-200 hover:border-dark-500' 
+                        : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  ✓ {t('payment.paid')} ($20)
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setPaymentStatus('pending')}
-                className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                  paymentStatus === 'pending'
-                    ? isDark ? 'bg-red-600 text-white' : 'bg-red-500 text-white'
-                    : isDark 
-                      ? 'bg-dark-700 border border-dark-600 text-dark-200 hover:border-dark-500' 
-                      : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                ⏳ {t('payment.pendingLabel')}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentStatus('pending')}
+                  className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                    paymentStatus === 'pending'
+                      ? isDark ? 'bg-red-600 text-white' : 'bg-red-500 text-white'
+                      : isDark 
+                        ? 'bg-dark-700 border border-dark-600 text-dark-200 hover:border-dark-500' 
+                        : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  ⏳ {t('payment.pendingLabel')}
+                </button>
+              </div>
+
+              <div className={`p-3 rounded-lg text-xs ${
+                paymentStatus === 'pending'
+                  ? isDark ? 'bg-red-900/20 text-red-300' : 'bg-red-50 text-red-700'
+                  : isDark ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-700'
+              }`}>
+                {paymentStatus === 'pending' 
+                  ? t('payment.pendingMessage')
+                  : t('payment.paidMessage')}
+              </div>
             </div>
-
-            <div className={`p-3 rounded-lg text-xs ${
-              paymentStatus === 'pending'
-                ? isDark ? 'bg-red-900/20 text-red-300' : 'bg-red-50 text-red-700'
-                : isDark ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-700'
+          ) : (
+            /* Payment Status Display for Editing - Read Only */
+            <div className={`rounded-lg border p-4 ${
+              isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
             }`}>
-              {paymentStatus === 'pending' 
-                ? t('payment.pendingMessage')
-                : t('payment.paidMessage')}
+              <label className={`block text-sm font-medium mb-3 ${
+                isDark ? 'text-dark-200' : 'text-gray-700'
+              }`}>
+                {t('payment.title')}
+              </label>
+              
+              <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                existingBet.paid
+                  ? isDark ? 'bg-emerald-900/20 border border-emerald-700/30' : 'bg-emerald-50 border border-emerald-200'
+                  : isDark ? 'bg-amber-900/20 border border-amber-700/30' : 'bg-amber-50 border border-amber-200'
+              }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  existingBet.paid
+                    ? isDark ? 'bg-emerald-900/50' : 'bg-emerald-100'
+                    : isDark ? 'bg-amber-900/50' : 'bg-amber-100'
+                }`}>
+                  <span className="text-lg">{existingBet.paid ? '✓' : '⏳'}</span>
+                </div>
+                <div className="flex-1">
+                  <p className={`font-medium ${
+                    existingBet.paid
+                      ? isDark ? 'text-emerald-300' : 'text-emerald-700'
+                      : isDark ? 'text-amber-300' : 'text-amber-700'
+                  }`}>
+                    {existingBet.paid ? t('payment.paid') : t('payment.pendingLabel')}
+                  </p>
+                  <p className={`text-xs mt-0.5 ${
+                    isDark ? 'text-dark-400' : 'text-gray-500'
+                  }`}>
+                    {t('payment.adminOnlyChange', 'Payment status can only be changed by an admin')}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Submit */}
           <div className={`rounded-lg border p-4 ${
@@ -573,6 +714,17 @@ export default function PlaceBet() {
           </div>
         </form>
       </div>
+      
+      {/* Validation Modal */}
+      <ValidationModal
+        isOpen={validationModal.isOpen}
+        onClose={closeValidationModal}
+        title={validationModal.title}
+        message={validationModal.message}
+        items={validationModal.items}
+        isDark={isDark}
+        buttonText={t('validation.gotIt', "Got it, I'll fix it")}
+      />
     </div>
   )
 }

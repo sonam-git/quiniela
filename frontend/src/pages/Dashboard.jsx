@@ -495,7 +495,11 @@ export default function Dashboard() {
                       to="/place-bet"
                       className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
                     >
-                      <BetIcon /> {bets.some(bet => bet.userId?._id === user?._id || bet.userId === user?._id) ? t('cta.updateBet') : t('cta.placeBet')}
+                      <BetIcon /> {bets.some(bet => {
+                        const odId = user?._id || user?.id
+                        const betUserId = bet.userId?._id || bet.userId
+                        return odId && betUserId && betUserId.toString() === odId.toString()
+                      }) ? t('cta.updateBetShort') : t('cta.placeBet')}
                     </Link>
                   )}
                 </div>

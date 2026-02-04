@@ -225,115 +225,273 @@ export default function Admin() {
     }
   }, [isAdmin, fetchData])
 
-  // Real-time updates for admin panel
-  const handleRealTimeUpdate = useCallback((data) => {
-    if (isAdmin) {
-      // For payment updates, update only the affected row
-      if (data?.action === 'update' && data?.userId) {
-        // Check if this is a pending change we initiated (skip to avoid double-update)
-        const pendingChange = pendingChangesRef.current.get(data.userId)
-        if (pendingChange) {
-          const timeSinceChange = Date.now() - pendingChange.timestamp
-          // If the change was made within the last 5 seconds by this admin, skip
-          if (timeSinceChange < 5000 && pendingChange.status === data.status) {
-            console.log('Skipping socket update for pending change:', data.userId)
-            // Clean up the pending change
-            pendingChangesRef.current.delete(data.userId)
-            return
+  // Targeted real-time update handlers to minimize re-renders
+
+  // Handle payment updates - only update specific user's payment status
+  const handlePaymentsUpdate = useCallback((data) => {
+    if (!isAdmin) return
+    
+    console.log('💳 Admin: Payment update received:', data)
+    
+    if (data?.userId) {
+      // Check if this is a pending change we initiated (skip to avoid double-update)
+      const pendingChange = pendingChangesRef.current.get(data.userId)
+      if (pendingChange) {
+        const timeSinceChange = Date.now() - pendingChange.timestamp
+        if (timeSinceChange < 5000 && pendingChange.status === data.status) {
+          console.log('Skipping socket update for pending change:', data.userId)
+          pendingChangesRef.current.delete(data.userId)
+          return
+        }
+      }
+      
+      // Update payments state locally
+      setPayments(prev => prev.map(p => {
+        if (p.userId === data.userId || p.userId?.toString() === data.userId) {
+          return { 
+            ...p, 
+            paid: data.paid ?? (data.status === 'paid'),
+            paymentStatus: data.status || (data.paid ? 'paid' : 'pending'),
+            hasBet: data.status !== 'na'
           }
         }
-        
-        // Update payments state locally for changes from other admins
-        // Note: payments use `userId` field (not `id`)
-        setPayments(prev => prev.map(p => {
-          if (p.userId === data.userId || p.userId?.toString() === data.userId) {
-            return { 
-              ...p, 
-              paid: data.status === 'paid',
-              paymentStatus: data.status,
-              hasBet: data.status !== 'na'
-            }
-          }
-          return p
-        }))
-        return
+        return p
+      }))
+      
+      // Also update bets state if betId provided
+      if (data.betId) {
+        setBets(prev => prev.map(b => 
+          b._id === data.betId ? { ...b, paid: data.paid ?? (data.status === 'paid') } : b
+        ))
       }
-      // For other updates, refetch all data
-      fetchData()
     }
-  }, [isAdmin, fetchData])
+  }, [isAdmin])
+
+  // Handle results updates - only update specific match scores
+  const handleResultsUpdate = useCallback((data) => {
+    if (!isAdmin) return
+    
+    console.log('📊 Admin: Results update received:', data)
+    
+    if (data?.matchId) {
+      // Update current schedule
+      setSchedule(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(match => 
+            match._id === data.matchId
+              ? { 
+                  ...match, 
+                  scoreTeamA: data.scoreTeamA ?? match.scoreTeamA,
+                  scoreTeamB: data.scoreTeamB ?? match.scoreTeamB,
+                  isCompleted: data.isCompleted ?? match.isCompleted,
+                  result: data.result ?? match.result
+                }
+              : match
+          )
+        }
+      })
+      
+      // Also update in allSchedules
+      setAllSchedules(prev => prev.map(sched => {
+        if (sched.weekNumber === data.weekNumber && sched.year === data.year) {
+          return {
+            ...sched,
+            matches: sched.matches.map(match =>
+              match._id === data.matchId
+                ? { 
+                    ...match, 
+                    scoreTeamA: data.scoreTeamA ?? match.scoreTeamA,
+                    scoreTeamB: data.scoreTeamB ?? match.scoreTeamB,
+                    isCompleted: data.isCompleted ?? match.isCompleted,
+                    result: data.result ?? match.result
+                  }
+                : match
+            )
+          }
+        }
+        return sched
+      }))
+    }
+  }, [isAdmin])
+
+  // Handle bets updates - update specific bet or refetch if needed
+  const handleBetsUpdate = useCallback((data) => {
+    if (!isAdmin) return
+    
+    console.log('🎯 Admin: Bets update received:', data)
+    
+    if (data?.bet) {
+      setBets(prev => {
+        const exists = prev.find(b => b._id === data.bet._id)
+        if (exists) {
+          return prev.map(b => b._id === data.bet._id ? data.bet : b)
+        } else {
+          return [...prev, data.bet]
+        }
+      })
+    } else if (data?.betId && data?.deleted) {
+      setBets(prev => prev.filter(b => b._id !== data.betId))
+    } else if (data?.action === 'create' || data?.action === 'update') {
+      // New bet created or updated - refetch just bets
+      api.get('/admin/bets').then(res => {
+        setBets(res.data.bets)
+      }).catch(console.error)
+    }
+  }, [isAdmin])
+
+  // Handle announcement updates
+  const handleAnnouncementUpdate = useCallback((data) => {
+    if (!isAdmin) return
+    
+    console.log('📢 Admin: Announcement update received:', data)
+    
+    if (data?.announcements) {
+      setAnnouncements(data.announcements)
+    } else if (data?.announcement) {
+      setAnnouncements(prev => {
+        const exists = prev.find(a => a._id === data.announcement._id)
+        if (exists) {
+          return prev.map(a => a._id === data.announcement._id ? data.announcement : a)
+        } else {
+          return [data.announcement, ...prev]
+        }
+      })
+    } else if (data?.deleted) {
+      setAnnouncements(prev => prev.filter(a => a._id !== data.deleted))
+    } else {
+      // Refetch announcements if no specific data
+      api.get('/admin/announcements').then(res => {
+        setAnnouncements(res.data.announcements || [])
+      }).catch(console.error)
+    }
+  }, [isAdmin])
 
   // Handle schedule created event
   const handleScheduleCreated = useCallback((data) => {
-    if (isAdmin && data?.schedule) {
-      toast.success(`📅 New schedule created for Week ${data.schedule.weekNumber}`)
-      // Update allSchedules state
-      setAllSchedules(prev => {
-        const exists = prev.some(s => s._id === data.schedule._id)
-        if (exists) {
-          return prev.map(s => s._id === data.schedule._id ? data.schedule : s)
-        }
-        return [data.schedule, ...prev].sort((a, b) => {
-          if (b.year !== a.year) return b.year - a.year
-          return b.weekNumber - a.weekNumber
-        })
-      })
-      // Update current schedule if it matches
-      if (data.schedule.weekNumber === weekInfo.weekNumber && data.schedule.year === weekInfo.year) {
-        setSchedule(data.schedule)
+    if (!isAdmin || !data?.schedule) return
+    
+    console.log('📅 Admin: Schedule created:', data)
+    toast.success(`📅 New schedule created for Week ${data.schedule.weekNumber}`, { id: 'schedule-created' })
+    
+    // Update allSchedules state
+    setAllSchedules(prev => {
+      const exists = prev.some(s => s._id === data.schedule._id)
+      if (exists) {
+        return prev.map(s => s._id === data.schedule._id ? data.schedule : s)
       }
+      return [data.schedule, ...prev].sort((a, b) => {
+        if (b.year !== a.year) return b.year - a.year
+        return b.weekNumber - a.weekNumber
+      })
+    })
+    
+    // Update current schedule if it matches
+    if (data.schedule.weekNumber === weekInfo.weekNumber && data.schedule.year === weekInfo.year) {
+      setSchedule(data.schedule)
     }
   }, [isAdmin, weekInfo])
 
-  // Handle schedule updated event
+  // Handle schedule updated event (team/date changes)
   const handleScheduleUpdated = useCallback((data) => {
-    if (isAdmin && data?.schedule) {
-      toast.success(`📅 Schedule updated for Week ${data.schedule.weekNumber}`)
-      // Update allSchedules state
-      setAllSchedules(prev => prev.map(s => 
-        s._id === data.schedule._id ? data.schedule : s
-      ))
-      // Update current schedule if it matches
-      if (data.schedule.weekNumber === weekInfo.weekNumber && data.schedule.year === weekInfo.year) {
-        setSchedule(data.schedule)
-      }
+    if (!isAdmin || !data?.schedule) return
+    
+    console.log('📅 Admin: Schedule updated:', data)
+    
+    // Update allSchedules state
+    setAllSchedules(prev => prev.map(s => 
+      s._id === data.schedule._id ? data.schedule : s
+    ))
+    
+    // Update current schedule if it matches
+    if (data.schedule._id === schedule?._id) {
+      setSchedule(data.schedule)
     }
-  }, [isAdmin, weekInfo])
+  }, [isAdmin, schedule?._id])
+
+  // Handle schedule deleted event
+  const handleScheduleDeleted = useCallback((data) => {
+    if (!isAdmin || !data) return
+    
+    console.log('🗑️ Admin: Schedule deleted:', data)
+    toast.success(`📅 Schedule for Week ${data.weekNumber} deleted`, { id: 'schedule-deleted' })
+    
+    // Remove from allSchedules state
+    setAllSchedules(prev => prev.filter(s => s._id !== data.scheduleId))
+    
+    // Clear current schedule if it was deleted
+    if (schedule?._id === data.scheduleId) {
+      setSchedule(null)
+    }
+    
+    // Remove bets associated with the deleted schedule's week
+    setBets(prev => prev.filter(b => 
+      !(b.weekNumber === data.weekNumber && b.year === data.year)
+    ))
+  }, [isAdmin, schedule?._id])
 
   // Handle week settled event
   const handleWeekSettled = useCallback((data) => {
-    if (isAdmin && data) {
-      toast.success(
-        <div>
-          <p className="font-semibold">🏆 Week {data.weekNumber} Settled!</p>
-          <p className="text-sm">Total Goals: {data.actualTotalGoals} • Winners: {data.winnersCount}</p>
-        </div>,
-        { duration: 5000 }
-      )
-      // Update schedule state
-      setSchedule(prev => prev ? { ...prev, isSettled: true, actualTotalGoals: data.actualTotalGoals } : prev)
-      // Update allSchedules state
-      setAllSchedules(prev => prev.map(s => 
-        s.weekNumber === data.weekNumber && s.year === data.year
-          ? { ...s, isSettled: true, actualTotalGoals: data.actualTotalGoals }
-          : s
-      ))
-      // Switch to schedule sub-tab to show results
-      setMatchesSubTab('schedule')
-      // Refetch to get updated bets with winner info
-      fetchData()
+    if (!isAdmin || !data) return
+    
+    console.log('🏆 Admin: Week settled:', data)
+    toast.success(
+      <div>
+        <p className="font-semibold">🏆 Week {data.weekNumber} Settled!</p>
+        <p className="text-sm">Total Goals: {data.actualTotalGoals} • Winners: {data.winnersCount}</p>
+      </div>,
+      { duration: 5000, id: 'week-settled' }
+    )
+    
+    // Update schedule state
+    setSchedule(prev => prev ? { ...prev, isSettled: true, actualTotalGoals: data.actualTotalGoals } : prev)
+    
+    // Update allSchedules state
+    setAllSchedules(prev => prev.map(s => 
+      s.weekNumber === data.weekNumber && s.year === data.year
+        ? { ...s, isSettled: true, actualTotalGoals: data.actualTotalGoals }
+        : s
+    ))
+    
+    // Switch to schedule sub-tab to show results
+    setMatchesSubTab('schedule')
+    
+    // Refetch bets to get updated winner info
+    api.get('/admin/bets').then(res => {
+      setBets(res.data.bets)
+    }).catch(console.error)
+  }, [isAdmin])
+
+  // Handle generic admin updates (user changes, etc.)
+  const handleAdminUpdate = useCallback((data) => {
+    if (!isAdmin) return
+    
+    console.log('👤 Admin: Admin update received:', data)
+    
+    // For user-related changes, update users state
+    if (data?.user) {
+      setUsers(prev => prev.map(u => u._id === data.user._id ? data.user : u))
+    } else if (data?.deleted && data?.userId) {
+      setUsers(prev => prev.filter(u => u._id !== data.userId))
+    } else {
+      // Unknown admin update - refetch users
+      api.get('/admin/users').then(res => {
+        setUsers(res.data.users)
+      }).catch(console.error)
     }
-  }, [isAdmin, fetchData])
+  }, [isAdmin])
 
   useRealTimeUpdates({
-    onPaymentsUpdate: handleRealTimeUpdate,
-    onBetsUpdate: handleRealTimeUpdate,
-    onScheduleUpdate: handleRealTimeUpdate,
+    onPaymentsUpdate: handlePaymentsUpdate,
+    onBetsUpdate: handleBetsUpdate,
+    onScheduleUpdate: handleScheduleUpdated,
     onScheduleCreated: handleScheduleCreated,
     onScheduleUpdated: handleScheduleUpdated,
-    onResultsUpdate: handleRealTimeUpdate,
-    onAnnouncementUpdate: handleRealTimeUpdate,
-    onAdminUpdate: handleRealTimeUpdate,
+    onScheduleDeleted: handleScheduleDeleted,
+    onResultsUpdate: handleResultsUpdate,
+    onAnnouncementUpdate: handleAnnouncementUpdate,
+    onAdminUpdate: handleAdminUpdate,
     onSettled: handleWeekSettled
   })
 
@@ -424,7 +582,10 @@ export default function Admin() {
         try {
           await api.delete(`/admin/users/${userId}`)
           toast.success('User deleted successfully')
-          fetchData()
+          // Update state locally instead of full refetch
+          setUsers(prev => prev.filter(u => u._id !== userId))
+          setPayments(prev => prev.filter(p => p.userId !== userId))
+          setBets(prev => prev.filter(b => b.userId !== userId && b.userId?._id !== userId))
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to delete user')
         } finally {
@@ -462,10 +623,15 @@ export default function Admin() {
         { duration: 5000 }
       )
       
+      // Update codes state locally instead of full refetch
+      setCodes(prev => ({
+        ...prev,
+        signupCode: response.data.signupCode || prev.signupCode,
+        adminCode: response.data.adminCode || prev.adminCode
+      }))
       setNewSignupCode('')
       setNewAdminCode('')
       setShowCodeForm(false)
-      fetchData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update codes')
     }
@@ -483,7 +649,10 @@ export default function Admin() {
         try {
           await api.patch(`/admin/users/${userId}/admin`, { isAdmin: !currentStatus })
           toast.success(`Admin privileges ${!currentStatus ? 'granted' : 'removed'} for ${userName}`)
-          fetchData()
+          // Update users state locally instead of full refetch
+          setUsers(prev => prev.map(u => 
+            u._id === userId ? { ...u, isAdmin: !currentStatus } : u
+          ))
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to update admin status')
         } finally {
@@ -503,11 +672,14 @@ export default function Admin() {
 
     try {
       setAnnouncementLoading(true)
-      await api.post('/admin/announcements', newAnnouncement)
+      const response = await api.post('/admin/announcements', newAnnouncement)
       toast.success('Announcement published successfully!')
+      // Update announcements state locally instead of full refetch
+      if (response.data.announcement) {
+        setAnnouncements(prev => [response.data.announcement, ...prev])
+      }
       setNewAnnouncement({ title: '', message: '' })
       setShowAnnouncementForm(false)
-      fetchData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create announcement')
     } finally {
@@ -519,7 +691,10 @@ export default function Admin() {
     try {
       await api.patch(`/admin/announcements/${id}`, { isActive: !currentStatus })
       toast.success(`Announcement ${!currentStatus ? 'activated' : 'deactivated'}`)
-      fetchData()
+      // Update announcements state locally
+      setAnnouncements(prev => prev.map(a => 
+        a._id === id ? { ...a, isActive: !currentStatus } : a
+      ))
     } catch (error) {
       toast.error('Failed to update announcement')
     }
@@ -537,7 +712,8 @@ export default function Admin() {
         try {
           await api.delete(`/admin/announcements/${id}`)
           toast.success('Announcement deleted')
-          fetchData()
+          // Update announcements state locally
+          setAnnouncements(prev => prev.filter(a => a._id !== id))
         } catch (error) {
           toast.error('Failed to delete announcement')
         } finally {
@@ -569,14 +745,28 @@ export default function Admin() {
 
     try {
       setMatchLoading(true)
-      await api.patch(`/admin/schedule/match/${matchId}`, {
+      const response = await api.patch(`/admin/schedule/match/${matchId}`, {
         scoreTeamA: parseInt(matchScores.scoreTeamA),
         scoreTeamB: parseInt(matchScores.scoreTeamB)
       })
       toast.success('Match score saved successfully')
       setEditingMatch(null)
       setMatchScores({ scoreTeamA: '', scoreTeamB: '' })
-      fetchData()
+      // Update schedule state locally
+      if (response.data.schedule) {
+        setSchedule(response.data.schedule)
+        setAllSchedules(prev => prev.map(s => 
+          s._id === response.data.schedule._id ? response.data.schedule : s
+        ))
+      } else if (response.data.match) {
+        // Update just the match in schedule
+        setSchedule(prev => ({
+          ...prev,
+          matches: prev.matches.map(m => 
+            m._id === matchId ? response.data.match : m
+          )
+        }))
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save match score')
     } finally {
@@ -594,9 +784,22 @@ export default function Admin() {
       onConfirm: async () => {
         setConfirmModal(prev => ({ ...prev, isLoading: true }))
         try {
-          await api.patch(`/admin/schedule/match/${matchId}/reset`)
+          const response = await api.patch(`/admin/schedule/match/${matchId}/reset`)
           toast.success('Match score reset successfully')
-          fetchData()
+          // Update schedule state locally
+          if (response.data.schedule) {
+            setSchedule(response.data.schedule)
+            setAllSchedules(prev => prev.map(s => 
+              s._id === response.data.schedule._id ? response.data.schedule : s
+            ))
+          } else if (response.data.match) {
+            setSchedule(prev => ({
+              ...prev,
+              matches: prev.matches.map(m => 
+                m._id === matchId ? response.data.match : m
+              )
+            }))
+          }
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to reset match score')
         } finally {
@@ -625,8 +828,24 @@ export default function Admin() {
         setConfirmModal(prev => ({ ...prev, isLoading: true }))
         try {
           const response = await api.post('/admin/schedule/settle')
-          toast.success(`Week settled! Total goals: ${response.data.totalGoals}`)
-          fetchData()
+          toast.success(`Week settled! Total goals: ${response.data.actualTotalGoals}`)
+          // Update schedule state locally
+          setSchedule(prev => prev ? { 
+            ...prev, 
+            isSettled: true, 
+            actualTotalGoals: response.data.actualTotalGoals 
+          } : prev)
+          setAllSchedules(prev => prev.map(s => 
+            s.weekNumber === weekInfo.weekNumber && s.year === weekInfo.year
+              ? { ...s, isSettled: true, actualTotalGoals: response.data.actualTotalGoals }
+              : s
+          ))
+          // Only refetch bets to get updated winner info
+          if (response.data.bets) {
+            setBets(response.data.bets)
+          } else {
+            api.get('/admin/bets').then(res => setBets(res.data.bets)).catch(console.error)
+          }
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to settle week')
         } finally {
@@ -661,14 +880,22 @@ export default function Admin() {
 
     try {
       setScheduleLoading(true)
-      await api.put(`/admin/schedules/${selectedSchedule}/match/${editingScheduleMatch}`, {
+      const response = await api.put(`/admin/schedules/${selectedSchedule}/match/${editingScheduleMatch}`, {
         teamA: scheduleMatchForm.teamA,
         teamB: scheduleMatchForm.teamB,
         startTime: scheduleMatchForm.startTime
       })
       toast.success('Match updated successfully')
       handleCancelScheduleEdit()
-      fetchData()
+      // Update schedule state locally
+      if (response.data.schedule) {
+        setAllSchedules(prev => prev.map(s => 
+          s._id === response.data.schedule._id ? response.data.schedule : s
+        ))
+        if (schedule?._id === response.data.schedule._id) {
+          setSchedule(response.data.schedule)
+        }
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update match')
     } finally {
@@ -682,7 +909,28 @@ export default function Admin() {
       const response = await api.post('/admin/schedules/refresh')
       if (response.data.success) {
         toast.success(response.data.message)
-        fetchData()
+        // Update schedule states locally if data provided
+        if (response.data.schedule) {
+          setSchedule(response.data.schedule)
+          setAllSchedules(prev => {
+            const exists = prev.some(s => s._id === response.data.schedule._id)
+            if (exists) {
+              return prev.map(s => s._id === response.data.schedule._id ? response.data.schedule : s)
+            }
+            return [response.data.schedule, ...prev].sort((a, b) => {
+              if (b.year !== a.year) return b.year - a.year
+              return b.weekNumber - a.weekNumber
+            })
+          })
+        } else {
+          // Refetch schedules if no data provided
+          api.get('/admin/schedules').then(res => {
+            setAllSchedules(res.data.schedules || [])
+          }).catch(console.error)
+          api.get('/admin/schedule').then(res => {
+            setSchedule(res.data.schedule)
+          }).catch(console.error)
+        }
       } else {
         toast.error(response.data.message)
       }
@@ -705,7 +953,13 @@ export default function Admin() {
         try {
           await api.delete(`/admin/schedules/${scheduleId}`)
           toast.success('Schedule deleted successfully')
-          fetchData()
+          // Update schedule states locally
+          setAllSchedules(prev => prev.filter(s => s._id !== scheduleId))
+          if (schedule?._id === scheduleId) {
+            setSchedule(null)
+          }
+          // Also remove bets associated with this schedule
+          setBets(prev => prev.filter(b => b.scheduleId !== scheduleId))
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to delete schedule')
         } finally {
@@ -743,7 +997,7 @@ export default function Admin() {
           time: m.time
         }))
       })
-      toast.success('Schedule created successfully')
+      // Success toast and state updates will be handled by real-time event (handleScheduleCreated)
       setShowCreateSchedule(false)
       setNewScheduleForm({
         weekNumber: '',
@@ -751,7 +1005,6 @@ export default function Admin() {
         jornada: '',
         matches: Array(9).fill({ teamA: '', teamB: '', date: '', time: '' })
       })
-      fetchData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create schedule')
     } finally {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import QuinielaTable from '../components/QuinielaTable'
 import { BetIcon } from '../components/Navbar'
+import toast from 'react-hot-toast'
 
 export default function Dashboard() {
   const [schedule, setSchedule] = useState(null)
@@ -103,14 +104,195 @@ export default function Dashboard() {
     }
   }, [])
 
-  // Real-time updates - refetch data when server emits events
+  // Targeted real-time update handlers to minimize re-renders
+  const handleResultsUpdate = useCallback((data) => {
+    console.log('📊 Dashboard: Results update received:', data)
+    // Update only schedule matches with new scores
+    if (data?.schedule) {
+      setSchedule(prev => {
+        if (!prev) return data.schedule
+        return {
+          ...prev,
+          matches: prev.matches.map(match => {
+            const updatedMatch = data.schedule.matches?.find(m => m._id === match._id)
+            return updatedMatch || match
+          })
+        }
+      })
+      toast.success('Match scores updated', { id: 'results-update', duration: 2000 })
+    } else if (data?.matchId) {
+      // Single match update
+      setSchedule(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(match => 
+            match._id === data.matchId
+              ? { ...match, scoreTeamA: data.scoreTeamA, scoreTeamB: data.scoreTeamB, isCompleted: data.isCompleted ?? match.isCompleted }
+              : match
+          )
+        }
+      })
+    }
+  }, [])
+
+  const handlePaymentsUpdate = useCallback((data) => {
+    console.log('💳 Dashboard: Payment update received:', data)
+    // Update only the affected bet's payment status
+    if (data?.betId) {
+      setBets(prev => prev.map(bet => 
+        bet._id === data.betId 
+          ? { ...bet, paid: data.paid }
+          : bet
+      ))
+    } else if (data?.bets) {
+      // Batch update
+      setBets(prev => prev.map(bet => {
+        const update = data.bets.find(b => b.betId === bet._id)
+        return update ? { ...bet, paid: update.paid } : bet
+      }))
+    } else if (data?.userId) {
+      // Update by user ID
+      setBets(prev => prev.map(bet => 
+        bet.userId === data.userId 
+          ? { ...bet, paid: data.paid }
+          : bet
+      ))
+    }
+  }, [])
+
+  const handleBetsUpdate = useCallback((data) => {
+    console.log('🎯 Dashboard: Bets update received:', data)
+    // Update specific bet or add new one
+    if (data?.bet) {
+      setBets(prev => {
+        const exists = prev.find(b => b._id === data.bet._id)
+        if (exists) {
+          return prev.map(b => b._id === data.bet._id ? data.bet : b)
+        } else {
+          return [...prev, data.bet]
+        }
+      })
+    } else if (data?.betId && data?.deleted) {
+      // Bet deleted
+      setBets(prev => prev.filter(b => b._id !== data.betId))
+    } else {
+      // Full refetch if no specific data
+      api.get('/bets/current').then(res => {
+        setBets(res.data.bets)
+        setIsSettled(res.data.isSettled)
+      }).catch(console.error)
+    }
+  }, [])
+
+  // Handle schedule creation - show new schedule to non-admin users
+  const handleScheduleCreated = useCallback((data) => {
+    console.log('📅 Dashboard: Schedule created received:', data)
+    if (data?.schedule) {
+      // Set the new schedule
+      setSchedule(data.schedule)
+      // Update week info to match the new schedule
+      setWeekInfo({
+        weekNumber: data.schedule.weekNumber,
+        year: data.schedule.year
+      })
+      // Clear any error state
+      setError(null)
+      // Reset lock status for new schedule
+      setLockStatus({
+        isBettingLocked: false,
+        hasStarted: false,
+        lockoutTime: data.schedule.matches?.[0]?.startTime || null
+      })
+      toast.success('New schedule available!', { id: 'schedule-created', duration: 3000 })
+    }
+  }, [])
+
+  const handleScheduleUpdate = useCallback((data) => {
+    console.log('📅 Dashboard: Schedule update received:', data)
+    if (data?.schedule) {
+      setSchedule(data.schedule)
+      // Update week info if provided in schedule
+      if (data.schedule.weekNumber && data.schedule.year) {
+        setWeekInfo({
+          weekNumber: data.schedule.weekNumber,
+          year: data.schedule.year
+        })
+      }
+      // Update lock status if provided
+      if (data.isBettingLocked !== undefined) {
+        setLockStatus(prev => ({ ...prev, isBettingLocked: data.isBettingLocked }))
+      }
+      // Clear any error state
+      setError(null)
+    }
+  }, [])
+
+  const handleAnnouncementUpdate = useCallback((data) => {
+    console.log('📢 Dashboard: Announcement update received:', data)
+    if (data?.announcements) {
+      setAnnouncements(data.announcements)
+    } else if (data?.announcement) {
+      // Single announcement added/updated
+      setAnnouncements(prev => {
+        const exists = prev.find(a => a._id === data.announcement._id)
+        if (exists) {
+          return prev.map(a => a._id === data.announcement._id ? data.announcement : a)
+        } else {
+          return [data.announcement, ...prev]
+        }
+      })
+      toast.success('New announcement!', { id: 'announcement', duration: 3000 })
+    } else if (data?.deleted) {
+      setAnnouncements(prev => prev.filter(a => a._id !== data.deleted))
+    } else {
+      // Refetch announcements if no specific data
+      api.get('/announcements').then(res => {
+        setAnnouncements(res.data.announcements || [])
+      }).catch(console.error)
+    }
+  }, [])
+
+  const handleSettledUpdate = useCallback((data) => {
+    console.log('✅ Dashboard: Week settled:', data)
+    if (data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year) {
+      setIsSettled(true)
+      // Refetch bets to get final scores
+      api.get('/bets/current').then(res => {
+        setBets(res.data.bets)
+      }).catch(console.error)
+      toast.success('Week has been settled! Final results are in.', { id: 'settled', duration: 4000 })
+    }
+  }, [weekInfo.weekNumber, weekInfo.year])
+
+  // Handle schedule deleted event
+  const handleScheduleDeleted = useCallback((data) => {
+    console.log('🗑️ Dashboard: Schedule deleted:', data)
+    // If the deleted schedule is the current one, clear it (don't set error - let UI handle empty schedule)
+    // Match by scheduleId if available, or by week/year
+    const isCurrentSchedule = 
+      (data?.scheduleId && schedule?._id === data.scheduleId) ||
+      (data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year);
+    
+    if (isCurrentSchedule) {
+      setSchedule(null)
+      setBets([])
+      setError(null) // Clear any existing error to show inline message
+      toast.info('Schedule has been removed by admin', { id: 'schedule-deleted', duration: 4000 })
+    }
+  }, [weekInfo.weekNumber, weekInfo.year, schedule?._id])
+
+  // Real-time updates - targeted handlers to minimize re-renders
   useRealTimeUpdates({
-    onScheduleUpdate: fetchData,
-    onBetsUpdate: fetchData,
-    onResultsUpdate: fetchData,
-    onPaymentsUpdate: fetchData,
-    onAnnouncementUpdate: fetchData,
-    onSettled: fetchData
+    onScheduleUpdate: handleScheduleUpdate,
+    onScheduleCreated: handleScheduleCreated,
+    onScheduleUpdated: handleScheduleUpdate,
+    onScheduleDeleted: handleScheduleDeleted,
+    onBetsUpdate: handleBetsUpdate,
+    onResultsUpdate: handleResultsUpdate,
+    onPaymentsUpdate: handlePaymentsUpdate,
+    onAnnouncementUpdate: handleAnnouncementUpdate,
+    onSettled: handleSettledUpdate
   })
 
   useEffect(() => {
@@ -896,6 +1078,27 @@ export default function Dashboard() {
                 hasStarted={lockStatus.hasStarted}
                 currentUserId={user?.id}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Standings Tab - No Schedule Available */}
+        {activeTab === 'standings' && !schedule && !loading && !error && (
+          <div className={`rounded-xl border ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <div className="p-8 text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                isDark ? 'bg-amber-500/10' : 'bg-amber-50'
+              }`}>
+                <span className="text-3xl">📅</span>
+              </div>
+              <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                No Schedule Available
+              </h3>
+              <p className={`text-sm max-w-md mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                The schedule for this week hasn't been created yet or has been removed. Please check back later.
+              </p>
             </div>
           </div>
         )}

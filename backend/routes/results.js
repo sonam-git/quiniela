@@ -51,10 +51,19 @@ router.post('/update-match', auth, async (req, res) => {
     // Recalculate points for all bets after each match update
     await recalculatePoints(weekNumber, year, schedule);
 
-    // Emit real-time update
+    // Emit real-time update with full match data for targeted frontend updates
     const io = req.app.get('io');
     if (io) {
-      io.emit('results:update', { weekNumber, year, matchId });
+      io.emit('results:update', { 
+        weekNumber, 
+        year, 
+        matchId,
+        scoreTeamA: match.scoreTeamA,
+        scoreTeamB: match.scoreTeamB,
+        isCompleted: match.isCompleted,
+        result: match.result,
+        match: match.toObject()
+      });
     }
 
     res.json({ message: 'Match result updated', match });
@@ -174,10 +183,17 @@ router.post('/settle', auth, async (req, res) => {
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });
 
-    // Emit real-time update
+    const winnersCount = finalBets.filter(b => b.isWinner).length;
+
+    // Emit real-time update with complete settlement data
     const io = req.app.get('io');
     if (io) {
-      io.emit('week:settled', { weekNumber, year });
+      io.emit('week:settled', { 
+        weekNumber, 
+        year,
+        actualTotalGoals,
+        winnersCount
+      });
     }
 
     res.json({

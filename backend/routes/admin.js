@@ -215,10 +215,15 @@ router.patch('/bets/:betId/payment', auth, adminAuth, async (req, res) => {
     bet.paid = paid;
     await bet.save();
 
-    // Emit real-time update for payment status change
+    // Emit real-time update for payment status change with user ID for targeted updates
     const io = req.app.get('io');
     if (io) {
-      io.emit('payments:update', { action: 'update', betId: bet._id, paid });
+      io.emit('payments:update', { 
+        action: 'update', 
+        betId: bet._id, 
+        userId: bet.userId,
+        paid 
+      });
     }
 
     res.json({ 
@@ -334,7 +339,13 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
     // Emit real-time update for payment status change
     const io = req.app.get('io');
     if (io) {
-      io.emit('payments:update', { action: 'update', userId, status, betId: bet._id });
+      io.emit('payments:update', { 
+        action: 'update', 
+        userId, 
+        status, 
+        betId: bet._id,
+        paid: status === 'paid'
+      });
     }
 
     res.json({ 
@@ -706,14 +717,20 @@ router.patch('/schedule/match/:matchId', auth, adminAuth, async (req, res) => {
 
     await schedule.save();
 
-    // Emit real-time update for match score change
+    // Emit real-time update for match score change with full match data
     const io = req.app.get('io');
     if (io) {
       io.emit('results:update', { 
         action: 'score', 
         matchId, 
         weekNumber: schedule.weekNumber, 
-        year: schedule.year 
+        year: schedule.year,
+        // Include match data for targeted frontend updates
+        scoreTeamA: match.scoreTeamA,
+        scoreTeamB: match.scoreTeamB,
+        isCompleted: match.isCompleted,
+        result: match.result,
+        match: match.toObject()
       });
     }
 
@@ -753,14 +770,20 @@ router.patch('/schedule/match/:matchId/reset', auth, adminAuth, async (req, res)
 
     await schedule.save();
 
-    // Emit real-time update for match reset
+    // Emit real-time update for match reset with full match data
     const io = req.app.get('io');
     if (io) {
       io.emit('results:update', { 
         action: 'reset', 
         matchId, 
         weekNumber: schedule.weekNumber, 
-        year: schedule.year 
+        year: schedule.year,
+        // Include reset state for targeted frontend updates
+        scoreTeamA: null,
+        scoreTeamB: null,
+        isCompleted: false,
+        result: null,
+        match: match.toObject()
       });
     }
 
@@ -1050,13 +1073,32 @@ router.delete('/schedules/:scheduleId', auth, adminAuth, async (req, res) => {
       return res.status(400).json({ message: 'Cannot delete schedule after matches have started' });
     }
 
+    const weekNumber = schedule.weekNumber;
+    const year = schedule.year;
+    const scheduleId = schedule._id.toString();
+
     // Delete associated bets
     await Bet.deleteMany({ scheduleId: schedule._id });
 
     // Delete schedule
     await Schedule.findByIdAndDelete(schedule._id);
 
-    res.json({ message: 'Schedule deleted successfully' });
+    // Emit real-time update for schedule deletion
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('schedule:deleted', { 
+        scheduleId,
+        weekNumber, 
+        year 
+      });
+    }
+
+    res.json({ 
+      message: 'Schedule deleted successfully',
+      scheduleId,
+      weekNumber,
+      year
+    });
   } catch (error) {
     console.error('Delete schedule error:', error);
     res.status(500).json({ message: 'Server error' });

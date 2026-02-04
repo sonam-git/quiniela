@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
@@ -223,12 +223,143 @@ export default function Profile() {
     fetchData()
   }, [fetchData])
 
-  // Real-time updates for profile data
+  // Targeted real-time update handlers - only update specific state without full reload
+  const handleResultsUpdate = useCallback((data) => {
+    console.log('📊 Results update received:', data)
+    // Update only the schedule/matches state with new scores
+    if (data?.schedule) {
+      setSchedule(prev => {
+        if (!prev) return data.schedule
+        // Update only the matches that changed
+        return {
+          ...prev,
+          matches: prev.matches.map(match => {
+            const updatedMatch = data.schedule.matches?.find(m => m._id === match._id)
+            return updatedMatch || match
+          })
+        }
+      })
+      toast.success('Match scores updated', { id: 'results-update', duration: 2000 })
+    } else if (data?.matchId) {
+      // Single match update
+      setSchedule(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(match => 
+            match._id === data.matchId
+              ? { ...match, scoreTeamA: data.scoreTeamA, scoreTeamB: data.scoreTeamB, isCompleted: data.isCompleted ?? match.isCompleted }
+              : match
+          )
+        }
+      })
+      toast.success('Match score updated', { id: 'match-update', duration: 2000 })
+    }
+  }, [])
+
+  const handlePaymentsUpdate = useCallback((data) => {
+    console.log('💳 Payment update received:', data)
+    // Check if this update is for the current user
+    if (data?.userId === user?._id || data?.betId === myBet?._id) {
+      setMyBet(prev => {
+        if (!prev) return prev
+        return { ...prev, paid: data.paid }
+      })
+      toast.success(
+        data.paid ? 'Payment confirmed! ✅' : 'Payment status changed to pending',
+        { id: 'payment-update', duration: 3000 }
+      )
+    } else if (data?.bets) {
+      // Batch update - find if current user's bet is affected
+      const userBetUpdate = data.bets.find(b => b.betId === myBet?._id || b.userId === user?._id)
+      if (userBetUpdate) {
+        setMyBet(prev => {
+          if (!prev) return prev
+          return { ...prev, paid: userBetUpdate.paid }
+        })
+        toast.success(
+          userBetUpdate.paid ? 'Payment confirmed! ✅' : 'Payment status changed to pending',
+          { id: 'payment-update', duration: 3000 }
+        )
+      }
+    }
+  }, [user?._id, myBet?._id])
+
+  // Handle schedule creation - show new schedule to users
+  const handleScheduleCreated = useCallback((data) => {
+    console.log('📅 Profile: Schedule created received:', data)
+    if (data?.schedule) {
+      setSchedule(data.schedule)
+      setWeekInfo({
+        weekNumber: data.schedule.weekNumber,
+        year: data.schedule.year
+      })
+      setLockStatus({ locked: false })
+      toast.success('New schedule available!', { id: 'schedule-created', duration: 3000 })
+    }
+  }, [])
+
+  const handleScheduleUpdate = useCallback((data) => {
+    console.log('📅 Schedule update received:', data)
+    // Update schedule if it's for the current week or if we have no schedule
+    if (data?.schedule) {
+      if (!schedule || (data.schedule.weekNumber === weekInfo.weekNumber && data.schedule.year === weekInfo.year)) {
+        setSchedule(data.schedule)
+      }
+    }
+  }, [weekInfo.weekNumber, weekInfo.year, schedule])
+
+  const handleBetsUpdate = useCallback((data) => {
+    console.log('🎯 Bets update received:', data)
+    // Only refetch if it affects current user's bet
+    if (data?.userId === user?._id || data?.betId === myBet?._id) {
+      // Targeted update if data provided
+      if (data.bet) {
+        setMyBet(data.bet)
+      } else {
+        // Minimal refetch - only bet data
+        api.get('/bets/my/current').then(res => {
+          setMyBet(res.data.bet)
+          setLockStatus({ locked: res.data.locked })
+        }).catch(console.error)
+      }
+    }
+  }, [user?._id, myBet?._id])
+
+  const handleSettledUpdate = useCallback((data) => {
+    console.log('✅ Week settled:', data)
+    // Week settlement affects stats calculation - need to refresh
+    if (data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year) {
+      fetchData()
+      toast.success('Week has been settled! Final results are in.', { id: 'settled', duration: 4000 })
+    }
+  }, [weekInfo.weekNumber, weekInfo.year, fetchData])
+
+  // Handle schedule deleted event
+  const handleScheduleDeleted = useCallback((data) => {
+    console.log('🗑️ Profile: Schedule deleted:', data)
+    // If the deleted schedule is the current one, clear it
+    // Match by scheduleId if available, or by week/year
+    const isCurrentSchedule = 
+      (data?.scheduleId && schedule?._id === data.scheduleId) ||
+      (data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year);
+    
+    if (isCurrentSchedule) {
+      setSchedule(null)
+      setMyBet(null)
+      toast.info('Schedule has been removed by admin', { id: 'schedule-deleted', duration: 4000 })
+    }
+  }, [weekInfo.weekNumber, weekInfo.year, schedule?._id])
+
+  // Real-time updates for profile data - targeted handlers to minimize re-renders
   useRealTimeUpdates({
-    onAnnouncementUpdate: fetchData,
-    onBetsUpdate: fetchData,
-    onResultsUpdate: fetchData,
-    onPaymentsUpdate: fetchData
+    onResultsUpdate: handleResultsUpdate,
+    onPaymentsUpdate: handlePaymentsUpdate,
+    onScheduleUpdate: handleScheduleUpdate,
+    onScheduleCreated: handleScheduleCreated,
+    onScheduleDeleted: handleScheduleDeleted,
+    onBetsUpdate: handleBetsUpdate,
+    onSettled: handleSettledUpdate
   })
 
   const handleDeleteBet = async () => {
@@ -290,7 +421,8 @@ export default function Profile() {
     }
   }
 
-  const calculateStats = () => {
+  // Memoize stats calculation to only recalculate when schedule or bet changes
+  const stats = useMemo(() => {
     if (!myBet || !schedule) return { correctPredictions: 0, totalPoints: 0, completedMatches: 0, accuracy: 0 }
     
     let correctPredictions = 0
@@ -315,7 +447,7 @@ export default function Profile() {
     const accuracy = completedMatches > 0 ? Math.round((correctPredictions / completedMatches) * 100) : 0
     
     return { correctPredictions, totalPoints: correctPredictions, completedMatches, accuracy }
-  }
+  }, [myBet, schedule])
 
   const getPredictionLabel = (prediction) => {
     switch (prediction) {
@@ -341,8 +473,6 @@ export default function Profile() {
     
     return prediction.prediction === actualResult ? 'correct' : 'incorrect'
   }
-
-  const stats = calculateStats()
 
   const { t } = useTranslation('profile')
 

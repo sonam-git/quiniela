@@ -7,6 +7,7 @@ import socket, { connectSocket, disconnectSocket } from '../services/socket'
  * @param {Function} handlers.onScheduleUpdate - Called when schedule is updated
  * @param {Function} handlers.onScheduleCreated - Called when a new schedule is created
  * @param {Function} handlers.onScheduleUpdated - Called when schedule details are updated
+ * @param {Function} handlers.onScheduleDeleted - Called when a schedule is deleted
  * @param {Function} handlers.onBetsUpdate - Called when bets are updated
  * @param {Function} handlers.onResultsUpdate - Called when match results are updated
  * @param {Function} handlers.onAnnouncementUpdate - Called when announcements change
@@ -40,6 +41,10 @@ export function useRealTimeUpdates(handlers = {}) {
       // Also call general schedule update handler as fallback
       handlersRef.current.onScheduleUpdate?.(data)
     }
+    const scheduleDeletedHandler = (data) => {
+      console.log('🔌 Received schedule:deleted', data)
+      handlersRef.current.onScheduleDeleted?.(data)
+    }
     const betsHandler = (data) => {
       console.log('🔌 Received bets:update', data)
       handlersRef.current.onBetsUpdate?.(data)
@@ -69,6 +74,7 @@ export function useRealTimeUpdates(handlers = {}) {
     socket.on('schedule:update', scheduleHandler)
     socket.on('schedule:created', scheduleCreatedHandler)
     socket.on('schedule:updated', scheduleUpdatedHandler)
+    socket.on('schedule:deleted', scheduleDeletedHandler)
     socket.on('bets:update', betsHandler)
     socket.on('results:update', resultsHandler)
     socket.on('announcement:update', announcementHandler)
@@ -81,6 +87,7 @@ export function useRealTimeUpdates(handlers = {}) {
       socket.off('schedule:update', scheduleHandler)
       socket.off('schedule:created', scheduleCreatedHandler)
       socket.off('schedule:updated', scheduleUpdatedHandler)
+      socket.off('schedule:deleted', scheduleDeletedHandler)
       socket.off('bets:update', betsHandler)
       socket.off('results:update', resultsHandler)
       socket.off('announcement:update', announcementHandler)

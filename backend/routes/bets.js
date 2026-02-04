@@ -262,10 +262,16 @@ router.post('/', auth, async (req, res) => {
       bet.updatedAt = new Date();
       await bet.save();
       
-      // Emit real-time update
+      // Emit real-time update with user info for targeted updates
       const io = req.app.get('io');
       if (io) {
-        io.emit('bets:update', { action: 'update', weekNumber, year });
+        io.emit('bets:update', { 
+          action: 'update', 
+          weekNumber, 
+          year,
+          userId: req.user._id,
+          betId: bet._id
+        });
       }
       
       return res.json({ 
@@ -287,10 +293,16 @@ router.post('/', auth, async (req, res) => {
 
     await bet.save();
 
-    // Emit real-time update
+    // Emit real-time update with user info
     const io = req.app.get('io');
     if (io) {
-      io.emit('bets:update', { action: 'create', weekNumber, year });
+      io.emit('bets:update', { 
+        action: 'create', 
+        weekNumber, 
+        year,
+        userId: req.user._id,
+        betId: bet._id
+      });
     }
 
     res.status(201).json({ 
@@ -329,10 +341,15 @@ router.patch('/:betId/paid', auth, async (req, res) => {
       return res.status(404).json({ message: 'Bet not found' });
     }
 
-    // Emit real-time update
+    // Emit real-time update with user and bet info
     const io = req.app.get('io');
     if (io) {
-      io.emit('bets:update', { action: 'paid', betId: bet._id });
+      io.emit('bets:update', { 
+        action: 'paid', 
+        betId: bet._id,
+        userId: bet.userId,
+        paid: bet.paid
+      });
     }
 
     res.json({ message: 'Paid status updated', bet });

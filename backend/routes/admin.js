@@ -97,6 +97,16 @@ router.patch('/users/:userId/admin', auth, adminAuth, async (req, res) => {
     user.isAdmin = isAdmin;
     await user.save();
 
+    // Emit real-time update for admin status change
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('admin:update', { 
+        action: isAdmin ? 'granted' : 'removed', 
+        userId: user._id,
+        isAdmin: user.isAdmin
+      });
+    }
+
     res.json({ 
       message: `Admin privileges ${isAdmin ? 'granted' : 'removed'} successfully`,
       user: {
@@ -846,6 +856,17 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
     // Mark schedule as settled
     schedule.isSettled = true;
     await schedule.save();
+
+    // Emit real-time update for week settled
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('week:settled', { 
+        weekNumber, 
+        year, 
+        actualTotalGoals,
+        winnersCount: sortedBets.filter(b => b.isWinner).length
+      });
+    }
 
     // Get final results with user info
     const finalBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })

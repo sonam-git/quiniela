@@ -108,6 +108,7 @@ export default function Dashboard() {
     onScheduleUpdate: fetchData,
     onBetsUpdate: fetchData,
     onResultsUpdate: fetchData,
+    onPaymentsUpdate: fetchData,
     onAnnouncementUpdate: fetchData,
     onSettled: fetchData
   })

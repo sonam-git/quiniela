@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import toast from 'react-hot-toast'
 
 // Icons
@@ -194,16 +195,13 @@ export default function Profile() {
     return `${minutes}m`
   }
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const [betRes, scheduleRes] = await Promise.all([
+      const [betRes, scheduleRes, announcementsRes] = await Promise.all([
         api.get('/bets/my/current'),
-        api.get('/schedule/current')
+        api.get('/schedule/current'),
+        api.get('/announcements')
       ])
       
       setMyBet(betRes.data.bet)
@@ -213,12 +211,25 @@ export default function Profile() {
       })
       setLockStatus({ locked: betRes.data.locked })
       setSchedule(scheduleRes.data.schedule)
+      // Store announcements in state if you have a state for them
     } catch (error) {
       console.error('Error fetching profile data:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // Real-time updates for profile data
+  useRealTimeUpdates({
+    onAnnouncementUpdate: fetchData,
+    onBetsUpdate: fetchData,
+    onResultsUpdate: fetchData,
+    onPaymentsUpdate: fetchData
+  })
 
   const handleDeleteBet = async () => {
     try {

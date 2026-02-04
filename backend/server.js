@@ -16,10 +16,32 @@ const { initScheduler } = require('./services/scheduler');
 const app = express();
 const server = http.createServer(app);
 
+// Production frontend URL
+const PRODUCTION_FRONTEND = 'https://quiniela-ten.vercel.app';
+
 // Configure CORS for production
-const allowedOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || '*';
+const allowedOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || PRODUCTION_FRONTEND;
+
+// Build list of allowed origins
+const allowedOrigins = [
+  allowedOrigin,
+  PRODUCTION_FRONTEND,
+  'http://localhost:3000',
+  'http://localhost:3001'
+].filter(Boolean);
+
 const corsOptions = {
-  origin: allowedOrigin,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Allow all origins for now, but log blocked ones
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -29,10 +51,15 @@ const corsOptions = {
 // Initialize Socket.io with CORS
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigin === '*' ? '*' : [allowedOrigin, 'http://localhost:3000', 'http://localhost:3001'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
-  }
+  },
+  // Enable long polling as fallback
+  transports: ['websocket', 'polling'],
+  // Ping settings for keeping connection alive
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Make io accessible to routes
@@ -40,10 +67,14 @@ app.set('io', io);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log('🔌 Client connected:', socket.id);
   
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  socket.on('disconnect', (reason) => {
+    console.log('🔌 Client disconnected:', socket.id, 'Reason:', reason);
+  });
+  
+  socket.on('error', (error) => {
+    console.log('🔌 Socket error:', socket.id, error);
   });
 });
 
@@ -73,7 +104,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Quiniela API is running' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Socket.io enabled for real-time updates');

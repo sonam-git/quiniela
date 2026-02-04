@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useTransition } from 'react'
+import { createContext, useContext, useState, useEffect, useTransition, useCallback } from 'react'
 import api from '../services/api'
+import socket, { connectSocket } from '../services/socket'
 
 const AuthContext = createContext(null)
 
@@ -8,9 +9,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/me')
+      startTransition(() => {
+        setUser(response.data.user)
+      })
+      return response.data.user
+    } catch (error) {
+      console.error('Failed to refresh user:', error)
+      return null
+    }
+  }, [])
+
   useEffect(() => {
     checkAuth()
   }, [])
+
+  // Listen for admin status changes
+  useEffect(() => {
+    if (!user) return
+
+    // Connect socket
+    connectSocket()
+
+    const handleAdminUpdate = (data) => {
+      console.log('🔌 Admin update received:', data)
+      // If the update is for the current user, refresh their data
+      if (data.userId === user._id || data.userId === user.id) {
+        console.log('🔌 Refreshing current user data...')
+        refreshUser()
+      }
+    }
+
+    socket.on('admin:update', handleAdminUpdate)
+
+    return () => {
+      socket.off('admin:update', handleAdminUpdate)
+    }
+  }, [user, refreshUser])
 
   const checkAuth = async () => {
     const token = localStorage.getItem('token')
@@ -57,19 +94,6 @@ export function AuthProvider({ children }) {
 
   const isAdmin = user?.isAdmin || false
   const isDeveloper = user?.isDeveloper || false
-
-  const refreshUser = async () => {
-    try {
-      const response = await api.get('/auth/me')
-      startTransition(() => {
-        setUser(response.data.user)
-      })
-      return response.data.user
-    } catch (error) {
-      console.error('Failed to refresh user:', error)
-      return null
-    }
-  }
 
   return (
     <AuthContext.Provider value={{ user, loading, isPending, isAdmin, isDeveloper, login, signup, logout, refreshUser }}>

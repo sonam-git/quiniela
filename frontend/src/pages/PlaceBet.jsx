@@ -1,8 +1,9 @@
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useTheme } from '../context/ThemeContext'
+import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import toast from 'react-hot-toast'
 
 export default function PlaceBet() {
@@ -21,9 +22,45 @@ export default function PlaceBet() {
   const { t } = useTranslation('bet')
   const navigate = useNavigate()
 
+  const fetchData = useCallback(async () => {
+    try {
+      const [scheduleRes, myBetRes] = await Promise.all([
+        api.get('/schedule/current'),
+        api.get('/bets/my/current')
+      ])
+
+      setSchedule(scheduleRes.data.schedule)
+      setLockStatus({
+        isBettingLocked: scheduleRes.data.isBettingLocked,
+        lockoutTime: scheduleRes.data.lockoutTime
+      })
+
+      if (myBetRes.data.bet) {
+        setExistingBet(myBetRes.data.bet)
+        setTotalGoals(myBetRes.data.bet.totalGoals.toString())
+        setPaymentStatus(myBetRes.data.bet.paid ? 'paid' : 'pending')
+        // Predictions will be initialized by useEffect based on existingBet
+      }
+    } catch (error) {
+      if (error.response?.status === 404) {
+        toast.error(t('errors.noSchedule'))
+      } else {
+        toast.error(t('errors.loadFailed'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [t])
+
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
+
+  // Real-time updates for schedule changes
+  useRealTimeUpdates({
+    onScheduleUpdate: fetchData,
+    onResultsUpdate: fetchData
+  })
 
   // Initialize predictions with 'draw' for all matches when schedule loads
   // If user has existing bet, merge with defaults to ensure all matches have predictions
@@ -52,36 +89,6 @@ export default function PlaceBet() {
       })
     }
   }, [schedule, existingBet])
-
-  const fetchData = async () => {
-    try {
-      const [scheduleRes, myBetRes] = await Promise.all([
-        api.get('/schedule/current'),
-        api.get('/bets/my/current')
-      ])
-
-      setSchedule(scheduleRes.data.schedule)
-      setLockStatus({
-        isBettingLocked: scheduleRes.data.isBettingLocked,
-        lockoutTime: scheduleRes.data.lockoutTime
-      })
-
-      if (myBetRes.data.bet) {
-        setExistingBet(myBetRes.data.bet)
-        setTotalGoals(myBetRes.data.bet.totalGoals.toString())
-        setPaymentStatus(myBetRes.data.bet.paid ? 'paid' : 'pending')
-        // Predictions will be initialized by useEffect based on existingBet
-      }
-    } catch (error) {
-      if (error.response?.status === 404) {
-        toast.error(t('errors.noSchedule'))
-      } else {
-        toast.error(t('errors.loadFailed'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handlePredictionChange = (matchId, prediction) => {
     setPredictions(prev => ({

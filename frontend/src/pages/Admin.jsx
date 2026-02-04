@@ -195,6 +195,7 @@ export default function Admin() {
     onScheduleUpdate: handleRealTimeUpdate,
     onResultsUpdate: handleRealTimeUpdate,
     onAnnouncementUpdate: handleRealTimeUpdate,
+    onAdminUpdate: handleRealTimeUpdate,
     onSettled: handleRealTimeUpdate
   })
 

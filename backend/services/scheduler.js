@@ -327,10 +327,10 @@ const cleanupOldData = async () => {
   }
 };
 
-// Main scheduled task - runs every Sunday at midnight
+// Main scheduled task - runs every Monday night
 const scheduleWeeklyTask = () => {
-  // Run every Sunday at 00:00 (midnight)
-  cron.schedule('0 0 * * 0', async () => {
+  // Run every Monday at 23:00 (11 PM)
+  cron.schedule('0 23 * * 1', async () => {
     console.log('[Scheduler] Running weekly schedule creation...');
     
     try {
@@ -353,7 +353,7 @@ const scheduleWeeklyTask = () => {
     timezone: 'America/Los_Angeles' // Pacific Time
   });
 
-  console.log('[Scheduler] ⏰ Weekly schedule task initialized (runs every Sunday at midnight PT)');
+  console.log('[Scheduler] ⏰ Weekly schedule task initialized (runs every Monday at 11 PM PT)');
 };
 
 // Manual trigger for creating next week's schedule

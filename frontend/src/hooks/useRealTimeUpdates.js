@@ -5,6 +5,8 @@ import socket, { connectSocket, disconnectSocket } from '../services/socket'
  * Hook to subscribe to real-time updates
  * @param {Object} handlers - Object with event handlers
  * @param {Function} handlers.onScheduleUpdate - Called when schedule is updated
+ * @param {Function} handlers.onScheduleCreated - Called when a new schedule is created
+ * @param {Function} handlers.onScheduleUpdated - Called when schedule details are updated
  * @param {Function} handlers.onBetsUpdate - Called when bets are updated
  * @param {Function} handlers.onResultsUpdate - Called when match results are updated
  * @param {Function} handlers.onAnnouncementUpdate - Called when announcements change
@@ -24,6 +26,18 @@ export function useRealTimeUpdates(handlers = {}) {
     // Create stable handler wrappers
     const scheduleHandler = (data) => {
       console.log('🔌 Received schedule:update', data)
+      handlersRef.current.onScheduleUpdate?.(data)
+    }
+    const scheduleCreatedHandler = (data) => {
+      console.log('🔌 Received schedule:created', data)
+      handlersRef.current.onScheduleCreated?.(data)
+      // Also call general schedule update handler as fallback
+      handlersRef.current.onScheduleUpdate?.(data)
+    }
+    const scheduleUpdatedHandler = (data) => {
+      console.log('🔌 Received schedule:updated', data)
+      handlersRef.current.onScheduleUpdated?.(data)
+      // Also call general schedule update handler as fallback
       handlersRef.current.onScheduleUpdate?.(data)
     }
     const betsHandler = (data) => {
@@ -53,6 +67,8 @@ export function useRealTimeUpdates(handlers = {}) {
 
     // Set up event listeners
     socket.on('schedule:update', scheduleHandler)
+    socket.on('schedule:created', scheduleCreatedHandler)
+    socket.on('schedule:updated', scheduleUpdatedHandler)
     socket.on('bets:update', betsHandler)
     socket.on('results:update', resultsHandler)
     socket.on('announcement:update', announcementHandler)
@@ -63,6 +79,8 @@ export function useRealTimeUpdates(handlers = {}) {
     // Cleanup on unmount
     return () => {
       socket.off('schedule:update', scheduleHandler)
+      socket.off('schedule:created', scheduleCreatedHandler)
+      socket.off('schedule:updated', scheduleUpdatedHandler)
       socket.off('bets:update', betsHandler)
       socket.off('results:update', resultsHandler)
       socket.off('announcement:update', announcementHandler)

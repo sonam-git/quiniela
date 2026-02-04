@@ -893,6 +893,200 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
   }
 });
 
+// ==================== SCHEDULE MANAGEMENT ====================
+
+// @route   GET /api/admin/schedules
+// @desc    Get all schedules
+// @access  Admin
+router.get('/schedules', auth, adminAuth, async (req, res) => {
+  try {
+    const schedules = await Schedule.find()
+      .sort({ year: -1, weekNumber: -1 });
+    res.json({ schedules });
+  } catch (error) {
+    console.error('Get schedules error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/schedules/:scheduleId
+// @desc    Get a specific schedule
+// @access  Admin
+router.get('/schedules/:scheduleId', auth, adminAuth, async (req, res) => {
+  try {
+    const schedule = await Schedule.findById(req.params.scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+    res.json({ schedule });
+  } catch (error) {
+    console.error('Get schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/schedules/:scheduleId/match/:matchId
+// @desc    Update a specific match in a schedule (admin override)
+// @access  Admin
+router.put('/schedules/:scheduleId/match/:matchId', auth, adminAuth, async (req, res) => {
+  try {
+    const { scheduleId, matchId } = req.params;
+    const { teamA, teamB, startTime } = req.body;
+
+    const schedule = await Schedule.findById(scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    // Find the match
+    const match = schedule.matches.id(matchId);
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+
+    // Check if any match has started (prevent editing after jornada starts)
+    const now = new Date();
+    const firstMatchTime = schedule.matches.reduce((earliest, m) => {
+      return m.startTime < earliest ? m.startTime : earliest;
+    }, schedule.matches[0].startTime);
+
+    if (now >= firstMatchTime) {
+      return res.status(400).json({ message: 'Cannot edit matches after the jornada has started' });
+    }
+
+    // Update match fields
+    if (teamA) match.teamA = teamA;
+    if (teamB) match.teamB = teamB;
+    if (startTime) match.startTime = new Date(startTime);
+
+    // Mark as admin-modified
+    schedule.dataSource = 'admin';
+    await schedule.save();
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('schedule:updated', { schedule });
+    }
+
+    res.json({ message: 'Match updated successfully', schedule });
+  } catch (error) {
+    console.error('Update match error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/schedules/create
+// @desc    Manually create a new schedule (admin override)
+// @access  Admin
+router.post('/schedules/create', auth, adminAuth, async (req, res) => {
+  try {
+    const { weekNumber, year, jornada, matches } = req.body;
+
+    // Validate
+    if (!weekNumber || !year || !matches || matches.length !== 9) {
+      return res.status(400).json({ message: 'Invalid schedule data. Must have weekNumber, year, and exactly 9 matches.' });
+    }
+
+    // Check if schedule already exists
+    const existing = await Schedule.findOne({ weekNumber, year });
+    if (existing) {
+      return res.status(400).json({ message: `Schedule already exists for Week ${weekNumber}/${year}` });
+    }
+
+    // Format matches
+    const formattedMatches = matches.map(m => ({
+      teamA: m.teamA || m.home,
+      teamB: m.teamB || m.away,
+      teamAIsHome: true,
+      startTime: new Date(m.startTime || `${m.date}T${m.time}`),
+      isCompleted: false,
+      scoreTeamA: null,
+      scoreTeamB: null,
+      result: null,
+      apiFixtureId: m.apiFixtureId || null
+    }));
+
+    const schedule = await Schedule.create({
+      weekNumber,
+      year,
+      jornada: jornada || null,
+      matches: formattedMatches,
+      dataSource: 'admin',
+      isSettled: false,
+      actualTotalGoals: null
+    });
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('schedule:created', { schedule });
+    }
+
+    res.status(201).json({ message: 'Schedule created successfully', schedule });
+  } catch (error) {
+    console.error('Create schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/schedules/:scheduleId
+// @desc    Delete a schedule
+// @access  Admin
+router.delete('/schedules/:scheduleId', auth, adminAuth, async (req, res) => {
+  try {
+    const schedule = await Schedule.findById(req.params.scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    // Don't allow deleting if matches have started
+    const now = new Date();
+    const firstMatchTime = schedule.matches.reduce((earliest, m) => {
+      return m.startTime < earliest ? m.startTime : earliest;
+    }, schedule.matches[0].startTime);
+
+    if (now >= firstMatchTime) {
+      return res.status(400).json({ message: 'Cannot delete schedule after matches have started' });
+    }
+
+    // Delete associated bets
+    await Bet.deleteMany({ scheduleId: schedule._id });
+
+    // Delete schedule
+    await Schedule.findByIdAndDelete(schedule._id);
+
+    res.json({ message: 'Schedule deleted successfully' });
+  } catch (error) {
+    console.error('Delete schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/schedules/refresh
+// @desc    Refresh schedule from API-Football
+// @access  Admin
+router.post('/schedules/refresh', auth, adminAuth, async (req, res) => {
+  try {
+    const { createNextWeekSchedule } = require('../services/scheduler');
+    const result = await createNextWeekSchedule();
+    
+    if (result.success) {
+      // Emit real-time update
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('schedule:created', { schedule: result.schedule });
+      }
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Refresh schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
 module.exports.getCodes = getCodes;
 module.exports.setCodes = setCodes;

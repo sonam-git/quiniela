@@ -89,6 +89,28 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
   )
 }
 
+// Liga MX Teams (18 teams in Liga MX Clausura 2026)
+const LIGA_MX_TEAMS = [
+  'Club América',
+  'Atlas',
+  'Atl. San Luis',
+  'Club León',
+  'Club Tijuana',
+  'Cruz Azul',
+  'FC Juárez',
+  'Guadalajara Chivas',
+  'Mazatlán FC',
+  'Monterrey',
+  'Necaxa',
+  'Pachuca',
+  'Puebla',
+  'Querétaro',
+  'Santos Laguna',
+  'Tigres UANL',
+  'Toluca',
+  'UNAM Pumas'
+]
+
 export default function Admin() {
   const [users, setUsers] = useState([])
   const [bets, setBets] = useState([])
@@ -103,9 +125,24 @@ export default function Admin() {
   
   // Schedule/Matches state
   const [schedule, setSchedule] = useState(null)
+  const [matchesSubTab, setMatchesSubTab] = useState('schedule') // 'schedule', 'update', 'settle'
   const [editingMatch, setEditingMatch] = useState(null)
   const [matchScores, setMatchScores] = useState({ scoreTeamA: '', scoreTeamB: '' })
   const [matchLoading, setMatchLoading] = useState(false)
+  
+  // Schedule Management state
+  const [allSchedules, setAllSchedules] = useState([])
+  const [selectedSchedule, setSelectedSchedule] = useState(null)
+  const [editingScheduleMatch, setEditingScheduleMatch] = useState(null)
+  const [scheduleMatchForm, setScheduleMatchForm] = useState({ teamA: '', teamB: '', startTime: '' })
+  const [scheduleLoading, setScheduleLoading] = useState(false)
+  const [showCreateSchedule, setShowCreateSchedule] = useState(false)
+  const [newScheduleForm, setNewScheduleForm] = useState({
+    weekNumber: '',
+    year: new Date().getFullYear(),
+    jornada: '',
+    matches: Array(9).fill({ teamA: '', teamB: '', date: '', time: '' })
+  })
   
   // Announcement state
   const [announcements, setAnnouncements] = useState([])
@@ -151,10 +188,11 @@ export default function Admin() {
         api.get('/admin/bets'),
         api.get('/admin/payments'),
         api.get('/admin/announcements'),
-        api.get('/admin/schedule').catch(() => ({ data: { schedule: null } }))
+        api.get('/admin/schedule').catch(() => ({ data: { schedule: null } })),
+        api.get('/admin/schedules').catch(() => ({ data: { schedules: [] } }))
       ]
       
-      const [usersRes, betsRes, paymentsRes, announcementsRes, scheduleRes] = await Promise.all(baseRequests)
+      const [usersRes, betsRes, paymentsRes, announcementsRes, scheduleRes, schedulesRes] = await Promise.all(baseRequests)
       
       setUsers(usersRes.data.users)
       setBets(betsRes.data.bets)
@@ -162,6 +200,7 @@ export default function Admin() {
       setWeekInfo(paymentsRes.data.weekInfo || betsRes.data.weekInfo || { weekNumber: 0, year: 0 })
       setAnnouncements(announcementsRes.data.announcements || [])
       setSchedule(scheduleRes.data.schedule)
+      setAllSchedules(schedulesRes.data.schedules || [])
       
       // Only fetch codes if user is a developer
       if (isDeveloper) {
@@ -224,14 +263,78 @@ export default function Admin() {
     }
   }, [isAdmin, fetchData])
 
+  // Handle schedule created event
+  const handleScheduleCreated = useCallback((data) => {
+    if (isAdmin && data?.schedule) {
+      toast.success(`📅 New schedule created for Week ${data.schedule.weekNumber}`)
+      // Update allSchedules state
+      setAllSchedules(prev => {
+        const exists = prev.some(s => s._id === data.schedule._id)
+        if (exists) {
+          return prev.map(s => s._id === data.schedule._id ? data.schedule : s)
+        }
+        return [data.schedule, ...prev].sort((a, b) => {
+          if (b.year !== a.year) return b.year - a.year
+          return b.weekNumber - a.weekNumber
+        })
+      })
+      // Update current schedule if it matches
+      if (data.schedule.weekNumber === weekInfo.weekNumber && data.schedule.year === weekInfo.year) {
+        setSchedule(data.schedule)
+      }
+    }
+  }, [isAdmin, weekInfo])
+
+  // Handle schedule updated event
+  const handleScheduleUpdated = useCallback((data) => {
+    if (isAdmin && data?.schedule) {
+      toast.success(`📅 Schedule updated for Week ${data.schedule.weekNumber}`)
+      // Update allSchedules state
+      setAllSchedules(prev => prev.map(s => 
+        s._id === data.schedule._id ? data.schedule : s
+      ))
+      // Update current schedule if it matches
+      if (data.schedule.weekNumber === weekInfo.weekNumber && data.schedule.year === weekInfo.year) {
+        setSchedule(data.schedule)
+      }
+    }
+  }, [isAdmin, weekInfo])
+
+  // Handle week settled event
+  const handleWeekSettled = useCallback((data) => {
+    if (isAdmin && data) {
+      toast.success(
+        <div>
+          <p className="font-semibold">🏆 Week {data.weekNumber} Settled!</p>
+          <p className="text-sm">Total Goals: {data.actualTotalGoals} • Winners: {data.winnersCount}</p>
+        </div>,
+        { duration: 5000 }
+      )
+      // Update schedule state
+      setSchedule(prev => prev ? { ...prev, isSettled: true, actualTotalGoals: data.actualTotalGoals } : prev)
+      // Update allSchedules state
+      setAllSchedules(prev => prev.map(s => 
+        s.weekNumber === data.weekNumber && s.year === data.year
+          ? { ...s, isSettled: true, actualTotalGoals: data.actualTotalGoals }
+          : s
+      ))
+      // Switch to schedule sub-tab to show results
+      setMatchesSubTab('schedule')
+      // Refetch to get updated bets with winner info
+      fetchData()
+    }
+  }, [isAdmin, fetchData])
+
   useRealTimeUpdates({
     onPaymentsUpdate: handleRealTimeUpdate,
     onBetsUpdate: handleRealTimeUpdate,
     onScheduleUpdate: handleRealTimeUpdate,
+    onScheduleCreated: handleScheduleCreated,
+    onScheduleUpdated: handleScheduleUpdated,
     onResultsUpdate: handleRealTimeUpdate,
     onAnnouncementUpdate: handleRealTimeUpdate,
     onAdminUpdate: handleRealTimeUpdate,
-    onSettled: handleRealTimeUpdate
+    onSettled: handleWeekSettled
   })
 
   const handleTogglePayment = async (betId, currentStatus) => {
@@ -531,6 +634,138 @@ export default function Admin() {
         }
       }
     })
+  }
+
+  // Schedule Management Handlers
+  const handleEditScheduleMatch = (scheduleId, match) => {
+    setSelectedSchedule(scheduleId)
+    setEditingScheduleMatch(match._id)
+    setScheduleMatchForm({
+      teamA: match.teamA,
+      teamB: match.teamB,
+      startTime: new Date(match.startTime).toISOString().slice(0, 16) // Format for datetime-local input
+    })
+  }
+
+  const handleCancelScheduleEdit = () => {
+    setEditingScheduleMatch(null)
+    setSelectedSchedule(null)
+    setScheduleMatchForm({ teamA: '', teamB: '', startTime: '' })
+  }
+
+  const handleSaveScheduleMatch = async () => {
+    if (!scheduleMatchForm.teamA || !scheduleMatchForm.teamB || !scheduleMatchForm.startTime) {
+      toast.error('All fields are required')
+      return
+    }
+
+    try {
+      setScheduleLoading(true)
+      await api.put(`/admin/schedules/${selectedSchedule}/match/${editingScheduleMatch}`, {
+        teamA: scheduleMatchForm.teamA,
+        teamB: scheduleMatchForm.teamB,
+        startTime: scheduleMatchForm.startTime
+      })
+      toast.success('Match updated successfully')
+      handleCancelScheduleEdit()
+      fetchData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update match')
+    } finally {
+      setScheduleLoading(false)
+    }
+  }
+
+  const handleRefreshSchedule = async () => {
+    try {
+      setScheduleLoading(true)
+      const response = await api.post('/admin/schedules/refresh')
+      if (response.data.success) {
+        toast.success(response.data.message)
+        fetchData()
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to refresh schedule')
+    } finally {
+      setScheduleLoading(false)
+    }
+  }
+
+  const handleDeleteSchedule = async (scheduleId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Schedule',
+      message: 'Are you sure you want to delete this schedule? All associated bets will also be deleted. This action cannot be undone.',
+      confirmText: 'Delete Schedule',
+      confirmStyle: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isLoading: true }))
+        try {
+          await api.delete(`/admin/schedules/${scheduleId}`)
+          toast.success('Schedule deleted successfully')
+          fetchData()
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Failed to delete schedule')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
+        }
+      }
+    })
+  }
+
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault()
+    
+    // Validate
+    if (!newScheduleForm.weekNumber || !newScheduleForm.year) {
+      toast.error('Week number and year are required')
+      return
+    }
+
+    const validMatches = newScheduleForm.matches.filter(m => m.teamA && m.teamB && m.date && m.time)
+    if (validMatches.length !== 9) {
+      toast.error('All 9 matches must be filled in')
+      return
+    }
+
+    try {
+      setScheduleLoading(true)
+      await api.post('/admin/schedules/create', {
+        weekNumber: parseInt(newScheduleForm.weekNumber),
+        year: parseInt(newScheduleForm.year),
+        jornada: newScheduleForm.jornada ? parseInt(newScheduleForm.jornada) : null,
+        matches: newScheduleForm.matches.map(m => ({
+          teamA: m.teamA,
+          teamB: m.teamB,
+          date: m.date,
+          time: m.time
+        }))
+      })
+      toast.success('Schedule created successfully')
+      setShowCreateSchedule(false)
+      setNewScheduleForm({
+        weekNumber: '',
+        year: new Date().getFullYear(),
+        jornada: '',
+        matches: Array(9).fill({ teamA: '', teamB: '', date: '', time: '' })
+      })
+      fetchData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create schedule')
+    } finally {
+      setScheduleLoading(false)
+    }
+  }
+
+  const updateNewScheduleMatch = (index, field, value) => {
+    setNewScheduleForm(prev => ({
+      ...prev,
+      matches: prev.matches.map((m, i) => 
+        i === index ? { ...m, [field]: value } : m
+      )
+    }))
   }
 
   if (!isAdmin) {
@@ -1033,56 +1268,119 @@ export default function Admin() {
           <div className={`rounded-2xl border shadow-lg overflow-hidden ${
             isDark ? 'bg-gradient-to-br from-dark-800 to-dark-900 border-dark-700' : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
           }`}>
-            {/* Header */}
-            <div className={`px-6 py-5 border-b ${
+            {/* Sub-tabs Header - Scrollable on mobile */}
+            <div className={`px-4 sm:px-6 py-4 border-b ${
               isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-100 bg-white/80'
             }`}>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl ${
-                    isDark ? 'bg-gradient-to-br from-emerald-600 to-teal-700' : 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                  } shadow-lg`}>
-                    <span className="text-xl">⚽</span>
-                  </div>
-                  <div>
-                    <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      Match Scores
-                    </h2>
-                    <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      Week {weekInfo.weekNumber} • {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9} completed
-                    </p>
-                  </div>
-                </div>
-                
-                {schedule && !schedule.isSettled && schedule.matches?.every(m => m.isCompleted) && (
-                  <button
-                    onClick={handleSettleWeek}
-                    className="px-4 py-2 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors flex items-center gap-2"
-                  >
-                    <span>🏆</span>
-                    <span>Settle Week</span>
-                  </button>
-                )}
-                
-                {schedule?.isSettled && (
-                  <div className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                    isDark ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-green-100 text-green-700 border border-green-200'
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
+                {/* Schedule Sub-tab */}
+                <button
+                  onClick={() => setMatchesSubTab('schedule')}
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
+                    matchesSubTab === 'schedule'
+                      ? isDark
+                        ? 'bg-emerald-600 text-white shadow-lg'
+                        : 'bg-emerald-500 text-white shadow-lg'
+                      : isDark
+                        ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>⚽</span>
+                  <span>Schedule</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    matchesSubTab === 'schedule'
+                      ? 'bg-white/20'
+                      : isDark ? 'bg-dark-600' : 'bg-gray-200'
                   }`}>
-                    ✅ Week Settled • Total Goals: {schedule.actualTotalGoals}
-                  </div>
-                )}
+                    {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
+                  </span>
+                </button>
+                
+                {/* Update Sub-tab */}
+                <button
+                  onClick={() => setMatchesSubTab('update')}
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
+                    matchesSubTab === 'update'
+                      ? isDark
+                        ? 'bg-purple-600 text-white shadow-lg'
+                        : 'bg-purple-500 text-white shadow-lg'
+                      : isDark
+                        ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>📅</span>
+                  <span>Update</span>
+                </button>
+                
+                {/* Settle Week Sub-tab */}
+                <button
+                  onClick={() => {
+                    if (schedule?.matches?.every(m => m.isCompleted) && !schedule?.isSettled) {
+                      setMatchesSubTab('settle')
+                    }
+                  }}
+                  disabled={!schedule?.matches?.every(m => m.isCompleted) || schedule?.isSettled}
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 whitespace-nowrap ${
+                    matchesSubTab === 'settle'
+                      ? isDark
+                        ? 'bg-amber-600 text-white shadow-lg'
+                        : 'bg-amber-500 text-white shadow-lg'
+                      : schedule?.matches?.every(m => m.isCompleted) && !schedule?.isSettled
+                        ? isDark
+                          ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : isDark
+                          ? 'bg-dark-800 text-dark-500 cursor-not-allowed'
+                          : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span>🏆</span>
+                  <span className="hidden xs:inline">Settle Week</span>
+                  <span className="xs:hidden">Settle</span>
+                  {schedule?.isSettled && (
+                    <span className="text-xs">✅</span>
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Matches List */}
-            <div className="p-4 sm:p-6">
-              {!schedule ? (
-                <div className={`text-center py-8 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  <span className="text-4xl mb-3 block">📅</span>
-                  <p>No schedule found for this week</p>
+            {/* Schedule Sub-tab Content */}
+            {matchesSubTab === 'schedule' && (
+              <>
+                {/* Header */}
+                <div className={`px-6 py-4 border-b ${
+                  isDark ? 'border-dark-700' : 'border-gray-100'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Match Scores
+                      </h2>
+                      <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        Week {weekInfo.weekNumber} • Enter scores for each match
+                      </p>
+                    </div>
+                    {schedule?.isSettled && (
+                      <div className={`px-4 py-2 rounded-xl text-sm font-medium ${
+                        isDark ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-green-100 text-green-700 border border-green-200'
+                      }`}>
+                        ✅ Settled • Total: {schedule.actualTotalGoals} goals
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
+
+                {/* Matches List */}
+                <div className="p-4 sm:p-6">
+                  {!schedule ? (
+                    <div className={`text-center py-8 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      <span className="text-4xl mb-3 block">📅</span>
+                      <p>No schedule found for this week</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
                   {schedule.matches?.map((match, index) => (
                     <div
                       key={match._id}
@@ -1244,6 +1542,482 @@ export default function Admin() {
                 </div>
               )}
             </div>
+              </>
+            )}
+
+            {/* Update Sub-tab Content */}
+            {matchesSubTab === 'update' && (
+              <>
+                {/* Header */}
+                <div className={`px-4 sm:px-6 py-4 border-b ${
+                  isDark ? 'border-dark-700' : 'border-gray-100'
+                }`}>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <h2 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Schedule Management
+                      </h2>
+                      <p className={`text-xs sm:text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        {allSchedules.length} schedule{allSchedules.length !== 1 ? 's' : ''} • Edit match times
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={handleRefreshSchedule}
+                        disabled={scheduleLoading}
+                        className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                          isDark
+                            ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
+                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        } disabled:opacity-50`}
+                      >
+                        {scheduleLoading ? (
+                          <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                        ) : (
+                          <span>🔄</span>
+                        )}
+                        <span className="hidden sm:inline">Refresh from API</span>
+                        <span className="sm:hidden">Refresh</span>
+                      </button>
+                      <button
+                        onClick={() => setShowCreateSchedule(!showCreateSchedule)}
+                        className="px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors flex items-center gap-1.5"
+                      >
+                        <span>{showCreateSchedule ? '✕' : '➕'}</span>
+                        <span className="hidden sm:inline">{showCreateSchedule ? 'Cancel' : 'New Schedule'}</span>
+                        <span className="sm:hidden">{showCreateSchedule ? 'Cancel' : 'New'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-6">
+              {/* Create Schedule Form */}
+              {showCreateSchedule && (
+                <form onSubmit={handleCreateSchedule} className={`mb-6 p-4 rounded-xl border ${
+                  isDark ? 'bg-dark-700/50 border-dark-600' : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Create New Schedule
+                  </h3>
+                  
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                        Week Number *
+                      </label>
+                      <input
+                        type="number"
+                        value={newScheduleForm.weekNumber}
+                        onChange={(e) => setNewScheduleForm(prev => ({ ...prev, weekNumber: e.target.value }))}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                          isDark
+                            ? 'bg-dark-800 border-dark-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        placeholder="e.g., 6"
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                        Year *
+                      </label>
+                      <input
+                        type="number"
+                        value={newScheduleForm.year}
+                        onChange={(e) => setNewScheduleForm(prev => ({ ...prev, year: e.target.value }))}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                          isDark
+                            ? 'bg-dark-800 border-dark-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                        Jornada (Optional)
+                      </label>
+                      <input
+                        type="number"
+                        value={newScheduleForm.jornada}
+                        onChange={(e) => setNewScheduleForm(prev => ({ ...prev, jornada: e.target.value }))}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                          isDark
+                            ? 'bg-dark-800 border-dark-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        placeholder="e.g., 5"
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`mb-4 p-3 rounded-lg ${isDark ? 'bg-dark-800' : 'bg-gray-100'}`}>
+                    <p className={`text-xs font-medium mb-2 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                      Matches (9 required)
+                    </p>
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {newScheduleForm.matches.map((match, index) => (
+                        <div key={index} className={`p-2 rounded-lg ${isDark ? 'bg-dark-700/50' : 'bg-white'}`}>
+                          {/* Match Number */}
+                          <div className={`text-xs font-medium mb-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            Match {index + 1}
+                          </div>
+                          {/* Teams Row */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <select
+                              value={match.teamA}
+                              onChange={(e) => updateNewScheduleMatch(index, 'teamA', e.target.value)}
+                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
+                                isDark
+                                  ? 'bg-dark-700 border-dark-600 text-white'
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            >
+                              <option value="">Home Team</option>
+                              {LIGA_MX_TEAMS.map(team => (
+                                <option key={team} value={team}>{team}</option>
+                              ))}
+                            </select>
+                            <span className={`flex-shrink-0 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</span>
+                            <select
+                              value={match.teamB}
+                              onChange={(e) => updateNewScheduleMatch(index, 'teamB', e.target.value)}
+                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
+                                isDark
+                                  ? 'bg-dark-700 border-dark-600 text-white'
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            >
+                              <option value="">Away Team</option>
+                              {LIGA_MX_TEAMS.map(team => (
+                                <option key={team} value={team}>{team}</option>
+                              ))}
+                            </select>
+                          </div>
+                          {/* Date & Time Row */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="date"
+                              value={match.date}
+                              onChange={(e) => updateNewScheduleMatch(index, 'date', e.target.value)}
+                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
+                                isDark
+                                  ? 'bg-dark-700 border-dark-600 text-white'
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                            <input
+                              type="time"
+                              value={match.time}
+                              onChange={(e) => updateNewScheduleMatch(index, 'time', e.target.value)}
+                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
+                                isDark
+                                  ? 'bg-dark-700 border-dark-600 text-white'
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={scheduleLoading}
+                      className="px-4 py-2 rounded-xl text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {scheduleLoading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <span>💾</span>
+                      )}
+                      <span>Create Schedule</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Existing Schedules List */}
+              {allSchedules.length === 0 ? (
+                <div className={`text-center py-8 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                  <span className="text-4xl mb-3 block">📅</span>
+                  <p>No schedules found</p>
+                  <p className="text-sm mt-1">Click "Refresh from API" or "New Schedule" to create one</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {allSchedules.map((sched) => {
+                    const isCurrentWeek = sched.weekNumber === weekInfo.weekNumber && sched.year === weekInfo.year
+                    const firstMatchTime = sched.matches?.reduce((earliest, m) => 
+                      new Date(m.startTime) < new Date(earliest) ? m.startTime : earliest
+                    , sched.matches?.[0]?.startTime)
+                    const hasStarted = new Date() >= new Date(firstMatchTime)
+                    
+                    return (
+                      <div
+                        key={sched._id}
+                        className={`rounded-xl border overflow-hidden ${
+                          isCurrentWeek
+                            ? isDark
+                              ? 'border-purple-500/50 bg-purple-900/10'
+                              : 'border-purple-300 bg-purple-50/50'
+                            : isDark
+                              ? 'border-dark-600 bg-dark-700/30'
+                              : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        {/* Schedule Header */}
+                        <div className={`px-4 py-3 flex items-center justify-between ${
+                          isDark ? 'bg-dark-700/50' : 'bg-gray-50'
+                        }`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                              isCurrentWeek
+                                ? isDark ? 'bg-purple-900/50 text-purple-300' : 'bg-purple-100 text-purple-700'
+                                : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              Week {sched.weekNumber}
+                            </div>
+                            <span className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                              {sched.year} {sched.jornada ? `• Jornada ${sched.jornada}` : ''}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              sched.dataSource === 'api'
+                                ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                                : sched.dataSource === 'admin'
+                                  ? isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-600'
+                                  : isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'
+                            }`}>
+                              {sched.dataSource || 'hardcoded'}
+                            </span>
+                            {sched.isSettled && (
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                              }`}>
+                                ✅ Settled
+                              </span>
+                            )}
+                          </div>
+                          
+                          {!hasStarted && !sched.isSettled && (
+                            <button
+                              onClick={() => handleDeleteSchedule(sched._id)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                isDark
+                                  ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
+                                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+                              }`}
+                            >
+                              🗑️ Delete
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Matches */}
+                        <div className="p-3">
+                          <div className="grid gap-2">
+                            {sched.matches?.map((match, idx) => (
+                              <div
+                                key={match._id}
+                                className={`p-2 rounded-lg text-xs ${
+                                  isDark ? 'bg-dark-800/50' : 'bg-gray-50'
+                                } ${editingScheduleMatch === match._id && selectedSchedule === sched._id ? '' : 'flex items-center gap-2'}`}
+                              >
+                                {editingScheduleMatch === match._id && selectedSchedule === sched._id ? (
+                                  // Edit Mode - Full Width Stacked Layout
+                                  <div className="space-y-3">
+                                    {/* Match Number Badge */}
+                                    <div className="flex items-center gap-2">
+                                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                                        isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-200 text-gray-500'
+                                      }`}>
+                                        {idx + 1}
+                                      </span>
+                                      <span className={`text-xs font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                                        Editing Match
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Home Team */}
+                                    <div>
+                                      <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                        🏠 Home Team
+                                      </label>
+                                      <select
+                                        value={scheduleMatchForm.teamA}
+                                        onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, teamA: e.target.value }))}
+                                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                                          isDark
+                                            ? 'bg-dark-700 border-dark-600 text-white'
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                      >
+                                        <option value="">Select Home Team</option>
+                                        {LIGA_MX_TEAMS.map(team => (
+                                          <option key={team} value={team}>{team}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    
+                                    {/* Away Team */}
+                                    <div>
+                                      <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                        ✈️ Away Team
+                                      </label>
+                                      <select
+                                        value={scheduleMatchForm.teamB}
+                                        onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, teamB: e.target.value }))}
+                                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                                          isDark
+                                            ? 'bg-dark-700 border-dark-600 text-white'
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                      >
+                                        <option value="">Select Away Team</option>
+                                        {LIGA_MX_TEAMS.map(team => (
+                                          <option key={team} value={team}>{team}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    
+                                    {/* Date & Time */}
+                                    <div>
+                                      <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                        📅 Date & Time
+                                      </label>
+                                      <input
+                                        type="datetime-local"
+                                        value={scheduleMatchForm.startTime}
+                                        onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, startTime: e.target.value }))}
+                                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                                          isDark
+                                            ? 'bg-dark-700 border-dark-600 text-white'
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                      />
+                                    </div>
+                                    
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2 pt-1">
+                                      <button
+                                        onClick={handleCancelScheduleEdit}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                          isDark ? 'bg-dark-600 text-dark-300 hover:bg-dark-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                        }`}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={handleSaveScheduleMatch}
+                                        disabled={scheduleLoading}
+                                        className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 transition-colors"
+                                      >
+                                        {scheduleLoading ? 'Saving...' : '✓ Save'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // View Mode - Responsive
+                                  <>
+                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                      isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-200 text-gray-500'
+                                    }`}>
+                                      {idx + 1}
+                                    </span>
+                                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                      <div className="flex-1 flex items-center gap-1 sm:gap-2 min-w-0">
+                                        <span className={`text-xs sm:text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                          {match.teamA}
+                                        </span>
+                                        <span className={`flex-shrink-0 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</span>
+                                        <span className={`text-xs sm:text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                          {match.teamB}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                          {new Date(match.startTime).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                        {!hasStarted && !sched.isSettled && (
+                                          <button
+                                            onClick={() => handleEditScheduleMatch(sched._id, match)}
+                                            className={`px-2 py-1 rounded text-xs ${
+                                              isDark
+                                                ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
+                                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                            }`}
+                                          >
+                                            ✏️
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+              </>
+            )}
+
+            {/* Settle Week Sub-tab Content */}
+            {matchesSubTab === 'settle' && (
+              <div className="p-6">
+                <div className={`max-w-lg mx-auto text-center p-8 rounded-2xl ${
+                  isDark ? 'bg-dark-700/50' : 'bg-amber-50'
+                }`}>
+                  <div className="text-6xl mb-4">🏆</div>
+                  <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Settle Week {weekInfo.weekNumber}
+                  </h2>
+                  <p className={`text-sm mb-6 ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
+                    All {schedule?.matches?.length || 9} matches have been completed. 
+                    Calculate the total goals and determine the winners.
+                  </p>
+                  
+                  {/* Summary */}
+                  <div className={`mb-6 p-4 rounded-xl ${isDark ? 'bg-dark-800' : 'bg-white'}`}>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className={`${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Total Goals</p>
+                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {schedule?.matches?.reduce((sum, m) => sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0) || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Matches</p>
+                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleSettleWeek}
+                    className="w-full px-6 py-3 rounded-xl text-base font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>🏆</span>
+                    <span>Settle Week & Determine Winners</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

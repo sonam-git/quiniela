@@ -65,6 +65,15 @@ const scheduleSchema = new mongoose.Schema({
       message: 'A weekly schedule must have exactly 9 matches'
     }
   },
+  jornada: {
+    type: Number,
+    default: null
+  },
+  dataSource: {
+    type: String,
+    enum: ['api', 'hardcoded', 'admin'],
+    default: 'hardcoded'
+  },
   isSettled: {
     type: Boolean,
     default: false

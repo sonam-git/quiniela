@@ -1,14 +1,17 @@
 /**
- * AUTOMATIC WEEKLY SCHEDULE CREATOR
+ * AUTOMATIC WEEKLY SCHEDULE CREATOR (HYBRID APPROACH)
  * 
  * This service automatically:
- * 1. Creates next week's schedule every Sunday at midnight
- * 2. Cleans up old schedules (keeps current + last week only)
+ * 1. Creates next week's schedule every Monday night at 11 PM PT
+ * 2. Tries to fetch from API-Football first, falls back to hardcoded data
+ * 3. Cleans up old schedules (keeps current + last week only)
+ * 4. Allows admin overrides for match dates/times
  */
 
 const cron = require('node-cron');
 const Schedule = require('../models/Schedule');
 const Bet = require('../models/Bet');
+const { getFixturesByRound, getCurrentRound, LEAGUES } = require('./apiFootball');
 
 // Liga MX Clausura 2026 Complete Schedule (Jornadas 5-17)
 const LIGA_MX_CLAUSURA_2026 = {
@@ -255,11 +258,50 @@ const createMatchesFromJornada = (jornadaData) => {
   });
 };
 
-// Create schedule for a specific jornada
+// Convert API-Football fixtures to schedule matches
+const createMatchesFromApiFixtures = (fixtures) => {
+  return fixtures.map(fixture => ({
+    teamA: fixture.teams.home.name,
+    teamB: fixture.teams.away.name,
+    teamAIsHome: true,
+    startTime: new Date(fixture.fixture.date),
+    isCompleted: fixture.fixture.status.short === 'FT',
+    scoreTeamA: fixture.goals.home,
+    scoreTeamB: fixture.goals.away,
+    result: fixture.fixture.status.short === 'FT' 
+      ? (fixture.goals.home > fixture.goals.away ? 'A' : fixture.goals.home < fixture.goals.away ? 'B' : 'draw')
+      : null,
+    apiFixtureId: fixture.fixture.id
+  }));
+};
+
+// Fetch schedule from API-Football
+const fetchScheduleFromApi = async (jornada) => {
+  try {
+    const season = 2025; // Liga MX Clausura 2026 is season 2025
+    const round = `Clausura - ${jornada}`;
+    
+    console.log(`[Scheduler] Fetching Jornada ${jornada} from API-Football...`);
+    const fixtures = await getFixturesByRound(LEAGUES.LIGA_MX, season, round);
+    
+    if (fixtures && fixtures.length > 0) {
+      console.log(`[Scheduler] ✅ Got ${fixtures.length} matches from API-Football`);
+      return createMatchesFromApiFixtures(fixtures);
+    }
+    
+    console.log('[Scheduler] No fixtures returned from API');
+    return null;
+  } catch (error) {
+    console.log(`[Scheduler] API-Football error: ${error.message}`);
+    return null;
+  }
+};
+
+// Create schedule for a specific jornada (HYBRID: API first, then fallback)
 const createScheduleForJornada = async (jornada) => {
   const jornadaData = LIGA_MX_CLAUSURA_2026[jornada];
   if (!jornadaData) {
-    console.log(`[Scheduler] Jornada ${jornada} not found`);
+    console.log(`[Scheduler] Jornada ${jornada} not found in hardcoded data`);
     return null;
   }
 
@@ -274,20 +316,29 @@ const createScheduleForJornada = async (jornada) => {
     return existing;
   }
 
-  // Create new schedule
-  const matches = createMatchesFromJornada(jornadaData);
+  // HYBRID APPROACH: Try API-Football first, fallback to hardcoded data
+  let matches = await fetchScheduleFromApi(jornada);
+  let dataSource = 'api';
+  
+  if (!matches || matches.length === 0) {
+    console.log(`[Scheduler] Using hardcoded fallback for Jornada ${jornada}`);
+    matches = createMatchesFromJornada(jornadaData);
+    dataSource = 'hardcoded';
+  }
   
   const schedule = await Schedule.create({
     weekNumber,
     year,
+    jornada, // Store jornada number for reference
     matches,
+    dataSource, // Track where data came from
     isSettled: false,
     actualTotalGoals: null
   });
 
-  console.log(`[Scheduler] ✅ Created schedule for Jornada ${jornada} (Week ${weekNumber}/${year})`);
+  console.log(`[Scheduler] ✅ Created schedule for Jornada ${jornada} (Week ${weekNumber}/${year}) from ${dataSource}`);
   return schedule;
-};
+};;
 
 // Clean up old schedules and bets (keep only current and last week)
 const cleanupOldData = async () => {
@@ -403,7 +454,10 @@ const initScheduler = () => {
 module.exports = {
   initScheduler,
   createNextWeekSchedule,
+  createScheduleForJornada,
+  fetchScheduleFromApi,
   cleanupOldData,
   getWeekNumber,
+  getUpcomingJornada,
   LIGA_MX_CLAUSURA_2026
 };

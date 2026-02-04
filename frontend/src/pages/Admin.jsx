@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -180,6 +181,22 @@ export default function Admin() {
       fetchData()
     }
   }, [isAdmin, fetchData])
+
+  // Real-time updates for admin panel
+  const handleRealTimeUpdate = useCallback(() => {
+    if (isAdmin) {
+      fetchData()
+    }
+  }, [isAdmin, fetchData])
+
+  useRealTimeUpdates({
+    onPaymentsUpdate: handleRealTimeUpdate,
+    onBetsUpdate: handleRealTimeUpdate,
+    onScheduleUpdate: handleRealTimeUpdate,
+    onResultsUpdate: handleRealTimeUpdate,
+    onAnnouncementUpdate: handleRealTimeUpdate,
+    onSettled: handleRealTimeUpdate
+  })
 
   const handleTogglePayment = async (betId, currentStatus) => {
     try {

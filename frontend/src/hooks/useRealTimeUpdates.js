@@ -8,6 +8,7 @@ import socket, { connectSocket, disconnectSocket } from '../services/socket'
  * @param {Function} handlers.onBetsUpdate - Called when bets are updated
  * @param {Function} handlers.onResultsUpdate - Called when match results are updated
  * @param {Function} handlers.onAnnouncementUpdate - Called when announcements change
+ * @param {Function} handlers.onPaymentsUpdate - Called when payment status changes
  * @param {Function} handlers.onSettled - Called when week is settled
  */
 export function useRealTimeUpdates(handlers = {}) {
@@ -16,6 +17,7 @@ export function useRealTimeUpdates(handlers = {}) {
     onBetsUpdate,
     onResultsUpdate,
     onAnnouncementUpdate,
+    onPaymentsUpdate,
     onSettled
   } = handlers
 
@@ -36,6 +38,9 @@ export function useRealTimeUpdates(handlers = {}) {
     if (onAnnouncementUpdate) {
       socket.on('announcement:update', onAnnouncementUpdate)
     }
+    if (onPaymentsUpdate) {
+      socket.on('payments:update', onPaymentsUpdate)
+    }
     if (onSettled) {
       socket.on('week:settled', onSettled)
     }
@@ -54,11 +59,14 @@ export function useRealTimeUpdates(handlers = {}) {
       if (onAnnouncementUpdate) {
         socket.off('announcement:update', onAnnouncementUpdate)
       }
+      if (onPaymentsUpdate) {
+        socket.off('payments:update', onPaymentsUpdate)
+      }
       if (onSettled) {
         socket.off('week:settled', onSettled)
       }
     }
-  }, [onScheduleUpdate, onBetsUpdate, onResultsUpdate, onAnnouncementUpdate, onSettled])
+  }, [onScheduleUpdate, onBetsUpdate, onResultsUpdate, onAnnouncementUpdate, onPaymentsUpdate, onSettled])
 
   // Return socket status
   return {

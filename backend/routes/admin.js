@@ -205,6 +205,12 @@ router.patch('/bets/:betId/payment', auth, adminAuth, async (req, res) => {
     bet.paid = paid;
     await bet.save();
 
+    // Emit real-time update for payment status change
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payments:update', { action: 'update', betId: bet._id, paid });
+    }
+
     res.json({ 
       message: `Payment status updated to ${paid ? 'Paid' : 'Pending'}`,
       bet
@@ -260,6 +266,11 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
       // If setting to N/A and there's a placeholder bet (no predictions), delete it
       if (bet && bet.isPlaceholder) {
         await Bet.findByIdAndDelete(bet._id);
+        // Emit real-time update
+        const io = req.app.get('io');
+        if (io) {
+          io.emit('payments:update', { action: 'delete', userId, status: 'na' });
+        }
         return res.json({ 
           message: 'Payment status set to N/A',
           status: 'na'
@@ -268,6 +279,11 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
         // User has actual bet, just mark as unpaid
         bet.paid = false;
         await bet.save();
+        // Emit real-time update
+        const io = req.app.get('io');
+        if (io) {
+          io.emit('payments:update', { action: 'update', userId, status: 'pending' });
+        }
         return res.json({ 
           message: 'Payment status set to Pending (user has active bet)',
           status: 'pending',
@@ -303,6 +319,12 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
       
       bet = new Bet(betData);
       await bet.save();
+    }
+
+    // Emit real-time update for payment status change
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payments:update', { action: 'update', userId, status, betId: bet._id });
     }
 
     res.json({ 
@@ -674,6 +696,17 @@ router.patch('/schedule/match/:matchId', auth, adminAuth, async (req, res) => {
 
     await schedule.save();
 
+    // Emit real-time update for match score change
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('results:update', { 
+        action: 'score', 
+        matchId, 
+        weekNumber: schedule.weekNumber, 
+        year: schedule.year 
+      });
+    }
+
     res.json({ 
       message: 'Match score updated successfully',
       match,
@@ -709,6 +742,17 @@ router.patch('/schedule/match/:matchId/reset', auth, adminAuth, async (req, res)
     match.isCompleted = false;
 
     await schedule.save();
+
+    // Emit real-time update for match reset
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('results:update', { 
+        action: 'reset', 
+        matchId, 
+        weekNumber: schedule.weekNumber, 
+        year: schedule.year 
+      });
+    }
 
     res.json({ 
       message: 'Match score reset successfully',

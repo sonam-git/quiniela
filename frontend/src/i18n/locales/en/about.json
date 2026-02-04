@@ -9,8 +9,13 @@
   },
   "vision": {
     "title": "The Vision",
-    "p1": "We dreamed of a solution that preserved the soul of our weekly tradition while embracing modern convenience. Thus, Quiniela was born—a digital platform that automates the once manual process while keeping the friendly, community-driven spirit intact.",
-    "p2": "Quiniela was designed by quiniela enthusiasts, for quiniela enthusiasts. It's not just an app; it's a digital continuation of the camaraderie we share on the work floor."
+    "p1": ", a developer and a regular participant in these weekly prediction games, saw an opportunity to honor this tradition while removing the friction. Witnessing the effort his colleagues put into maintaining the game by hand, ",
+    "p2": "He decided to leverage his technical expertise to build a digital home for the group.",
+    "developerRole": "Developer & Creator"
+  },
+  "whatWeDo": {
+    "title": "What We Do",
+    "description": "Quiniela is a custom-built digital platform designed specifically for the workplace football community for entertainment purposes. It streamlines the entire experience:"
   },
   "features": {
     "title": "What Makes Us Different",
@@ -26,6 +31,11 @@
       "title": "Transparency",
       "description": "Real-time visibility into payment statuses and live standings."
     }
+  },
+  "closing": {
+    "text": "What started as a way to simplify a workplace hobby has evolved into a sleek, efficient application that keeps the",
+    "highlight": "spirit of the game alive",
+    "suffix": "—minus the paperwork."
   },
   "cta": {
     "ready": "Ready to join?",

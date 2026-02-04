@@ -1,9 +1,14 @@
 {
   "title": "Dashboard",
   "subtitle": "Liga MX · Week {{week}}, {{year}}",
+  "loading": "Loading...",
+  "tryAgain": "Try Again",
+  "howToPlay": "How to Play",
+  "statsTab": "Stats",
+  "weekStats": "Week {{week}} Statistics",
   "tabs": {
     "standings": "Standings",
-    "schedule": "Match Schedule"
+    "schedule": "Schedule"
   },
   "standings": {
     "title": "Leaderboard",
@@ -33,17 +38,23 @@
     "participants": "Participants",
     "matches": "Matches",
     "avgPoints": "Avg Points",
-    "topScore": "Top Score"
+    "topScore": "Top Score",
+    "totalMatches": "Total Matches",
+    "completed": "Completed",
+    "totalGoals": "Total Goals"
   },
   "status": {
     "bettingOpen": "Betting Open",
     "bettingClosed": "Betting Closed",
     "settled": "Settled",
-    "inProgress": "In Progress"
+    "inProgress": "In Progress",
+    "paid": "Paid",
+    "pending": "Pending",
+    "confirmed": "Confirmed"
   },
   "cta": {
-    "placeBet": "Place Prediction",
-    "updateBet": "Update Prediction",
+    "placeBet": "Predict Now",
+    "updateBet": "Update",
     "viewResults": "View Results"
   },
   "errors": {
@@ -56,6 +67,37 @@
   },
   "announcements": {
     "title": "Announcements",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "new": "New",
+    "posted": "Posted"
+  },
+  "table": {
+    "noPredictions": "No Predictions Yet",
+    "beFirst": "Be the first to place your prediction this week and compete for the prize!",
+    "leaderAfterFirst": "Leader appears after first match",
+    "points": "points",
+    "status": "Status",
+    "winner": "Winner",
+    "weekChampion": "🏆 WEEK CHAMPION 🏆",
+    "left": "left",
+    "yourBet": "(Your bet)",
+    "hidden": "Hidden",
+    "goals": "Goals",
+    "exact": "Exact",
+    "correct": "Correct",
+    "wrong": "Wrong",
+    "matchPredictions": "Match Predictions",
+    "predictionsHidden": "Predictions Hidden",
+    "predictionsHiddenDesc": "Other participants' predictions will be visible after the first match starts.",
+    "legend": "Legend",
+    "homeLocal": "Home (Local)",
+    "awayVisitante": "Away (Visitante)",
+    "drawEmpate": "Draw (Empate)",
+    "homeWins": "Home wins (L)",
+    "awayWins": "Away wins (V)",
+    "draw": "Draw (E)",
+    "noPrediction": "No prediction",
+    "predictionsHiddenUntilStart": "Predictions hidden until first match starts",
+    "pointsHiddenUntilStart": "Points hidden until first match starts"
   }
 }

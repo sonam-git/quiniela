@@ -22,10 +22,10 @@ export default function Login() {
     startTransition(async () => {
       try {
         await login(email, password, adminCode.trim() || null)
-        toast.success('Welcome back!')
+        toast.success(t('login.welcomeBack'))
         navigate('/')
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Login failed')
+        toast.error(error.response?.data?.message || t('errors.loginFailed'))
       }
     })
   }
@@ -50,10 +50,10 @@ export default function Login() {
           
           {/* Title */}
           <h1 className="font-brand text-5xl text-white mb-4">
-            Quiniela Liga MX
+            {t('branding.title')}
           </h1>
           <p className={`text-lg ${isDark ? 'text-dark-300' : 'text-emerald-100'}`}>
-            The ultimate digital platform for Liga MX quiniela enthusiasts
+            {t('branding.tagline')}
           </p>
           
           {/* Features */}
@@ -62,19 +62,19 @@ export default function Login() {
               isDark ? 'bg-dark-700/50' : 'bg-white/10'
             }`}>
               <span className="text-2xl">⚽</span>
-              <span className="text-white text-left text-sm">Make predictions for Liga MX matches</span>
+              <span className="text-white text-left text-sm">{t('branding.feature1')}</span>
             </div>
             <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
               isDark ? 'bg-dark-700/50' : 'bg-white/10'
             }`}>
               <span className="text-2xl">🏆</span>
-              <span className="text-white text-left text-sm">Compete with friends for the top spot</span>
+              <span className="text-white text-left text-sm">{t('branding.feature2')}</span>
             </div>
             <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
               isDark ? 'bg-dark-700/50' : 'bg-white/10'
             }`}>
               <span className="text-2xl">📊</span>
-              <span className="text-white text-left text-sm">Track your performance in real-time</span>
+              <span className="text-white text-left text-sm">{t('branding.feature3')}</span>
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function Login() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Home
+            {t('backToHome')}
           </Link>
 
           {/* Header (visible on mobile, hidden on lg) */}

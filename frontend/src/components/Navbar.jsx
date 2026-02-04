@@ -245,7 +245,7 @@ export default function Navbar() {
               <div className="flex items-center gap-1">
                 <span className={`text-xs font-semibold leading-tight ${
                   isDark ? 'text-emerald-400' : 'text-emerald-600'
-                }`}>Liga MX 2026</span>
+                }`}>{t('ligaMXYear', { year: 2026 })}</span>
               </div>
             </div>
           </Link>

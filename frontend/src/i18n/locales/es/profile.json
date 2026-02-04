@@ -1,6 +1,7 @@
 {
   "title": "Mi Perfil",
   "subtitle": "Ve y administra tus predicciones y detalles de cuenta",
+  "loading": "Cargando perfil...",
   "breadcrumb": {
     "dashboard": "Tablero",
     "profile": "Perfil"
@@ -14,7 +15,10 @@
     "totalBets": "Total Predicciones",
     "avgPoints": "Puntos Prom",
     "bestScore": "Mejor Puntaje",
-    "winRate": "Tasa de Victoria"
+    "winRate": "Tasa de Victoria",
+    "points": "Puntos",
+    "correctPredictions": "Predicciones Correctas",
+    "goalsPredicted": "Goles Predichos"
   },
   "currentBet": {
     "title": "Predicción de la Semana",
@@ -26,6 +30,13 @@
     "noBetMessage": "Haz tu predicción para los partidos de esta semana",
     "placeBet": "Hacer Predicción",
     "updateBet": "Actualizar Predicción"
+  },
+  "predictions": {
+    "title": "Mis Predicciones",
+    "weekMatches": "Semana {{week}} · {{count}} partidos",
+    "updatePrediction": "Actualizar Predicción",
+    "delete": "Eliminar",
+    "locked": "Bloqueado"
   },
   "history": {
     "title": "Historial de Predicciones",
@@ -63,7 +74,7 @@
   "deleteModal": {
     "title": "Eliminar Cuenta",
     "warning": "Esta acción no se puede deshacer. Todos tus datos serán eliminados permanentemente.",
-    "confirm": "Escribe ELIMINAR para confirmar",
+    "confirm": "Escribe DELETE para confirmar",
     "delete": "Eliminar Mi Cuenta",
     "deleting": "Eliminando..."
   }

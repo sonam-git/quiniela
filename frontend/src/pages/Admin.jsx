@@ -119,15 +119,16 @@ export default function Admin() {
   
   const { user, isAdmin } = useAuth()
   const { isDark } = useTheme()
+  const { t } = useTranslation('admin')
   const navigate = useNavigate()
 
   // Redirect non-admin users
   useEffect(() => {
     if (!isAdmin) {
-      toast.error('Access denied. Admin privileges required.')
+      toast.error(t('errors.loadFailed'))
       navigate('/dashboard')
     }
-  }, [isAdmin, navigate])
+  }, [isAdmin, navigate, t])
 
   const fetchData = useCallback(async () => {
     try {
@@ -326,7 +327,7 @@ export default function Admin() {
           <div className={`animate-spin rounded-full h-8 w-8 border-2 mx-auto ${
             isDark ? 'border-emerald-500 border-t-transparent' : 'border-emerald-600 border-t-transparent'
           }`} />
-          <p className={`mt-3 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Loading admin panel...</p>
+          <p className={`mt-3 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('common.loading', { ns: 'common' })}</p>
         </div>
       </div>
     )

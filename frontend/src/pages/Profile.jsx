@@ -243,6 +243,8 @@ export default function Profile() {
 
   const stats = calculateStats()
 
+  const { t } = useTranslation('profile')
+
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
@@ -250,7 +252,7 @@ export default function Profile() {
           <div className={`animate-spin rounded-full h-10 w-10 border-2 mx-auto ${
             isDark ? 'border-emerald-500 border-t-transparent' : 'border-emerald-600 border-t-transparent'
           }`} />
-          <p className={`mt-4 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Loading profile...</p>
+          <p className={`mt-4 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('loading')}</p>
         </div>
       </div>
     )
@@ -271,21 +273,21 @@ export default function Profile() {
                 }`}
               >
                 <BackIcon />
-                <span>Dashboard</span>
+                <span>{t('breadcrumb.dashboard')}</span>
               </Link>
             </li>
             <li className={isDark ? 'text-dark-600' : 'text-gray-300'}>/</li>
-            <li className={isDark ? 'text-white' : 'text-gray-900'}>Profile</li>
+            <li className={isDark ? 'text-white' : 'text-gray-900'}>{t('breadcrumb.profile')}</li>
           </ol>
         </nav>
 
         {/* Page Header */}
         <div className="mb-8">
           <h1 className={`text-2xl sm:text-3xl font-brand ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            My Profile
+            {t('title')}
           </h1>
           <p className={`mt-1 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-            View and manage your predictions and account details
+            {t('subtitle')}
           </p>
         </div>
 
@@ -390,13 +392,13 @@ export default function Profile() {
 
                 {/* Points */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Points</span>
+                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('stats.points')}</span>
                   <span className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{stats.totalPoints}</span>
                 </div>
 
                 {/* Correct */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Correct Predictions</span>
+                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('stats.correctPredictions')}</span>
                   <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {stats.correctPredictions}/{stats.completedMatches}
                   </span>
@@ -404,7 +406,7 @@ export default function Profile() {
 
                 {/* Goals Predicted */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Goals Predicted</span>
+                  <span className={`text-sm ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('stats.goalsPredicted')}</span>
                   <span className={`text-sm font-semibold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
                     {myBet?.totalGoals ?? '-'}
                   </span>
@@ -424,10 +426,10 @@ export default function Profile() {
               }`}>
                 <div>
                   <h2 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    My Predictions
+                    {t('predictions.title')}
                   </h2>
                   <p className={`text-xs mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Week {weekInfo.weekNumber} · {schedule?.matches?.length || 0} matches
+                    {t('predictions.weekMatches', { week: weekInfo.weekNumber, count: schedule?.matches?.length || 0 })}
                   </p>
                 </div>
                 
@@ -441,7 +443,7 @@ export default function Profile() {
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
                         >
                           <EditIcon />
-                          <span>Update Prediction</span>
+                          <span>{t('predictions.updatePrediction')}</span>
                         </Link>
                         <button
                           onClick={() => setShowDeleteModal(true)}
@@ -452,7 +454,7 @@ export default function Profile() {
                           }`}
                         >
                           <TrashIcon />
-                          <span className="hidden sm:inline">Delete</span>
+                          <span className="hidden sm:inline">{t('predictions.delete')}</span>
                         </button>
                       </>
                     )}
@@ -460,7 +462,7 @@ export default function Profile() {
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                         isDark ? 'bg-dark-700 text-dark-400' : 'bg-gray-100 text-gray-500'
                       }`}>
-                        🔒 Locked
+                        🔒 {t('predictions.locked')}
                       </span>
                     )}
                   </div>

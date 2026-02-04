@@ -1,6 +1,7 @@
 {
   "appName": "Quiniela",
   "ligaMX": "Liga MX",
+  "ligaMXYear": "Liga MX {{year}}",
   "year": "2026",
   "language": "Language",
   "navbar": {
@@ -31,10 +32,30 @@
     "predictNow": "Predict Now"
   },
   "footer": {
-    "copyright": "© {{year}} Quiniela Liga MX. All rights reserved.",
+    "copyright": "© {{year}} All Rights Reserved Quiniela | Developed by Sonam J Sherpa",
     "disclaimer": "This is a private prediction game for entertainment purposes only.",
     "madeWith": "Made with",
-    "forFans": "for Liga MX fans"
+    "forFans": "for Liga MX fans",
+    "tagline": "Liga MX Prediction Platform",
+    "description": "A fun prediction game for Liga MX enthusiasts. Compete with friends and colleagues by predicting match outcomes.",
+    "quickLinks": "Quick Links",
+    "howToPlay": "How to Play",
+    "importantNotice": "Important Notice",
+    "notGambling": "Not for Gambling Platform and Commercial Purpose",
+    "entertainmentOnly": "This is a friendly prediction game for entertainment purposes only among employers and friends. No big amount gambling is involved.",
+    "communityGuidelines": "Community Guidelines & Admin Rights",
+    "communityGuidelinesText": "By participating, you agree to follow our community guidelines. The administrator reserves the right to",
+    "suspendTerminate": "suspend or terminate",
+    "communityGuidelinesEnd": "any account that violates the rules, engages in unsportsmanlike conduct, or disrupts the friendly nature of this platform. Play fair, have fun, and respect fellow participants!",
+    "forFunOnly": "For Fun Only",
+    "friendsColleagues": "Friends & Colleagues"
+  },
+  "offline": {
+    "title": "You're Offline",
+    "description": "It looks like you've lost your internet connection. Please check your connection and try again.",
+    "tryAgain": "Try Again",
+    "didYouKnow": "Did you know?",
+    "cachedData": "Quiniela works offline! Some features may be limited, but you can still view your cached predictions and standings."
   },
   "theme": {
     "light": "Switch to light mode",

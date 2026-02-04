@@ -62,9 +62,9 @@ export default function PlaceBet() {
       }
     } catch (error) {
       if (error.response?.status === 404) {
-        toast.error('No schedule found for this week')
+        toast.error(t('errors.noSchedule'))
       } else {
-        toast.error('Failed to load schedule')
+        toast.error(t('errors.loadFailed'))
       }
     } finally {
       setLoading(false)
@@ -88,12 +88,12 @@ export default function PlaceBet() {
     )
 
     if (missingPredictions.length > 0) {
-      toast.error(`Please make predictions for all ${missingPredictions.length} remaining matches`)
+      toast.error(t('errors.allPredictions'))
       return
     }
 
     if (!totalGoals || parseInt(totalGoals) < 0) {
-      toast.error('Please enter a valid total goals prediction')
+      toast.error(t('errors.invalidGoals'))
       return
     }
 
@@ -110,10 +110,10 @@ export default function PlaceBet() {
 
         await api.post('/bets', betData)
         
-        toast.success(existingBet ? 'Bet updated successfully!' : 'Bet placed successfully!')
+        toast.success(existingBet ? t('success.updated') : t('success.placed'))
         navigate('/dashboard')
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to place bet')
+        toast.error(error.response?.data?.message || t('errors.submitFailed'))
       }
     })
   }
@@ -182,16 +182,16 @@ export default function PlaceBet() {
               <span className="text-2xl">🔒</span>
             </div>
             <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              Betting closed
+              {t('locked.title')}
             </h2>
             <p className={`text-sm mb-6 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              Betting closes 5 minutes before the first match starts. Check back next week!
+              {t('locked.message')}
             </p>
             <button
               onClick={() => navigate('/dashboard')}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
             >
-              Back to Dashboard
+              {t('locked.viewDashboard')}
             </button>
           </div>
         </div>
@@ -212,10 +212,10 @@ export default function PlaceBet() {
               <span className="text-2xl">📅</span>
             </div>
             <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              No schedule available
+              {t('errors.noSchedule')}
             </h2>
             <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              The schedule for this week hasn't been created yet.
+              {t('noScheduleMessage')}
             </p>
           </div>
         </div>
@@ -247,17 +247,17 @@ export default function PlaceBet() {
               {existingBet ? (
                 <>
             <span role="img" aria-label="Edit" className="text-lg">✏️</span>
-            Edit Prediction
+            {t('title.edit')}
                 </>
               ) : (
                 <>
             <span role="img" aria-label="Place Bet" className="text-lg">🎯</span>
-            Place Prediction
+            {t('title.place')}
                 </>
               )}
             </h1>
             <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              Make your predictions for this week's matches
+              {t('subtitle')}
             </p>
             
             {countdown && (
@@ -273,7 +273,7 @@ export default function PlaceBet() {
               </span>
               
               <span className={`text-xs font-medium ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-                Closes in
+                {t('closesIn')}
               </span>
 
               {/* Clock display */}
@@ -318,10 +318,10 @@ export default function PlaceBet() {
             <label className={`block text-sm font-medium mb-2 ${
               isDark ? 'text-dark-200' : 'text-gray-700'
             }`}>
-              Total goals prediction
+              {t('form.totalGoals')}
             </label>
             <p className={`text-xs mb-3 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-              Predict the total goals across all 9 matches
+              {t('form.totalGoalsHint', { count: schedule.matches.length })}
             </p>
             <input
               type="number"
@@ -348,14 +348,14 @@ export default function PlaceBet() {
               isDark ? 'border-dark-700' : 'border-gray-200'
             }`}>
               <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Match predictions
+                {t('matchPredictions')}
               </h2>
               <div className="flex items-center gap-2">
                 {schedule.matches.some(m => m.isCompleted) && (
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                     isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
                   }`}>
-                    {getCorrectCount()}/{schedule.matches.filter(m => m.isCompleted).length} correct
+                    {getCorrectCount()}/{schedule.matches.filter(m => m.isCompleted).length} {t('correct')}
                   </span>
                 )}
                 <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
@@ -381,7 +381,7 @@ export default function PlaceBet() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                          Match {index + 1}
+                          {t('match.matchNumber', { number: index + 1 })}
                         </span>
                         {result === 'correct' && (
                           <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
@@ -434,7 +434,7 @@ export default function PlaceBet() {
                               : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                         }`}
                       >
-                        Draw
+                        {t('form.draw')}
                       </button>
 
                       <button
@@ -467,7 +467,7 @@ export default function PlaceBet() {
             <label className={`block text-sm font-medium mb-3 ${
               isDark ? 'text-dark-200' : 'text-gray-700'
             }`}>
-              Payment status
+              {t('payment.title')}
             </label>
             
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -482,7 +482,7 @@ export default function PlaceBet() {
                       : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                ✓ Paid ($20)
+                ✓ {t('payment.paid')} ($20)
               </button>
 
               <button
@@ -496,7 +496,7 @@ export default function PlaceBet() {
                       : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                ⏳ Pending
+                ⏳ {t('payment.pendingLabel')}
               </button>
             </div>
 
@@ -506,8 +506,8 @@ export default function PlaceBet() {
                 : isDark ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-700'
             }`}>
               {paymentStatus === 'pending' 
-                ? 'Payment required before first match. Without payment, you cannot claim the prize.'
-                : 'Payment confirmed! You are officially participating.'}
+                ? t('payment.pendingMessage')
+                : t('payment.paidMessage')}
             </div>
           </div>
 
@@ -518,8 +518,8 @@ export default function PlaceBet() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
                 {completedPredictions === totalMatches
-                  ? <span className={isDark ? 'text-emerald-400' : 'text-emerald-600'}>✓ All predictions made</span>
-                  : <span className={isDark ? 'text-amber-400' : 'text-amber-600'}>{totalMatches - completedPredictions} predictions remaining</span>}
+                  ? <span className={isDark ? 'text-emerald-400' : 'text-emerald-600'}>✓ {t('allPredictionsMade')}</span>
+                  : <span className={isDark ? 'text-amber-400' : 'text-amber-600'}>{t('predictionsRemaining', { count: totalMatches - completedPredictions })}</span>}
               </p>
               <div className="flex gap-3">
                 <button
@@ -531,14 +531,14 @@ export default function PlaceBet() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || completedPredictions !== totalMatches || !totalGoals}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isPending ? 'Saving...' : existingBet ? 'Update bet' : 'Place bet'}
+                  {isPending ? t('submit.placing') : existingBet ? t('submit.update') : t('submit.place')}
                 </button>
               </div>
             </div>

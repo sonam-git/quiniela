@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { useTheme } from '../context/ThemeContext'
 
 export default function OfflineFallback() {
   const { isDark } = useTheme()
+  const { t } = useTranslation('common')
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${
@@ -38,15 +40,14 @@ export default function OfflineFallback() {
         <h1 className={`text-2xl font-bold mb-2 ${
           isDark ? 'text-white' : 'text-gray-900'
         }`}>
-          You're Offline
+          {t('offline.title')}
         </h1>
 
         {/* Description */}
         <p className={`text-sm mb-6 ${
           isDark ? 'text-dark-400' : 'text-gray-500'
         }`}>
-          It looks like you've lost your internet connection. 
-          Please check your connection and try again.
+          {t('offline.description')}
         </p>
 
         {/* Retry Button */}
@@ -57,7 +58,7 @@ export default function OfflineFallback() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Try Again
+          {t('offline.tryAgain')}
         </button>
 
         {/* Cached Data Notice */}
@@ -69,14 +70,13 @@ export default function OfflineFallback() {
             <span className={`text-sm font-semibold ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>
-              Did you know?
+              {t('offline.didYouKnow')}
             </span>
           </div>
           <p className={`text-xs ${
             isDark ? 'text-dark-400' : 'text-gray-500'
           }`}>
-            Quiniela works offline! Some features may be limited, 
-            but you can still view your cached predictions and standings.
+            {t('offline.cachedData')}
           </p>
         </div>
       </div>

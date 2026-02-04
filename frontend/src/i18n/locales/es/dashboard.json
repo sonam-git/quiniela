@@ -1,6 +1,11 @@
 {
   "title": "Tablero",
   "subtitle": "Liga MX · Semana {{week}}, {{year}}",
+  "loading": "Cargando...",
+  "tryAgain": "Intentar de Nuevo",
+  "howToPlay": "Cómo Jugar",
+  "statsTab": "Estadísticas",
+  "weekStats": "Estadísticas Semana {{week}}",
   "tabs": {
     "standings": "Clasificación",
     "schedule": "Calendario"
@@ -33,17 +38,23 @@
     "participants": "Participantes",
     "matches": "Partidos",
     "avgPoints": "Puntos Prom",
-    "topScore": "Mejor Puntaje"
+    "topScore": "Mejor Puntaje",
+    "totalMatches": "Total Partidos",
+    "completed": "Completados",
+    "totalGoals": "Goles Totales"
   },
   "status": {
     "bettingOpen": "Apuestas Abiertas",
     "bettingClosed": "Apuestas Cerradas",
     "settled": "Finalizado",
-    "inProgress": "En Progreso"
+    "inProgress": "En Progreso",
+    "paid": "Pagado",
+    "pending": "Pendiente",
+    "confirmed": "Confirmado"
   },
   "cta": {
-    "placeBet": "Hacer Predicción",
-    "updateBet": "Actualizar Predicción",
+    "placeBet": "Predecir Ahora",
+    "updateBet": "Actualizar",
     "viewResults": "Ver Resultados"
   },
   "errors": {
@@ -56,6 +67,37 @@
   },
   "announcements": {
     "title": "Anuncios",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "new": "Nuevo",
+    "posted": "Publicado"
+  },
+  "table": {
+    "noPredictions": "Sin Predicciones Aún",
+    "beFirst": "¡Sé el primero en hacer tu predicción esta semana y compite por el premio!",
+    "leaderAfterFirst": "El líder aparece después del primer partido",
+    "points": "puntos",
+    "status": "Estado",
+    "winner": "Ganador",
+    "weekChampion": "🏆 CAMPEÓN DE LA SEMANA 🏆",
+    "left": "restantes",
+    "yourBet": "(Tu apuesta)",
+    "hidden": "Oculto",
+    "goals": "Goles",
+    "exact": "Exacto",
+    "correct": "Correcto",
+    "wrong": "Incorrecto",
+    "matchPredictions": "Predicciones de Partidos",
+    "predictionsHidden": "Predicciones Ocultas",
+    "predictionsHiddenDesc": "Las predicciones de otros participantes serán visibles después de que comience el primer partido.",
+    "legend": "Leyenda",
+    "homeLocal": "Local (Home)",
+    "awayVisitante": "Visitante (Away)",
+    "drawEmpate": "Empate (Draw)",
+    "homeWins": "Gana Local (L)",
+    "awayWins": "Gana Visitante (V)",
+    "draw": "Empate (E)",
+    "noPrediction": "Sin predicción",
+    "predictionsHiddenUntilStart": "Predicciones ocultas hasta que comience el primer partido",
+    "pointsHiddenUntilStart": "Puntos ocultos hasta que comience el primer partido"
   }
 }

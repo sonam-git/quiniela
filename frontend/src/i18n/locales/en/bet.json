@@ -5,6 +5,13 @@
   },
   "subtitle": "Make your predictions for this week's matches",
   "weekInfo": "Week {{week}}, {{year}}",
+  "closesIn": "Closes in",
+  "matchPredictions": "Match predictions",
+  "correct": "correct",
+  "allPredictionsMade": "All predictions made",
+  "predictionsRemaining": "{{count}} predictions remaining",
+  "cancel": "Cancel",
+  "noScheduleMessage": "The schedule for this week hasn't been created yet.",
   "form": {
     "selectPrediction": "Select your prediction for each match",
     "homeWin": "Home",
@@ -28,8 +35,11 @@
   "payment": {
     "title": "Payment Status",
     "paid": "Paid",
+    "pendingLabel": "Pending",
     "pending": "Pending - Contact admin to confirm payment",
-    "hint": "Your bet will be included in standings once payment is confirmed"
+    "hint": "Your bet will be included in standings once payment is confirmed",
+    "pendingMessage": "Payment required before first match. Without payment, you cannot claim the prize.",
+    "paidMessage": "Payment confirmed! You are officially participating."
   },
   "submit": {
     "place": "Submit Prediction",
@@ -46,7 +56,8 @@
     "loadFailed": "Failed to load schedule",
     "submitFailed": "Failed to submit prediction",
     "bettingClosed": "Betting is closed for this week",
-    "allPredictions": "Please make a prediction for all matches"
+    "allPredictions": "Please make a prediction for all matches",
+    "invalidGoals": "Please enter a valid total goals prediction"
   },
   "locked": {
     "title": "Betting Closed",

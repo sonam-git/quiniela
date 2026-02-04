@@ -191,7 +191,7 @@ export default function Dashboard() {
           <div className={`animate-spin rounded-full h-8 w-8 border-2 mx-auto ${
             isDark ? 'border-emerald-500 border-t-transparent' : 'border-emerald-600 border-t-transparent'
           }`} />
-          <p className={`mt-3 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Loading...</p>
+          <p className={`mt-3 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('loading')}</p>
         </div>
       </div>
     )
@@ -267,7 +267,7 @@ export default function Dashboard() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Try Again
+                {t('tryAgain')}
               </button>
               
               <Link
@@ -281,7 +281,7 @@ export default function Dashboard() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                How to Play
+                {t('howToPlay')}
               </Link>
             </div>
           </div>
@@ -374,10 +374,10 @@ export default function Dashboard() {
                   <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2" />
                   <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2" />
                 </svg>
-                Dashboard
+                {t('title')}
               </h1>
               <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                Liga MX · Week {weekInfo.weekNumber}, {weekInfo.year}
+                {t('subtitle', { week: weekInfo.weekNumber, year: weekInfo.year })}
               </p>
             </div>
 
@@ -390,7 +390,7 @@ export default function Dashboard() {
                     : 'bg-red-50 text-red-700 border border-red-200'
                 }`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  Betting closed
+                  {t('status.bettingClosed')}
                 </span>
               ) : (
                 <div className="flex items-center gap-3">
@@ -457,7 +457,7 @@ export default function Dashboard() {
                       to="/place-bet"
                       className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
                     >
-                      <BetIcon /> {bets.some(bet => bet.userId?._id === user?._id || bet.userId === user?._id) ? 'Update' : 'Predict Now'}
+                      <BetIcon /> {bets.some(bet => bet.userId?._id === user?._id || bet.userId === user?._id) ? t('cta.updateBet') : t('cta.placeBet')}
                     </Link>
                   )}
                 </div>
@@ -487,7 +487,7 @@ export default function Dashboard() {
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <span>Standing</span>
+                <span>{t('tabs.standings')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('matches')}
@@ -504,7 +504,7 @@ export default function Dashboard() {
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>Schedule</span>
+                <span>{t('tabs.schedule')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('stats')}
@@ -522,7 +522,7 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                 </svg>
-                <span>Stats</span>
+                <span>{t('statsTab')}</span>
               </button>
             </div>
           </div>
@@ -537,7 +537,7 @@ export default function Dashboard() {
               isDark ? 'border-dark-700' : 'border-gray-200'
             }`}>
               <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                <span>📊</span> Week {weekInfo.weekNumber} Statistics
+                <span>📊</span> {t('weekStats', { week: weekInfo.weekNumber })}
               </h2>
             </div>
             <div className="p-4">
@@ -553,7 +553,7 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Total Matches
+                    {t('stats.totalMatches')}
                   </p>
                   <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {schedule.matches.length}
@@ -570,7 +570,7 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Completed
+                    {t('stats.completed')}
                   </p>
                   <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                     {schedule.matches.filter(m => m.isCompleted).length}
@@ -587,7 +587,7 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Participants
+                    {t('stats.participants')}
                   </p>
                   <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {bets.length}
@@ -604,7 +604,7 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <p className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Total Goals
+                    {t('stats.totalGoals')}
                   </p>
                   <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
                     {schedule.actualTotalGoals ?? '—'}

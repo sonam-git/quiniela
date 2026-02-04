@@ -135,7 +135,7 @@ export default function Home() {
                     isDark ? 'text-white' : 'text-gray-900'
                   }`}>9</div>
                   <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Matches / Week
+                    {t('stats.matchesPerWeek')}
                   </div>
                 </div>
                 <div className="text-center lg:text-left">
@@ -143,7 +143,7 @@ export default function Home() {
                     isDark ? 'text-white' : 'text-gray-900'
                   }`}>17</div>
                   <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Weeks Total
+                    {t('stats.weeksTotal')}
                   </div>
                 </div>
                 <div className="text-center lg:text-left">
@@ -151,7 +151,7 @@ export default function Home() {
                     isDark ? 'text-emerald-400' : 'text-emerald-600'
                   }`}>🏆</div>
                   <div className={`text-sm font-medium mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    Weekly Prizes
+                    {t('stats.weeklyPrizes')}
                   </div>
                 </div>
               </div>
@@ -182,10 +182,10 @@ export default function Home() {
                     </div>
                     <div>
                       <p className={`text-center font-welcome ${isDark ? 'text-white' : 'text-gray-100'}`}>
-                        Test Your Luck
+                        {t('floatingCard.testYourLuck')}
                       </p>
                       <p className={`text-sm ${isDark ? 'text-yellow-100' : 'text-yellow-100'}`}>
-                        Predict & win big
+                        {t('floatingCard.predictAndWin')}
                       </p>
                     </div>
                   </div>

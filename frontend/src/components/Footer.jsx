@@ -27,19 +27,19 @@ export default function Footer() {
                   Quiniela
                 </h3>
                 <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  Liga MX Prediction Platform
+                  {t('footer.tagline')}
                 </p>
               </div>
             </Link>
             <p className={`text-sm leading-relaxed ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
-              A fun prediction game for Liga MX enthusiasts. Compete with friends and colleagues by predicting match outcomes.
+              {t('footer.description')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="md:col-span-1">
             <h4 className={`text-sm font-semibold uppercase tracking-wide mb-4 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>
-              Quick Links
+              {t('footer.quickLinks')}
             </h4>
             <ul className="space-y-2">
               <li>
@@ -47,7 +47,7 @@ export default function Footer() {
                   to="/dashboard" 
                   className={`text-sm transition-colors ${isDark ? 'text-dark-400 hover:text-emerald-400' : 'text-gray-600 hover:text-emerald-600'}`}
                 >
-                  Dashboard
+                  {t('nav.dashboard')}
                 </Link>
               </li>
               <li>
@@ -55,7 +55,7 @@ export default function Footer() {
                   to="/instructions" 
                   className={`text-sm transition-colors ${isDark ? 'text-dark-400 hover:text-emerald-400' : 'text-gray-600 hover:text-emerald-600'}`}
                 >
-                  How to Play
+                  {t('footer.howToPlay')}
                 </Link>
               </li>
               <li>
@@ -63,7 +63,7 @@ export default function Footer() {
                   to="/about" 
                   className={`text-sm transition-colors ${isDark ? 'text-dark-400 hover:text-emerald-400' : 'text-gray-600 hover:text-emerald-600'}`}
                 >
-                  About
+                  {t('nav.about')}
                 </Link>
               </li>
             </ul>
@@ -72,7 +72,7 @@ export default function Footer() {
           {/* Disclaimer Section */}
           <div className="md:col-span-1">
             <h4 className={`text-sm font-semibold uppercase tracking-wide mb-4 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>
-              Important Notice
+              {t('footer.importantNotice')}
             </h4>
             <div className={`p-4 rounded-xl border ${
               isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'
@@ -87,10 +87,10 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-                    Not for Gambling Platform and Commercial Purpose
+                    {t('footer.notGambling')}
                   </p>
                   <p className={`text-xs leading-relaxed ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
-                    This is a friendly prediction game for entertainment purposes only among employers and friends. No big amount gambling is involved.
+                    {t('footer.entertainmentOnly')}
                   </p>
                 </div>
               </div>
@@ -111,13 +111,12 @@ export default function Footer() {
               </div>
               <div className="flex-1">
                 <h5 className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Community Guidelines & Admin Rights
+                  {t('footer.communityGuidelines')}
                 </h5>
                 <p className={`text-xs leading-relaxed ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
-                  By participating, you agree to follow our community guidelines. The administrator reserves the right to 
-                  <span className={`font-medium ${isDark ? 'text-red-400' : 'text-red-600'}`}> suspend or terminate </span> 
-                  any account that violates the rules, engages in unsportsmanlike conduct, or disrupts the friendly nature of this platform. 
-                  Play fair, have fun, and respect fellow participants!
+                  {t('footer.communityGuidelinesText')}
+                  <span className={`font-medium ${isDark ? 'text-red-400' : 'text-red-600'}`}> {t('footer.suspendTerminate')} </span> 
+                  {t('footer.communityGuidelinesEnd')}
                 </p>
               </div>
             </div>
@@ -131,7 +130,7 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             <span className="text-lg">⚽</span>
             <p className={`text-sm ${isDark ? 'text-dark-500' : 'text-gray-500'}`}>
-              © {currentYear} All Rights Reserved Quiniela | Developed by Sonam J Sherpa
+              {t('footer.copyright', { year: currentYear })}
             </p>
           </div>
           
@@ -143,12 +142,12 @@ export default function Footer() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              For Fun Only
+              {t('footer.forFunOnly')}
             </span>
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
               isDark ? 'bg-purple-500/10 text-purple-400 ring-1 ring-purple-500/20' : 'bg-purple-50 text-purple-700 ring-1 ring-purple-200'
             }`}>
-              🏆 Friends & Colleagues
+              🏆 {t('footer.friendsColleagues')}
             </span>
           </div>
         </div>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTheme } from '../context/ThemeContext'
 
 export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId }) {
   const { isDark } = useTheme()
+  const { t } = useTranslation('dashboard')
   const [expandedCard, setExpandedCard] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
 
@@ -70,10 +72,10 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
           <span className="text-3xl">🎯</span>
         </div>
         <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          No Predictions Yet
+          {t('table.noPredictions')}
         </h3>
         <p className={`text-sm max-w-xs mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-          Be the first to place your prediction this week and compete for the prize!
+          {t('table.beFirst')}
         </p>
       </div>
     )
@@ -116,7 +118,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 </svg>
               </div>
               <div>
-                <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Participants</p>
+                <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('stats.participants')}</p>
                 <p className={`text-lg font-bold -mt-0.5 ${isDark ? 'text-white' : 'text-gray-900'}`}>{bets.length}</p>
               </div>
             </div>
@@ -139,7 +141,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 </svg>
               </div>
               <div>
-                <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Matches</p>
+                <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('stats.matches')}</p>
                 <div className="flex items-center gap-1.5">
                   <p className={`text-lg font-bold -mt-0.5 ${
                     hasCompletedMatches
@@ -181,13 +183,13 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                       {bets[0]?.userId?.name || 'Unknown'}
                     </p>
                     <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                      {bets[0]?.totalPoints} points
+                      {bets[0]?.totalPoints} {t('table.points')}
                     </p>
                   </div>
                 </div>
               ) : (
                 <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  Leader appears after first match
+                  {t('table.leaderAfterFirst')}
                 </p>
               )}
             </div>
@@ -206,19 +208,19 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 <th className={`sticky left-0 z-20 w-14 px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${
                   isDark ? 'bg-dark-700/95 text-dark-300 backdrop-blur-sm' : 'bg-gray-50/95 text-gray-500 backdrop-blur-sm'
                 }`}>
-                  Rank
+                  {t('standings.rank')}
                 </th>
                 <th className={`sticky left-14 z-20 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider min-w-[140px] ${
                   isDark ? 'bg-dark-700/95 text-dark-300 backdrop-blur-sm' : 'bg-gray-50/95 text-gray-500 backdrop-blur-sm'
                 }`}>
-                  Player
+                  {t('standings.player')}
                 </th>
                 <th className={`px-3 py-3.5 text-center text-xs font-semibold uppercase tracking-wider ${
                   isDark ? 'text-dark-300' : 'text-gray-500'
                 }`}>
                   <div className="flex items-center justify-center gap-1">
                     <span>⚽</span>
-                    <span>Goals</span>
+                    <span>{t('standings.goals')}</span>
                   </div>
                 </th>
                 {schedule.matches.map((match, index) => (
@@ -243,12 +245,12 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 <th className={`px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider ${
                   isDark ? 'text-dark-300' : 'text-gray-500'
                 }`}>
-                  Points
+                  {t('standings.points')}
                 </th>
                 <th className={`px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider ${
                   isDark ? 'text-dark-300' : 'text-gray-500'
                 }`}>
-                  Status
+                  {t('table.status')}
                 </th>
               </tr>
             </thead>
@@ -297,7 +299,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                           <span className={`inline-flex items-center gap-1 text-xs font-medium ${
                             isDark ? 'text-amber-400' : 'text-amber-600'
                           }`}>
-                            <span>🏆</span> Winner
+                            <span>🏆</span> {t('table.winner')}
                           </span>
                         )}
                       </div>
@@ -353,7 +355,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                             className={`inline-flex items-center justify-center w-9 h-8 rounded-lg text-xs transition-all ${
                               isDark ? 'bg-dark-700/50 text-dark-500' : 'bg-gray-100 text-gray-400'
                             }`}
-                            title="Predictions hidden until first match starts"
+                            title={t('table.predictionsHiddenUntilStart')}
                           >
                             🔒
                           </div>
@@ -381,7 +383,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         className={`inline-flex items-center justify-center min-w-[44px] px-3 py-1.5 rounded-lg text-sm ${
                           isDark ? 'bg-dark-700/50 text-dark-500' : 'bg-gray-100 text-gray-400'
                         }`}
-                        title="Points hidden until first match starts"
+                        title={t('table.pointsHiddenUntilStart')}
                       >
                         🔒
                       </div>
@@ -397,7 +399,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        Paid
+                        {t('status.paid')}
                       </span>
                     ) : (
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
@@ -406,7 +408,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Pending
+                        {t('status.pending')}
                       </span>
                     )}
                   </td>
@@ -480,18 +482,18 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                             )}
                             {pendingCount > 0 && (
                               <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>
-                                {pendingCount} left
+                                {pendingCount} {t('table.left')}
                               </span>
                             )}
                             {!hasStarted && isCurrentUserBet(bet) && (
                               <span className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                (Your bet)
+                                {t('table.yourBet')}
                               </span>
                             )}
                           </>
                         ) : (
                           <span className={`text-xs flex items-center gap-1 ${isDark ? 'text-dark-400' : 'text-gray-400'}`}>
-                            🔒 Hidden
+                            🔒 {t('table.hidden')}
                           </span>
                         )}
                       </div>
@@ -548,7 +550,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 <div className={`mx-4 mb-3 py-2.5 px-4 rounded-lg text-center text-sm font-bold ${
                   isDark ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/40' : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
                 }`}>
-                  🏆 WEEK CHAMPION 🏆
+                  {t('table.weekChampion')}
                 </div>
               )}
 
@@ -562,26 +564,26 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                       <div className="grid grid-cols-4 gap-2 pt-4">
                         <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{bet.totalGoals}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Goals</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('table.goals')}</p>
                           {isSettled && bet.goalDifference !== null && (
                             <p className={`text-xs mt-0.5 ${
                               bet.goalDifference === 0 ? 'text-emerald-500' : isDark ? 'text-blue-400' : 'text-blue-600'
                             }`}>
-                              {bet.goalDifference === 0 ? '✓ Exact' : `±${bet.goalDifference}`}
+                              {bet.goalDifference === 0 ? `✓ ${t('table.exact')}` : `±${bet.goalDifference}`}
                             </p>
                           )}
                         </div>
                         <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{correctCount}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>Correct</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>{t('table.correct')}</p>
                         </div>
                         <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{wrongCount}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-red-400/60' : 'text-red-600/60'}`}>Wrong</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-red-400/60' : 'text-red-600/60'}`}>{t('table.wrong')}</p>
                         </div>
                         <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{pendingCount}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Pending</p>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('status.pending')}</p>
                         </div>
                       </div>
 
@@ -590,7 +592,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         <div className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide ${
                           isDark ? 'bg-dark-700 text-dark-300' : 'bg-gray-100 text-gray-600'
                         }`}>
-                          Match Predictions
+                          {t('table.matchPredictions')}
                         </div>
                         <div className={`p-3 ${isDark ? 'bg-dark-700/30' : 'bg-gray-50/50'}`}>
                           <div className="grid grid-cols-3 gap-2">
@@ -647,10 +649,10 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         <span className="text-3xl">🔒</span>
                       </div>
                       <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Predictions Hidden
+                        {t('table.predictionsHidden')}
                       </h4>
                       <p className={`text-xs max-w-xs mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        Other participants' predictions will be visible after the first match starts.
+                        {t('table.predictionsHiddenDesc')}
                       </p>
                     </div>
                   )}
@@ -660,7 +662,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                     isDark ? 'bg-dark-700/50' : 'bg-gray-50'
                   }`}>
                     <span className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                      Payment
+                      {t('standings.payment')}
                     </span>
                     {bet.paid ? (
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
@@ -669,7 +671,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        Confirmed
+                        {t('status.confirmed')}
                       </span>
                     ) : (
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
@@ -678,7 +680,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Pending
+                        {t('status.pending')}
                       </span>
                     )}
                   </div>
@@ -699,7 +701,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Legend
+          {t('table.legend')}
         </div>
         <div className="p-4">
           <div className="flex flex-wrap gap-4">
@@ -707,19 +709,19 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
               <span className={`w-7 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                 isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
               }`}>L</span>
-              <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Home (Local)</span>
+              <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('table.homeLocal')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={`w-7 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                 isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
               }`}>V</span>
-              <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Away (Visitante)</span>
+              <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('table.awayVisitante')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={`w-7 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                 isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
               }`}>E</span>
-              <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Draw (Empate)</span>
+              <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('table.drawEmpate')}</span>
             </div>
             {hasCompletedMatches && (
               <>
@@ -727,13 +729,13 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                   <span className={`w-7 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                     isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/40' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
                   }`}>✓</span>
-                  <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Correct</span>
+                  <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('table.correct')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`w-7 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                     isDark ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30' : 'bg-red-50 text-red-600 ring-1 ring-red-200'
                   }`}>✗</span>
-                  <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>Wrong</span>
+                  <span className={`text-xs ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{t('table.wrong')}</span>
                 </div>
               </>
             )}

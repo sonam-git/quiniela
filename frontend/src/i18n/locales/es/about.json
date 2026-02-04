@@ -9,8 +9,13 @@
   },
   "vision": {
     "title": "La Visión",
-    "p1": "Soñamos con una solución que preservara el alma de nuestra tradición semanal mientras adoptaba la conveniencia moderna. Así nació Quiniela—una plataforma digital que automatiza el proceso antes manual mientras mantiene el espíritu amigable y comunitario intacto.",
-    "p2": "Quiniela fue diseñada por entusiastas de la quiniela, para entusiastas de la quiniela. No es solo una app; es una continuación digital de la camaradería que compartimos en el piso de trabajo."
+    "p1": ", desarrollador y participante habitual en estos juegos de predicción semanales, vio la oportunidad de honrar esta tradición a la vez que simplificaba el proceso. Al ser testigo del esfuerzo que sus colegas dedicaban a mantener el juego manualmente,",
+    "p2": "él decidió aprovechar su experiencia técnica para crear un espacio digital para el grupo.",
+    "developerRole": "Desarrollador y Creador"
+  },
+  "whatWeDo": {
+    "title": "Qué Hacemos",
+    "description": "Quiniela es una plataforma digital personalizada diseñada específicamente para la comunidad futbolera del trabajo con fines de entretenimiento. Simplifica toda la experiencia:"
   },
   "features": {
     "title": "Lo Que Nos Hace Diferentes",
@@ -26,6 +31,11 @@
       "title": "Transparencia",
       "description": "Visibilidad en tiempo real de estados de pago y clasificaciones en vivo."
     }
+  },
+  "closing": {
+    "text": "Lo que comenzó como una forma de simplificar un pasatiempo laboral ha evolucionado en una aplicación elegante y eficiente que mantiene el",
+    "highlight": "espíritu del juego vivo",
+    "suffix": "—sin el papeleo."
   },
   "cta": {
     "ready": "¿Listo para unirte?",

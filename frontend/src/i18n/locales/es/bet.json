@@ -5,6 +5,13 @@
   },
   "subtitle": "Haz tus predicciones para los partidos de esta semana",
   "weekInfo": "Semana {{week}}, {{year}}",
+  "closesIn": "Cierra en",
+  "matchPredictions": "Predicciones de partidos",
+  "correct": "correctas",
+  "allPredictionsMade": "Todas las predicciones hechas",
+  "predictionsRemaining": "{{count}} predicciones restantes",
+  "cancel": "Cancelar",
+  "noScheduleMessage": "El calendario para esta semana aún no ha sido creado.",
   "form": {
     "selectPrediction": "Selecciona tu predicción para cada partido",
     "homeWin": "Local",
@@ -28,8 +35,11 @@
   "payment": {
     "title": "Estado de Pago",
     "paid": "Pagado",
+    "pendingLabel": "Pendiente",
     "pending": "Pendiente - Contacta al admin para confirmar pago",
-    "hint": "Tu predicción se incluirá en la clasificación una vez confirmado el pago"
+    "hint": "Tu predicción se incluirá en la clasificación una vez confirmado el pago",
+    "pendingMessage": "Pago requerido antes del primer partido. Sin pago, no puedes reclamar el premio.",
+    "paidMessage": "¡Pago confirmado! Estás participando oficialmente."
   },
   "submit": {
     "place": "Enviar Predicción",
@@ -46,7 +56,8 @@
     "loadFailed": "Error al cargar calendario",
     "submitFailed": "Error al enviar predicción",
     "bettingClosed": "Las apuestas están cerradas para esta semana",
-    "allPredictions": "Por favor haz una predicción para todos los partidos"
+    "allPredictions": "Por favor haz una predicción para todos los partidos",
+    "invalidGoals": "Por favor ingresa una predicción de goles válida"
   },
   "locked": {
     "title": "Apuestas Cerradas",

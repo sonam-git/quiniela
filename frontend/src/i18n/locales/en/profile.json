@@ -1,6 +1,7 @@
 {
   "title": "My Profile",
   "subtitle": "View and manage your predictions and account details",
+  "loading": "Loading profile...",
   "breadcrumb": {
     "dashboard": "Dashboard",
     "profile": "Profile"
@@ -14,7 +15,10 @@
     "totalBets": "Total Bets",
     "avgPoints": "Avg Points",
     "bestScore": "Best Score",
-    "winRate": "Win Rate"
+    "winRate": "Win Rate",
+    "points": "Points",
+    "correctPredictions": "Correct Predictions",
+    "goalsPredicted": "Goals Predicted"
   },
   "currentBet": {
     "title": "Current Week Prediction",
@@ -26,6 +30,13 @@
     "noBetMessage": "Place your prediction for this week's matches",
     "placeBet": "Place Prediction",
     "updateBet": "Update Prediction"
+  },
+  "predictions": {
+    "title": "My Predictions",
+    "weekMatches": "Week {{week}} · {{count}} matches",
+    "updatePrediction": "Update Prediction",
+    "delete": "Delete",
+    "locked": "Locked"
   },
   "history": {
     "title": "Prediction History",

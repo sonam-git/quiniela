@@ -10,50 +10,50 @@ export default function Instructions() {
     {
       number: 1,
       icon: '📝',
-      title: 'Sign Up for an Account',
-      description: 'Create your Quiniela account by clicking "Sign Up" in the navigation bar. Enter your name, email, invitation code and create a password to get started.'
+      title: t('steps.step1.title'),
+      description: t('steps.step1.description')
     },
     {
       number: 2,
       icon: '📊',
-      title: 'View the Dashboard',
-      description: 'Once logged in, go to the Dashboard to see the current week\'s matches and schedule. You\'ll see all 9 Liga MX games for that jornada along with match times.'
+      title: t('steps.step2.title'),
+      description: t('steps.step2.description')
     },
     {
       number: 3,
       icon: '🎯',
-      title: 'Place your predictions',
-      description: 'Click on "Predict Now" to make your predictions. For each of the 9 matches, choose your guess: 🏠 Home Win, ✈️ Away Win, or E for Draw. You can also update your prediction before the first game. Once the first game is started you cannot change your prediction'
+      title: t('steps.step3.title'),
+      description: t('steps.step3.description')
     },
     {
       number: 4,
       icon: '⚽',
-      title: 'Predict Total Goals',
-      description: 'Guess the total number of goals that will be scored across all 9 games for the week. This is your tiebreaker if multiple players have the same points!'
+      title: t('steps.step4.title'),
+      description: t('steps.step4.description')
     },
     {
       number: 5,
       icon: '💰',
-      title: 'Pay the Entry Fee',
-      description: 'Pay the entry amount to the game administrator. Your prediction will show as "Pending Payment" until confirmed by the admin. We collect reasonable fees to fund the prize pool and platform maintenance.'
+      title: t('steps.step5.title'),
+      description: t('steps.step5.description')
     },
     {
       number: 6,
       icon: '✅',
-      title: 'Submit Your Prediction',
-      description: 'Once you\'ve made all your predictions and your payment is confirmed, submit your prediction before the first match begins. Betting closes when the first game starts!'
+      title: t('steps.step6.title'),
+      description: t('steps.step6.description')
     },
     {
       number: 7,
       icon: '📺',
-      title: 'Watch the Games',
-      description: 'Follow the matches throughout the week. The standings on the Dashboard update as games are completed, showing everyone\'s points in real-time.'
+      title: t('steps.step7.title'),
+      description: t('steps.step7.description')
     },
     {
       number: 8,
       icon: '🏆',
-      title: 'Win the Prize',
-      description: 'After all games are finished, the participant with the highest points wins! If multiple players tie on points, the closest total goals prediction wins. If still tied, the prize is split between the winners.'
+      title: t('steps.step8.title'),
+      description: t('steps.step8.description')
     }
   ]
 
@@ -66,10 +66,10 @@ export default function Instructions() {
             <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            How to Play Quiniela
+            {t('title')}
           </h1>
           <p className={`mt-3 text-base ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
-            Follow these simple steps to join the Liga MX prediction game
+            {t('subtitle')}
           </p>
         </div>
 
@@ -129,29 +129,29 @@ export default function Instructions() {
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
         }`}>
           <h2 className={`text-lg font-semibold flex items-center gap-2 mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            <span>📋</span> Scoring Rules
+            <span>📋</span> {t('scoring.title')}
           </h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className={`p-4 rounded-lg ${isDark ? 'bg-dark-700' : 'bg-gray-50'}`}>
               <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                ✓ Correct Prediction
+                ✓ {t('scoring.correct')}
               </p>
               <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                +1 Point
+                +1 {t('scoring.point')}
               </p>
               <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                Per correct match result
+                {t('scoring.perCorrect')}
               </p>
             </div>
             <div className={`p-4 rounded-lg ${isDark ? 'bg-dark-700' : 'bg-gray-50'}`}>
               <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                ⚽ Total Goals Tiebreaker
+                ⚽ {t('scoring.tiebreaker')}
               </p>
               <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                Closest Wins
+                {t('scoring.closestWins')}
               </p>
               <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                Used when points are tied
+                {t('scoring.usedWhenTied')}
               </p>
             </div>
           </div>
@@ -162,20 +162,20 @@ export default function Instructions() {
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
         }`}>
           <h2 className={`text-lg font-semibold flex items-center gap-2 mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            <span>🔤</span> Prediction Legend
+            <span>🔤</span> {t('legend.title')}
           </h2>
           <div className="flex flex-wrap gap-4">
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-dark-700' : 'bg-gray-50'}`}>
               <span className="text-lg">🏠</span>
-              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Home Team Wins</span>
+              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('legend.homeWin')}</span>
             </div>
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-dark-700' : 'bg-gray-50'}`}>
               <span className="text-lg">✈️</span>
-              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Away Team Wins</span>
+              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('legend.awayWin')}</span>
             </div>
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-dark-700' : 'bg-gray-50'}`}>
               <span className={`text-lg font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>E</span>
-              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Draw (Empate)</span>
+              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('legend.draw')}</span>
             </div>
           </div>
         </div>
@@ -183,14 +183,14 @@ export default function Instructions() {
         {/* CTA */}
         <div className="mt-10 text-center">
           <p className={`text-sm mb-4 ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
-            Ready to start playing?
+            {t('cta.ready')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/signup"
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
             >
-              <span>📝</span> Sign Up Now
+              <span>📝</span> {t('cta.startPlaying')}
             </Link>
             <Link
               to="/dashboard"
@@ -200,7 +200,7 @@ export default function Instructions() {
                   : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-300'
               }`}
             >
-              <span>📊</span> Go to Dashboard
+              <span>📊</span> {t('cta.backHome')}
             </Link>
           </div>
         </div>

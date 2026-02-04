@@ -1,6 +1,7 @@
 {
   "appName": "Quiniela",
   "ligaMX": "Liga MX",
+  "ligaMXYear": "Liga MX {{year}}",
   "year": "2026",
   "language": "Idioma",
   "navbar": {
@@ -31,10 +32,30 @@
     "predictNow": "Predecir Ahora"
   },
   "footer": {
-    "copyright": "© {{year}} Quiniela Liga MX. Todos los derechos reservados.",
+    "copyright": "© {{year}} Todos los Derechos Reservados Quiniela | Desarrollado por Sonam J Sherpa",
     "disclaimer": "Este es un juego de predicción privado solo para entretenimiento.",
     "madeWith": "Hecho con",
-    "forFans": "para fans de la Liga MX"
+    "forFans": "para fans de la Liga MX",
+    "tagline": "Plataforma de Predicciones Liga MX",
+    "description": "Un juego divertido de predicciones para entusiastas de la Liga MX. Compite con amigos y colegas prediciendo resultados de partidos.",
+    "quickLinks": "Enlaces Rápidos",
+    "howToPlay": "Cómo Jugar",
+    "importantNotice": "Aviso Importante",
+    "notGambling": "No es una Plataforma de Apuestas ni de Uso Comercial",
+    "entertainmentOnly": "Este es un juego de predicciones amigable solo para entretenimiento entre empleadores y amigos. No hay apuestas de grandes cantidades involucradas.",
+    "communityGuidelines": "Normas de la Comunidad y Derechos del Administrador",
+    "communityGuidelinesText": "Al participar, aceptas seguir nuestras normas de la comunidad. El administrador se reserva el derecho de",
+    "suspendTerminate": "suspender o terminar",
+    "communityGuidelinesEnd": "cualquier cuenta que viole las reglas, tenga conducta antideportiva, o perturbe la naturaleza amigable de esta plataforma. ¡Juega limpio, diviértete y respeta a los demás participantes!",
+    "forFunOnly": "Solo por Diversión",
+    "friendsColleagues": "Amigos y Colegas"
+  },
+  "offline": {
+    "title": "Estás Desconectado",
+    "description": "Parece que has perdido tu conexión a internet. Por favor verifica tu conexión e intenta de nuevo.",
+    "tryAgain": "Intentar de Nuevo",
+    "didYouKnow": "¿Sabías que?",
+    "cachedData": "¡Quiniela funciona sin conexión! Algunas funciones pueden estar limitadas, pero aún puedes ver tus predicciones y clasificaciones en caché."
   },
   "theme": {
     "light": "Cambiar a modo claro",

@@ -20,7 +20,7 @@ export default function About() {
     {
       icon: '📊',
       title: t('features.transparency.title'),
-      description: 'Real-time visibility into payment statuses and live standings.'
+      description: t('features.transparency.description')
     }
   ]
 
@@ -35,10 +35,10 @@ export default function About() {
               <circle cx="12" cy="12" r="9" strokeWidth="2" />
               <path strokeWidth="2" d="M12 3v4M12 17v4M3 12h4M17 12h4M6.34 6.34l2.83 2.83M14.83 14.83l2.83 2.83M6.34 17.66l2.83-2.83M14.83 9.17l2.83-2.83" />
             </svg>
-            About Quiniela
+            {t('title')}
           </h1>
           <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-            A digital home for the workplace football community
+            {t('subtitle')}
           </p>
         </div>
 
@@ -49,23 +49,19 @@ export default function About() {
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xl">📖</span>
             <h2 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              Our Story
+              {t('story.title')}
             </h2>
           </div>
           
           <div className={`space-y-3 text-sm leading-relaxed ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
             <p className={`font-medium ${isDark ? 'text-dark-100' : 'text-gray-800'}`}>
-              From Paper to Platform
+              {t('story.heading')}
             </p>
             <p>
-              Quiniela was born out of a weekly tradition in a bustling workplace where a group of 
-              Mexican friends shared more than just a shift—they shared a passion for football. 
-              Every week, the crew would gather to organize a friendly and fun Liga MX match prediction pool every week, meticulously 
-              handwriting match schedules, predictions, and scores on sheets of paper.
+              {t('story.p1')}
             </p>
             <p>
-              While the "pen and paper" method carried a certain nostalgic charm, it was prone to 
-              lost slips, handwriting disputes, and the tedious manual calculation of points.
+              {t('story.p2')}
             </p>
           </div>
         </section>
@@ -77,16 +73,15 @@ export default function About() {
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xl">👁️</span>
             <h2 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              The Vision
+              {t('vision.title')}
             </h2>
           </div>
           
           <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-            <span className={`font-medium ${isDark ? 'text-dark-100' : 'text-gray-800'}`}>Sonam Sherpa</span>, 
-            a developer and a regular participant in these weekly prediction games, saw an opportunity to 
-            honor this tradition while removing the friction. Witnessing the effort his colleagues 
-            put into maintaining the game by hand, Sonam decided to leverage his technical expertise 
-            to build a digital home for the group.
+            <strong>Sonam Sherpa</strong>{t('vision.p1')}
+          </p>
+          <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+            {t('vision.p2')}
           </p>
           
           {/* Developer Card */}
@@ -101,7 +96,7 @@ export default function About() {
                 Sonam Sherpa
               </p>
               <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                Developer & Creator
+                {t('vision.developerRole')}
               </p>
             </div>
           </div>
@@ -112,12 +107,11 @@ export default function About() {
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
         }`}>
           <h2 className={`text-base font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            What We Do
+            {t('whatWeDo.title')}
           </h2>
           
           <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-            Quiniela is a custom-built digital platform designed specifically for the workplace 
-            football community for entertainment purposes. It streamlines the entire experience:
+            {t('whatWeDo.description')}
           </p>
 
           {/* Features */}
@@ -146,26 +140,25 @@ export default function About() {
           isDark ? 'bg-emerald-900/20 border-emerald-800/50' : 'bg-emerald-50 border-emerald-100'
         }`}>
           <p className={`text-sm leading-relaxed ${isDark ? 'text-dark-200' : 'text-gray-700'}`}>
-            What started as a way to simplify a workplace hobby has evolved into a sleek, 
-            efficient application that keeps the{' '}
+            {t('closing.text')}{' '}
             <span className={`font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-              spirit of the game alive
+              {t('closing.highlight')}
             </span>
-            —minus the paperwork.
+            {t('closing.suffix')}
           </p>
         </section>
 
         {/* CTA */}
         <div className="text-center">
           <p className={`mb-4 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-            Ready to join the game?
+            {t('cta.ready')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/signup"
               className="px-6 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
             >
-              Get Started
+              {t('cta.getStarted')}
             </Link>
             <Link
               to="/dashboard"
@@ -175,7 +168,7 @@ export default function About() {
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
               }`}
             >
-              View Dashboard
+              {t('cta.backHome')}
             </Link>
           </div>
         </div>

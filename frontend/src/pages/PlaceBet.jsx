@@ -26,13 +26,30 @@ export default function PlaceBet() {
   }, [])
 
   // Initialize predictions with 'draw' for all matches when schedule loads
+  // If user has existing bet, merge with defaults to ensure all matches have predictions
   useEffect(() => {
-    if (schedule && !existingBet) {
+    if (schedule) {
       const defaultPredictions = {}
       schedule.matches.forEach(match => {
         defaultPredictions[match._id] = 'draw'
       })
-      setPredictions(defaultPredictions)
+      
+      if (existingBet && existingBet.predictions) {
+        // Merge existing predictions with defaults
+        existingBet.predictions.forEach(p => {
+          if (p.matchId && p.prediction) {
+            defaultPredictions[p.matchId] = p.prediction
+          }
+        })
+      }
+      
+      setPredictions(prev => {
+        // Only update if predictions are empty or need to be merged
+        if (Object.keys(prev).length === 0 || !schedule.matches.every(m => prev[m._id])) {
+          return defaultPredictions
+        }
+        return prev
+      })
     }
   }, [schedule, existingBet])
 
@@ -53,12 +70,7 @@ export default function PlaceBet() {
         setExistingBet(myBetRes.data.bet)
         setTotalGoals(myBetRes.data.bet.totalGoals.toString())
         setPaymentStatus(myBetRes.data.bet.paid ? 'paid' : 'pending')
-        
-        const preds = {}
-        myBetRes.data.bet.predictions.forEach(p => {
-          preds[p.matchId] = p.prediction
-        })
-        setPredictions(preds)
+        // Predictions will be initialized by useEffect based on existingBet
       }
     } catch (error) {
       if (error.response?.status === 404) {
@@ -223,8 +235,17 @@ export default function PlaceBet() {
     )
   }
 
-  const completedPredictions = Object.keys(predictions).length
-  const totalMatches = schedule.matches.length
+  // Count predictions that have a valid value
+  const totalMatches = schedule?.matches?.length || 0
+  // Check if every match has a valid prediction
+  const allPredictionsMade = totalMatches > 0 && schedule?.matches?.every(match => {
+    const pred = predictions[match._id]
+    return pred && ['teamA', 'teamB', 'draw'].includes(pred)
+  })
+  const completedPredictions = schedule?.matches?.filter(match => {
+    const pred = predictions[match._id]
+    return pred && ['teamA', 'teamB', 'draw'].includes(pred)
+  }).length || 0
 
   const getCorrectCount = () => {
     if (!schedule?.matches || !predictions) return 0
@@ -535,7 +556,7 @@ export default function PlaceBet() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending || completedPredictions !== totalMatches || !totalGoals}
+                  disabled={isPending || !allPredictionsMade || totalGoals === '' || totalGoals === undefined}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isPending ? t('submit.placing') : existingBet ? t('submit.update') : t('submit.place')}

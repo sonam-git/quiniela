@@ -1590,8 +1590,8 @@ export default function Admin() {
                   }`}
                 >
                   <span>🏆</span>
-                  <span className="hidden xs:inline">Settle Week</span>
-                  <span className="xs:hidden">Settle</span>
+                  <span className="hidden xs:inline">Verify Week</span>
+                  <span className="xs:hidden">Verify</span>
                   {schedule?.isSettled && (
                     <span className="text-xs">✅</span>
                   )}
@@ -1602,25 +1602,40 @@ export default function Admin() {
             {/* Schedule Sub-tab Content */}
             {matchesSubTab === 'schedule' && (
               <>
-                {/* Header */}
-                <div className={`px-6 py-4 border-b ${
-                  isDark ? 'border-dark-700' : 'border-gray-100'
+                {/* AWS-Style Header */}
+                <div className={`px-4 sm:px-6 py-4 border-b ${
+                  isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-200 bg-gray-50/80'
                 }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Match Scores
-                      </h2>
-                      <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        Week {weekInfo.weekNumber} • Enter scores for each match
-                      </p>
-                    </div>
-                    {schedule?.isSettled && (
-                      <div className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                        isDark ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-green-100 text-green-700 border border-green-200'
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {/* Title & Description */}
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg hidden sm:flex ${
+                        isDark ? 'bg-emerald-900/30' : 'bg-emerald-100'
                       }`}>
-                        ✅ Settled • Total: {schedule.actualTotalGoals} goals
+                        <svg className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
                       </div>
+                      <div>
+                        <h2 className={`text-base sm:text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Match Scores
+                        </h2>
+                        <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          Week {weekInfo.weekNumber} • Enter scores for each match
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Status Badge */}
+                    {schedule?.isSettled && (
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${
+                        isDark ? 'bg-green-900/30 text-green-400 ring-1 ring-green-800/50' : 'bg-green-50 text-green-700 ring-1 ring-green-200'
+                      }`}>
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Verified • {schedule.actualTotalGoals} goals
+                      </span>
                     )}
                   </div>
                 </div>
@@ -1628,33 +1643,40 @@ export default function Admin() {
                 {/* Matches List */}
                 <div className="p-4 sm:p-6">
                   {!schedule ? (
-                    <div className={`text-center py-8 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      <span className="text-4xl mb-3 block">📅</span>
-                      <p>No schedule found for this week</p>
+                    <div className={`text-center py-12 rounded-lg border-2 border-dashed ${
+                      isDark ? 'border-dark-600' : 'border-gray-200'
+                    }`}>
+                      <svg className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-dark-500' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className={`font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>No schedule found</p>
+                      <p className={`text-sm mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                        Create or refresh a schedule first
+                      </p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                   {schedule.matches?.map((match, index) => (
                     <div
                       key={match._id}
-                      className={`rounded-xl border p-4 transition-all ${
+                      className={`rounded-lg border p-3 sm:p-4 transition-all ${
                         match.isCompleted
                           ? isDark
-                            ? 'bg-dark-700/50 border-dark-600'
-                            : 'bg-gray-50 border-gray-200'
+                            ? 'bg-dark-700/30 border-dark-600'
+                            : 'bg-gray-50/80 border-gray-200'
                           : isDark
                             ? 'bg-dark-800 border-dark-700 hover:border-dark-600'
-                            : 'bg-white border-gray-200 hover:border-gray-300'
+                            : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
                       }`}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         {/* Match Number */}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center flex-shrink-0 ${
                           match.isCompleted
                             ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
                             : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-600'
                         }`}>
-                          <span className="text-sm font-bold">{index + 1}</span>
+                          <span className="text-xs sm:text-sm font-bold">{match.isCompleted ? '✓' : index + 1}</span>
                         </div>
 
                         {/* Teams */}
@@ -1801,191 +1823,264 @@ export default function Admin() {
             {/* Update Sub-tab Content */}
             {matchesSubTab === 'update' && (
               <>
-                {/* Header */}
+                {/* AWS-Style Header */}
                 <div className={`px-4 sm:px-6 py-4 border-b ${
-                  isDark ? 'border-dark-700' : 'border-gray-100'
+                  isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-200 bg-gray-50/80'
                 }`}>
-                  <div className="flex flex-col gap-3">
-                    <div>
-                      <h2 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Schedule Management
-                      </h2>
-                      <p className={`text-xs sm:text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        {allSchedules.length} schedule{allSchedules.length !== 1 ? 's' : ''} • Edit match times
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {/* Title & Description */}
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg hidden sm:flex ${
+                        isDark ? 'bg-purple-900/30' : 'bg-purple-100'
+                      }`}>
+                        <svg className={`w-5 h-5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className={`text-base sm:text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Schedule Management
+                        </h2>
+                        <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          {allSchedules.length} schedule{allSchedules.length !== 1 ? 's' : ''} available
+                        </p>
+                      </div>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* Action Buttons - AWS Style */}
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={handleRefreshSchedule}
                         disabled={scheduleLoading}
-                        className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium border transition-all ${
                           isDark
-                            ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
-                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                        } disabled:opacity-50`}
+                            ? 'bg-dark-700 border-dark-600 text-dark-200 hover:bg-dark-600 hover:border-dark-500'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {scheduleLoading ? (
-                          <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                          <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                         ) : (
-                          <span>🔄</span>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
                         )}
-                        <span className="hidden sm:inline">Refresh from API</span>
-                        <span className="sm:hidden">Refresh</span>
+                        <span>Refresh</span>
                       </button>
                       <button
                         onClick={() => setShowCreateSchedule(!showCreateSchedule)}
-                        className="px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors flex items-center gap-1.5"
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                          showCreateSchedule
+                            ? isDark
+                              ? 'bg-dark-700 border border-dark-600 text-dark-300'
+                              : 'bg-gray-100 border border-gray-300 text-gray-600'
+                            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
+                        }`}
                       >
-                        <span>{showCreateSchedule ? '✕' : '➕'}</span>
-                        <span className="hidden sm:inline">{showCreateSchedule ? 'Cancel' : 'New Schedule'}</span>
-                        <span className="sm:hidden">{showCreateSchedule ? 'Cancel' : 'New'}</span>
+                        {showCreateSchedule ? (
+                          <>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span>Cancel</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>New</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 sm:p-6">
-              {/* Create Schedule Form */}
+              {/* Create Schedule Form - AWS Style Card */}
               {showCreateSchedule && (
-                <form onSubmit={handleCreateSchedule} className={`mb-6 p-4 rounded-xl border ${
-                  isDark ? 'bg-dark-700/50 border-dark-600' : 'bg-gray-50 border-gray-200'
+                <form onSubmit={handleCreateSchedule} className={`mb-6 rounded-lg border overflow-hidden ${
+                  isDark ? 'bg-dark-800 border-dark-600' : 'bg-white border-gray-200 shadow-sm'
                 }`}>
-                  <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Create New Schedule
-                  </h3>
-                  
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                        Week Number *
-                      </label>
-                      <input
-                        type="number"
-                        value={newScheduleForm.weekNumber}
-                        onChange={(e) => setNewScheduleForm(prev => ({ ...prev, weekNumber: e.target.value }))}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                          isDark
-                            ? 'bg-dark-800 border-dark-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-900'
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        placeholder="e.g., 6"
-                      />
-                    </div>
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                        Year *
-                      </label>
-                      <input
-                        type="number"
-                        value={newScheduleForm.year}
-                        onChange={(e) => setNewScheduleForm(prev => ({ ...prev, year: e.target.value }))}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                          isDark
-                            ? 'bg-dark-800 border-dark-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-900'
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                      />
-                    </div>
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                        Jornada (Optional)
-                      </label>
-                      <input
-                        type="number"
-                        value={newScheduleForm.jornada}
-                        onChange={(e) => setNewScheduleForm(prev => ({ ...prev, jornada: e.target.value }))}
-                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                          isDark
-                            ? 'bg-dark-800 border-dark-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-900'
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        placeholder="e.g., 5"
-                      />
-                    </div>
-                  </div>
-
-                  <div className={`mb-4 p-3 rounded-lg ${isDark ? 'bg-dark-800' : 'bg-gray-100'}`}>
-                    <p className={`text-xs font-medium mb-2 ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                      Matches (9 required)
+                  {/* Form Header */}
+                  <div className={`px-4 py-3 border-b ${
+                    isDark ? 'border-dark-600 bg-dark-700/50' : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Create New Schedule
+                    </h3>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      Configure week details and add 9 matches
                     </p>
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {newScheduleForm.matches.map((match, index) => (
-                        <div key={index} className={`p-2 rounded-lg ${isDark ? 'bg-dark-700/50' : 'bg-white'}`}>
-                          {/* Match Number */}
-                          <div className={`text-xs font-medium mb-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                            Match {index + 1}
-                          </div>
-                          {/* Teams Row */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <select
-                              value={match.teamA}
-                              onChange={(e) => updateNewScheduleMatch(index, 'teamA', e.target.value)}
-                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
-                                isDark
-                                  ? 'bg-dark-700 border-dark-600 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
+                  </div>
+                  
+                  {/* Form Body */}
+                  <div className="p-4 space-y-4">
+                    {/* Week Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>
+                          Week Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={newScheduleForm.weekNumber}
+                          onChange={(e) => setNewScheduleForm(prev => ({ ...prev, weekNumber: e.target.value }))}
+                          className={`w-full px-3 py-2 rounded-md border text-sm transition-colors ${
+                            isDark
+                              ? 'bg-dark-700 border-dark-600 text-white placeholder-dark-500 focus:border-purple-500'
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500'
+                          } focus:outline-none focus:ring-1 focus:ring-purple-500/30`}
+                          placeholder="6"
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>
+                          Year <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={newScheduleForm.year}
+                          onChange={(e) => setNewScheduleForm(prev => ({ ...prev, year: e.target.value }))}
+                          className={`w-full px-3 py-2 rounded-md border text-sm transition-colors ${
+                            isDark
+                              ? 'bg-dark-700 border-dark-600 text-white focus:border-purple-500'
+                              : 'bg-white border-gray-300 text-gray-900 focus:border-purple-500'
+                          } focus:outline-none focus:ring-1 focus:ring-purple-500/30`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>
+                          Jornada <span className={`text-xs font-normal ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>(optional)</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={newScheduleForm.jornada}
+                          onChange={(e) => setNewScheduleForm(prev => ({ ...prev, jornada: e.target.value }))}
+                          className={`w-full px-3 py-2 rounded-md border text-sm transition-colors ${
+                            isDark
+                              ? 'bg-dark-700 border-dark-600 text-white placeholder-dark-500 focus:border-purple-500'
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500'
+                          } focus:outline-none focus:ring-1 focus:ring-purple-500/30`}
+                          placeholder="5"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Matches Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className={`text-xs font-medium ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>
+                          Matches <span className="text-red-500">*</span>
+                        </label>
+                        <span className={`text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                          {newScheduleForm.matches.filter(m => m.teamA && m.teamB && m.date && m.time).length}/9 complete
+                        </span>
+                      </div>
+                      
+                      <div className={`rounded-md border overflow-hidden ${
+                        isDark ? 'border-dark-600' : 'border-gray-200'
+                      }`}>
+                        <div className="max-h-[400px] overflow-y-auto">
+                          {newScheduleForm.matches.map((match, index) => (
+                            <div 
+                              key={index} 
+                              className={`p-3 ${
+                                index !== 0 ? (isDark ? 'border-t border-dark-700' : 'border-t border-gray-100') : ''
+                              } ${isDark ? 'hover:bg-dark-700/30' : 'hover:bg-gray-50'}`}
                             >
-                              <option value="">Home Team</option>
-                              {LIGA_MX_TEAMS.map(team => (
-                                <option key={team} value={team}>{team}</option>
-                              ))}
-                            </select>
-                            <span className={`flex-shrink-0 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</span>
-                            <select
-                              value={match.teamB}
-                              onChange={(e) => updateNewScheduleMatch(index, 'teamB', e.target.value)}
-                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
-                                isDark
-                                  ? 'bg-dark-700 border-dark-600 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
-                            >
-                              <option value="">Away Team</option>
-                              {LIGA_MX_TEAMS.map(team => (
-                                <option key={team} value={team}>{team}</option>
-                              ))}
-                            </select>
-                          </div>
-                          {/* Date & Time Row */}
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="date"
-                              value={match.date}
-                              onChange={(e) => updateNewScheduleMatch(index, 'date', e.target.value)}
-                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
-                                isDark
-                                  ? 'bg-dark-700 border-dark-600 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
-                            />
-                            <input
-                              type="time"
-                              value={match.time}
-                              onChange={(e) => updateNewScheduleMatch(index, 'time', e.target.value)}
-                              className={`flex-1 min-w-0 px-2 py-1.5 rounded border text-xs ${
-                                isDark
-                                  ? 'bg-dark-700 border-dark-600 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
-                            />
-                          </div>
+                              {/* Match Header - Mobile */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`w-5 h-5 rounded text-xs font-medium flex items-center justify-center ${
+                                  match.teamA && match.teamB && match.date && match.time
+                                    ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                                    : isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-100 text-gray-500'
+                                }`}>
+                                  {index + 1}
+                                </span>
+                                <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                  Match {index + 1}
+                                </span>
+                              </div>
+                              
+                              {/* Teams - Responsive Grid */}
+                              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 mb-2">
+                                <select
+                                  value={match.teamA}
+                                  onChange={(e) => updateNewScheduleMatch(index, 'teamA', e.target.value)}
+                                  className={`w-full px-2.5 py-1.5 rounded-md border text-xs transition-colors ${
+                                    isDark
+                                      ? 'bg-dark-700 border-dark-600 text-white'
+                                      : 'bg-white border-gray-300 text-gray-900'
+                                  } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
+                                >
+                                  <option value="">🏠 Home Team</option>
+                                  {LIGA_MX_TEAMS.map(team => (
+                                    <option key={team} value={team}>{team}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={match.teamB}
+                                  onChange={(e) => updateNewScheduleMatch(index, 'teamB', e.target.value)}
+                                  className={`w-full px-2.5 py-1.5 rounded-md border text-xs transition-colors ${
+                                    isDark
+                                      ? 'bg-dark-700 border-dark-600 text-white'
+                                      : 'bg-white border-gray-300 text-gray-900'
+                                  } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
+                                >
+                                  <option value="">✈️ Away Team</option>
+                                  {LIGA_MX_TEAMS.map(team => (
+                                    <option key={team} value={team}>{team}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              
+                              {/* Date & Time - Responsive Grid */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="date"
+                                  value={match.date}
+                                  onChange={(e) => updateNewScheduleMatch(index, 'date', e.target.value)}
+                                  className={`w-full px-2.5 py-1.5 rounded-md border text-xs transition-colors ${
+                                    isDark
+                                      ? 'bg-dark-700 border-dark-600 text-white'
+                                      : 'bg-white border-gray-300 text-gray-900'
+                                  } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
+                                />
+                                <input
+                                  type="time"
+                                  value={match.time}
+                                  onChange={(e) => updateNewScheduleMatch(index, 'time', e.target.value)}
+                                  className={`w-full px-2.5 py-1.5 rounded-md border text-xs transition-colors ${
+                                    isDark
+                                      ? 'bg-dark-700 border-dark-600 text-white'
+                                      : 'bg-white border-gray-300 text-gray-900'
+                                  } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
+                  {/* Form Footer */}
+                  <div className={`px-4 py-3 border-t flex justify-end ${
+                    isDark ? 'border-dark-600 bg-dark-700/30' : 'border-gray-200 bg-gray-50'
+                  }`}>
                     <button
                       type="submit"
                       disabled={scheduleLoading}
-                      className="px-4 py-2 rounded-xl text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     >
                       {scheduleLoading ? (
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <span>💾</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                       )}
                       <span>Create Schedule</span>
                     </button>
@@ -1993,172 +2088,203 @@ export default function Admin() {
                 </form>
               )}
 
-              {/* Existing Schedules List */}
+              {/* Existing Schedules List - AWS Style */}
               {allSchedules.length === 0 ? (
-                <div className={`text-center py-8 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  <span className="text-4xl mb-3 block">📅</span>
-                  <p>No schedules found</p>
-                  <p className="text-sm mt-1">Click "Refresh from API" or "New Schedule" to create one</p>
+                <div className={`text-center py-12 rounded-lg border-2 border-dashed ${
+                  isDark ? 'border-dark-600' : 'border-gray-200'
+                }`}>
+                  <svg className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-dark-500' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className={`font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>No schedules found</p>
+                  <p className={`text-sm mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                    Click "Sync API" or "Create" to add a schedule
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {allSchedules.map((sched) => {
                     const isCurrentWeek = sched.weekNumber === weekInfo.weekNumber && sched.year === weekInfo.year
                     const firstMatchTime = sched.matches?.reduce((earliest, m) => 
                       new Date(m.startTime) < new Date(earliest) ? m.startTime : earliest
                     , sched.matches?.[0]?.startTime)
                     const hasStarted = new Date() >= new Date(firstMatchTime)
+                    const completedMatches = sched.matches?.filter(m => m.isCompleted).length || 0
                     
                     return (
                       <div
                         key={sched._id}
-                        className={`rounded-xl border overflow-hidden ${
+                        className={`rounded-lg border overflow-hidden transition-all ${
                           isCurrentWeek
                             ? isDark
-                              ? 'border-purple-500/50 bg-purple-900/10'
-                              : 'border-purple-300 bg-purple-50/50'
+                              ? 'border-purple-500/50 bg-purple-900/5 ring-1 ring-purple-500/20'
+                              : 'border-purple-300 bg-purple-50/30 ring-1 ring-purple-200'
                             : isDark
-                              ? 'border-dark-600 bg-dark-700/30'
-                              : 'border-gray-200 bg-white'
+                              ? 'border-dark-600 bg-dark-800/50 hover:border-dark-500'
+                              : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm'
                         }`}
                       >
-                        {/* Schedule Header */}
-                        <div className={`px-4 py-3 flex items-center justify-between ${
-                          isDark ? 'bg-dark-700/50' : 'bg-gray-50'
+                        {/* Schedule Header - AWS Style */}
+                        <div className={`px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                          isDark ? 'bg-dark-700/30' : 'bg-gray-50/80'
                         }`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Week Badge */}
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${
                               isCurrentWeek
-                                ? isDark ? 'bg-purple-900/50 text-purple-300' : 'bg-purple-100 text-purple-700'
-                                : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-200 text-gray-600'
+                                ? isDark ? 'bg-purple-900/50 text-purple-300 ring-1 ring-purple-500/30' : 'bg-purple-100 text-purple-700'
+                                : isDark ? 'bg-dark-600 text-dark-200' : 'bg-gray-200 text-gray-700'
                             }`}>
                               Week {sched.weekNumber}
-                            </div>
-                            <span className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                              {sched.year} {sched.jornada ? `• Jornada ${sched.jornada}` : ''}
                             </span>
-                            <span className={`text-xs px-2 py-0.5 rounded ${
+                            
+                            {/* Year & Jornada */}
+                            <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                              {sched.year}{sched.jornada ? ` • J${sched.jornada}` : ''}
+                            </span>
+                            
+                            {/* Data Source Badge */}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                               sched.dataSource === 'api'
-                                ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                                ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200'
                                 : sched.dataSource === 'admin'
-                                  ? isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-600'
-                                  : isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'
+                                  ? isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-600 ring-1 ring-amber-200'
+                                  : isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-100 text-gray-500'
                             }`}>
-                              {sched.dataSource || 'hardcoded'}
+                              {sched.dataSource === 'api' && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                              {sched.dataSource || 'manual'}
                             </span>
+                            
+                            {/* Status Badges */}
                             {sched.isSettled && (
-                              <span className={`text-xs px-2 py-0.5 rounded ${
-                                isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                                isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-600 ring-1 ring-green-200'
                               }`}>
-                                ✅ Settled
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Settled
+                              </span>
+                            )}
+                            
+                            {/* Progress indicator */}
+                            {!sched.isSettled && completedMatches > 0 && (
+                              <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                {completedMatches}/{sched.matches?.length || 9} played
                               </span>
                             )}
                           </div>
                           
+                          {/* Delete Button */}
                           {!hasStarted && !sched.isSettled && (
                             <button
                               onClick={() => handleDeleteSchedule(sched._id)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isDark
-                                  ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                  ? 'text-red-400 hover:bg-red-900/30'
+                                  : 'text-red-600 hover:bg-red-50'
                               }`}
                             >
-                              🗑️ Delete
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              <span className="hidden sm:inline">Delete</span>
                             </button>
                           )}
                         </div>
 
-                        {/* Matches */}
-                        <div className="p-3">
-                          <div className="grid gap-2">
+                        {/* Matches List - Compact */}
+                        <div className="p-2 sm:p-3">
+                          <div className="space-y-1">
                             {sched.matches?.map((match, idx) => (
                               <div
                                 key={match._id}
-                                className={`p-2 rounded-lg text-xs ${
-                                  isDark ? 'bg-dark-800/50' : 'bg-gray-50'
-                                } ${editingScheduleMatch === match._id && selectedSchedule === sched._id ? '' : 'flex items-center gap-2'}`}
+                                className={`rounded-md text-xs transition-all ${
+                                  isDark ? 'hover:bg-dark-700/50' : 'hover:bg-gray-50'
+                                } ${editingScheduleMatch === match._id && selectedSchedule === sched._id 
+                                  ? isDark ? 'bg-dark-700 ring-1 ring-purple-500/30' : 'bg-purple-50 ring-1 ring-purple-200' 
+                                  : ''
+                                }`}
                               >
                                 {editingScheduleMatch === match._id && selectedSchedule === sched._id ? (
-                                  // Edit Mode - Full Width Stacked Layout
-                                  <div className="space-y-3">
-                                    {/* Match Number Badge */}
+                                  /* Edit Mode - Stacked for Mobile */
+                                  <div className="p-3 space-y-3">
                                     <div className="flex items-center gap-2">
-                                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                                        isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-200 text-gray-500'
+                                      <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-medium ${
+                                        isDark ? 'bg-purple-900/50 text-purple-300' : 'bg-purple-100 text-purple-600'
                                       }`}>
                                         {idx + 1}
                                       </span>
-                                      <span className={`text-xs font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
+                                      <span className={`text-xs font-medium ${isDark ? 'text-purple-300' : 'text-purple-600'}`}>
                                         Editing Match
                                       </span>
                                     </div>
                                     
-                                    {/* Home Team */}
-                                    <div>
-                                      <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                                        🏠 Home Team
-                                      </label>
-                                      <select
-                                        value={scheduleMatchForm.teamA}
-                                        onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, teamA: e.target.value }))}
-                                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                                          isDark
-                                            ? 'bg-dark-700 border-dark-600 text-white'
-                                            : 'bg-white border-gray-300 text-gray-900'
-                                        }`}
-                                      >
-                                        <option value="">Select Home Team</option>
-                                        {LIGA_MX_TEAMS.map(team => (
-                                          <option key={team} value={team}>{team}</option>
-                                        ))}
-                                      </select>
+                                    {/* Teams Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <div>
+                                        <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                          Home Team
+                                        </label>
+                                        <select
+                                          value={scheduleMatchForm.teamA}
+                                          onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, teamA: e.target.value }))}
+                                          className={`w-full px-2.5 py-2 rounded-md border text-sm ${
+                                            isDark
+                                              ? 'bg-dark-700 border-dark-600 text-white'
+                                              : 'bg-white border-gray-300 text-gray-900'
+                                          } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
+                                        >
+                                          <option value="">Select Team</option>
+                                          {LIGA_MX_TEAMS.map(team => (
+                                            <option key={team} value={team}>{team}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                          Away Team
+                                        </label>
+                                        <select
+                                          value={scheduleMatchForm.teamB}
+                                          onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, teamB: e.target.value }))}
+                                          className={`w-full px-2.5 py-2 rounded-md border text-sm ${
+                                            isDark
+                                              ? 'bg-dark-700 border-dark-600 text-white'
+                                              : 'bg-white border-gray-300 text-gray-900'
+                                          } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
+                                        >
+                                          <option value="">Select Team</option>
+                                          {LIGA_MX_TEAMS.map(team => (
+                                            <option key={team} value={team}>{team}</option>
+                                          ))}
+                                        </select>
+                                      </div>
                                     </div>
                                     
-                                    {/* Away Team */}
+                                    {/* DateTime */}
                                     <div>
                                       <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                                        ✈️ Away Team
-                                      </label>
-                                      <select
-                                        value={scheduleMatchForm.teamB}
-                                        onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, teamB: e.target.value }))}
-                                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                                          isDark
-                                            ? 'bg-dark-700 border-dark-600 text-white'
-                                            : 'bg-white border-gray-300 text-gray-900'
-                                        }`}
-                                      >
-                                        <option value="">Select Away Team</option>
-                                        {LIGA_MX_TEAMS.map(team => (
-                                          <option key={team} value={team}>{team}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    
-                                    {/* Date & Time */}
-                                    <div>
-                                      <label className={`block text-xs mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                                        📅 Date & Time
+                                        Date & Time
                                       </label>
                                       <input
                                         type="datetime-local"
                                         value={scheduleMatchForm.startTime}
                                         onChange={(e) => setScheduleMatchForm(prev => ({ ...prev, startTime: e.target.value }))}
-                                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                                        className={`w-full px-2.5 py-2 rounded-md border text-sm ${
                                           isDark
                                             ? 'bg-dark-700 border-dark-600 text-white'
                                             : 'bg-white border-gray-300 text-gray-900'
-                                        }`}
+                                        } focus:outline-none focus:ring-1 focus:ring-purple-500/30 focus:border-purple-500`}
                                       />
                                     </div>
                                     
-                                    {/* Action Buttons */}
+                                    {/* Actions */}
                                     <div className="flex gap-2 pt-1">
                                       <button
                                         onClick={handleCancelScheduleEdit}
-                                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                          isDark ? 'bg-dark-600 text-dark-300 hover:bg-dark-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                        className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                          isDark ? 'bg-dark-600 text-dark-300 hover:bg-dark-500' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
                                         }`}
                                       >
                                         Cancel
@@ -2166,54 +2292,61 @@ export default function Admin() {
                                       <button
                                         onClick={handleSaveScheduleMatch}
                                         disabled={scheduleLoading}
-                                        className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 transition-colors"
+                                        className="flex-1 px-3 py-2 rounded-md text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 transition-colors"
                                       >
-                                        {scheduleLoading ? 'Saving...' : '✓ Save'}
+                                        {scheduleLoading ? 'Saving...' : 'Save'}
                                       </button>
                                     </div>
                                   </div>
                                 ) : (
-                                  // View Mode - Responsive
-                                  <>
-                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                      isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-200 text-gray-500'
+                                  /* View Mode - Responsive */
+                                  <div className="px-2 py-1.5 flex items-center gap-2">
+                                    <span className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-xs ${
+                                      match.isCompleted
+                                        ? isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                                        : isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-100 text-gray-500'
                                     }`}>
-                                      {idx + 1}
+                                      {match.isCompleted ? '✓' : idx + 1}
                                     </span>
-                                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                      <div className="flex-1 flex items-center gap-1 sm:gap-2 min-w-0">
-                                        <span className={`text-xs sm:text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    
+                                    <div className="flex-1 min-w-0 flex flex-col xs:flex-row xs:items-center gap-0.5 xs:gap-2">
+                                      <div className="flex items-center gap-1 min-w-0">
+                                        <span className={`truncate text-xs sm:text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                           {match.teamA}
                                         </span>
-                                        <span className={`flex-shrink-0 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>vs</span>
-                                        <span className={`text-xs sm:text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                        <span className={`flex-shrink-0 text-[10px] sm:text-xs px-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                                          vs
+                                        </span>
+                                        <span className={`truncate text-xs sm:text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                           {match.teamB}
                                         </span>
                                       </div>
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                                          {new Date(match.startTime).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                          })}
-                                        </span>
-                                        {!hasStarted && !sched.isSettled && (
-                                          <button
-                                            onClick={() => handleEditScheduleMatch(sched._id, match)}
-                                            className={`px-2 py-1 rounded text-xs ${
-                                              isDark
-                                                ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
-                                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                                            }`}
-                                          >
-                                            ✏️
-                                          </button>
-                                        )}
-                                      </div>
+                                      
+                                      <span className={`text-[10px] sm:text-xs flex-shrink-0 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                                        {new Date(match.startTime).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })}
+                                      </span>
                                     </div>
-                                  </>
+                                    
+                                    {!hasStarted && !sched.isSettled && (
+                                      <button
+                                        onClick={() => handleEditScheduleMatch(sched._id, match)}
+                                        className={`p-1.5 rounded transition-colors flex-shrink-0 ${
+                                          isDark
+                                            ? 'text-dark-400 hover:text-blue-400 hover:bg-blue-900/30'
+                                            : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                                        }`}
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -2228,48 +2361,104 @@ export default function Admin() {
               </>
             )}
 
-            {/* Settle Week Sub-tab Content */}
+            {/* Verify Week Sub-tab Content */}
             {matchesSubTab === 'settle' && (
-              <div className="p-6">
-                <div className={`max-w-lg mx-auto text-center p-8 rounded-2xl ${
-                  isDark ? 'bg-dark-700/50' : 'bg-amber-50'
+              <>
+                {/* AWS-Style Header */}
+                <div className={`px-4 sm:px-6 py-4 border-b ${
+                  isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-200 bg-gray-50/80'
                 }`}>
-                  <div className="text-6xl mb-4">🏆</div>
-                  <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Settle Week {weekInfo.weekNumber}
-                  </h2>
-                  <p className={`text-sm mb-6 ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
-                    All {schedule?.matches?.length || 9} matches have been completed. 
-                    Calculate the total goals and determine the winners.
-                  </p>
-                  
-                  {/* Summary */}
-                  <div className={`mb-6 p-4 rounded-xl ${isDark ? 'bg-dark-800' : 'bg-white'}`}>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className={`${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Total Goals</p>
-                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          {schedule?.matches?.reduce((sum, m) => sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0) || 0}
-                        </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {/* Title & Description */}
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg hidden sm:flex ${
+                        isDark ? 'bg-amber-900/30' : 'bg-amber-100'
+                      }`}>
+                        <svg className={`w-5 h-5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       </div>
                       <div>
-                        <p className={`${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Matches</p>
-                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
+                        <h2 className={`text-base sm:text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Verify Week {weekInfo.weekNumber}
+                        </h2>
+                        <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          Finalize results and determine winners
                         </p>
                       </div>
                     </div>
                   </div>
-                  
-                  <button
-                    onClick={handleSettleWeek}
-                    className="w-full px-6 py-3 rounded-xl text-base font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span>🏆</span>
-                    <span>Settle Week & Determine Winners</span>
-                  </button>
                 </div>
-              </div>
+
+                <div className="p-4 sm:p-6">
+                  <div className={`max-w-md mx-auto rounded-lg border overflow-hidden ${
+                    isDark ? 'bg-dark-800 border-dark-600' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    {/* Card Header */}
+                    <div className={`px-4 py-3 border-b text-center ${
+                      isDark ? 'border-dark-600 bg-dark-700/50' : 'border-gray-200 bg-gray-50'
+                    }`}>
+                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 ${
+                        isDark ? 'bg-amber-900/30' : 'bg-amber-100'
+                      }`}>
+                        <span className="text-2xl">🏆</span>
+                      </div>
+                      <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Ready to Verify
+                      </h3>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        All {schedule?.matches?.length || 9} matches completed
+                      </p>
+                    </div>
+                    
+                    {/* Summary Stats */}
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className={`p-3 rounded-md text-center ${
+                          isDark ? 'bg-dark-700' : 'bg-gray-50'
+                        }`}>
+                          <p className={`text-xs font-medium mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            Total Goals
+                          </p>
+                          <p className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {schedule?.matches?.reduce((sum, m) => sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0) || 0}
+                          </p>
+                        </div>
+                        <div className={`p-3 rounded-md text-center ${
+                          isDark ? 'bg-dark-700' : 'bg-gray-50'
+                        }`}>
+                          <p className={`text-xs font-medium mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            Matches Played
+                          </p>
+                          <p className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Info Box */}
+                      <div className={`p-3 rounded-md mb-4 ${
+                        isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-100'
+                      }`}>
+                        <p className={`text-xs ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                          <span className="font-medium">Note:</span> Verifying the week will calculate final standings and cannot be undone.
+                        </p>
+                      </div>
+                      
+                      {/* Action Button */}
+                      <button
+                        onClick={handleSettleWeek}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Verify & Finalize Results</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}

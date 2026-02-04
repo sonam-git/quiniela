@@ -63,9 +63,26 @@ const convertApiFixtures = (fixtures) => {
   }));
 };
 
-// Liga MX Clausura 2026 Complete Schedule (Jornadas 5-17)
+// Liga MX Clausura 2026 Complete Schedule (Jornadas 4-17)
 // Format: { home: 'HomeTeam 🏠', away: 'AwayTeam ✈️', date: 'YYYY-MM-DD', time: 'HH:MM' }
+// For completed matches: result: 'teamA' | 'teamB' | 'draw', scoreA, scoreB
 const LIGA_MX_CLAUSURA_2026 = {
+  // Jornada 4 - January 30-31, 2026 (COMPLETED)
+  4: {
+    startDate: '2026-01-30',
+    completed: true,
+    matches: [
+      { home: 'Club Puebla', away: 'Deportivo Toluca', date: '2026-01-30', time: '17:00', scoreA: 0, scoreB: 0, result: 'draw' },
+      { home: 'Pumas UNAM', away: 'Club Santos Laguna', date: '2026-01-30', time: '19:00', scoreA: 4, scoreB: 0, result: 'teamA' },
+      { home: 'FC Juarez', away: 'CF Cruz Azul', date: '2026-01-30', time: '21:00', scoreA: 3, scoreB: 4, result: 'teamB' },
+      { home: 'CF America', away: 'Club Necaxa', date: '2026-01-31', time: '13:00', scoreA: 2, scoreB: 0, result: 'teamA' },
+      { home: 'Atlas', away: 'Mazatlan', date: '2026-01-31', time: '15:00', scoreA: 1, scoreB: 0, result: 'teamA' },
+      { home: 'Atletico San Luis', away: 'CD Guadalajara', date: '2026-01-31', time: '17:00', scoreA: 2, scoreB: 3, result: 'teamB' },
+      { home: 'CF Monterrey', away: 'Club Tijuana', date: '2026-01-31', time: '19:00', scoreA: 2, scoreB: 2, result: 'draw' },
+      { home: 'Club Leon', away: 'Tigres UANL', date: '2026-01-31', time: '19:00', scoreA: 1, scoreB: 2, result: 'teamB' },
+      { home: 'Queretaro', away: 'CF Pachuca', date: '2026-02-01', time: '12:00', scoreA: 0, scoreB: 0, result: 'draw' }
+    ]
+  },
   // Jornada 5 - February 6-7, 2026
   5: {
     startDate: '2026-02-06',
@@ -280,15 +297,18 @@ const getStaticSchedule = (jornada) => {
     const [hour, minute] = match.time.split(':').map(Number);
     const startTime = new Date(year, month - 1, day, hour, minute);
     
+    // Check if this jornada has completed matches
+    const isCompleted = jornadaData.completed || false;
+    
     return {
       teamA: match.home, // Home team 🏠
       teamB: match.away, // Away team ✈️
       teamAIsHome: true, // teamA is always home
       startTime,
-      isCompleted: false,
-      scoreTeamA: null,
-      scoreTeamB: null,
-      result: null,
+      isCompleted: isCompleted,
+      scoreTeamA: match.scoreA ?? null,
+      scoreTeamB: match.scoreB ?? null,
+      result: match.result ?? null,
       apiFixtureId: null
     };
   });
@@ -325,52 +345,6 @@ const getWeekNumber = (date) => {
   return weekNumber;
 };
 
-// Create demo users
-const createDemoUsers = async () => {
-  const users = await User.create([
-    { name: 'Carlos García', email: 'carlos@example.com', password: 'password123' },
-    { name: 'María López', email: 'maria@example.com', password: 'password123' },
-    { name: 'Juan Martínez', email: 'juan@example.com', password: 'password123' },
-    { name: 'Ana Rodríguez', email: 'ana@example.com', password: 'password123' },
-    { name: 'Pedro Sánchez', email: 'pedro@example.com', password: 'password123' },
-    { name: 'Luis Hernández', email: 'luis@example.com', password: 'password123' },
-    { name: 'Sofia Torres', email: 'sofia@example.com', password: 'password123' }
-  ]);
-  return users;
-};
-
-// Create demo bets for users
-const createDemoBets = async (users, schedule) => {
-  const predictionOptions = ['teamA', 'teamB', 'draw'];
-  
-  const betsToCreate = [];
-  
-  for (const user of users.slice(0, 5)) { // Create bets for first 5 users
-    const predictions = schedule.matches.map(match => ({
-      matchId: match._id,
-      prediction: predictionOptions[Math.floor(Math.random() * 3)]
-    }));
-    
-    betsToCreate.push({
-      userId: user._id,
-      weekNumber: schedule.weekNumber,
-      year: schedule.year,
-      totalGoals: Math.floor(Math.random() * 20) + 15, // Random between 15-35
-      predictions,
-      paid: Math.random() > 0.3, // 70% chance of being paid
-      totalPoints: 0,
-      goalDifference: 0,
-      isWinner: false
-    });
-  }
-  
-  for (const betData of betsToCreate) {
-    await Bet.create(betData);
-  }
-  
-  return betsToCreate.length;
-};
-
 // Main seed function
 const seedDatabase = async () => {
   try {
@@ -383,17 +357,15 @@ const seedDatabase = async () => {
     });
     console.log('✅ Connected to MongoDB');
 
-    // Clear existing data
-    console.log('\n🗑️  Clearing existing data...');
-    await User.deleteMany({});
+    // Check existing users (we never delete users)
+    const userCount = await User.countDocuments();
+    console.log(`\n👥 Found ${userCount} existing user(s) - users are preserved`);
+    
+    // Clear schedules and associated bets
+    console.log('\n🗑️  Clearing schedules and bets...');
     await Schedule.deleteMany({});
     await Bet.deleteMany({});
-    console.log('✅ Cleared existing data');
-
-    // Create demo users
-    console.log('\n👥 Creating demo users...');
-    const users = await createDemoUsers();
-    console.log(`✅ Created ${users.length} demo users`);
+    console.log('✅ Cleared schedules and bets (users preserved)');
 
     // Determine current jornada and calendar week
     const currentJornada = getCurrentJornada();
@@ -450,9 +422,10 @@ const seedDatabase = async () => {
     const schedule = await Schedule.create({
       weekNumber: calendarWeek,  // Use calendar week for route lookup
       year,
+      jornada: currentJornada,   // Store jornada for reference
       matches: matches.slice(0, 9),
+      dataSource: source.includes('API') ? 'api' : 'hardcoded',
       isSettled: false,
-      allMatchesCompleted: false,
       actualTotalGoals: null
     });
 
@@ -460,10 +433,34 @@ const seedDatabase = async () => {
     console.log(`   Jornada: ${currentJornada}, Week: ${calendarWeek}, Year: ${year}`);
     console.log(`   Matches: ${schedule.matches.length}`);
 
-    // Create demo bets
-    console.log('\n🎲 Creating demo bets...');
-    const betCount = await createDemoBets(users, schedule);
-    console.log(`✅ Created ${betCount} demo bets`);
+    // Also create last week's schedule (Jornada 4) with completed results
+    const lastWeekJornada = currentJornada - 1;
+    let lastWeekSchedule = null;
+    
+    if (LIGA_MX_CLAUSURA_2026[lastWeekJornada]) {
+      const lastWeekMatches = getStaticSchedule(lastWeekJornada);
+      const lastWeekCalendarWeek = calendarWeek - 1;
+      
+      // Calculate total goals for last week
+      const totalGoals = lastWeekMatches.reduce((sum, match) => {
+        return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+      }, 0);
+      
+      lastWeekSchedule = await Schedule.create({
+        weekNumber: lastWeekCalendarWeek,
+        year,
+        jornada: lastWeekJornada,
+        matches: lastWeekMatches.slice(0, 9),
+        dataSource: 'hardcoded',
+        isSettled: true,
+        actualTotalGoals: totalGoals
+      });
+      
+      console.log(`\n✅ Last week's schedule created (Jornada ${lastWeekJornada})`);
+      console.log(`   Week: ${lastWeekCalendarWeek}, Year: ${year}`);
+      console.log(`   Total Goals: ${totalGoals}`);
+      console.log(`   Status: Settled ✓`);
+    }
 
     // Summary
     console.log('\n' + '═'.repeat(55));
@@ -471,11 +468,14 @@ const seedDatabase = async () => {
     console.log('═'.repeat(55));
     
     console.log('\n📊 Summary:');
-    console.log(`   • Users: ${users.length}`);
-    console.log(`   • Schedule: Jornada ${currentJornada} (Week ${calendarWeek}/${year})`);
+    console.log(`   • Users: ${userCount} (preserved)`);
+    console.log(`   • Current Week: Jornada ${currentJornada} (Week ${calendarWeek}/${year})`);
+    if (lastWeekSchedule) {
+      console.log(`   • Last Week: Jornada ${lastWeekJornada} (Week ${calendarWeek - 1}/${year}) - SETTLED`);
+    }
     console.log(`   • Data source: ${source}`);
-    console.log(`   • Matches: ${schedule.matches.length}`);
-    console.log(`   • Bets: ${betCount}`);
+    console.log(`   • Matches per week: 9`);
+    console.log(`   • Bets: 0 (cleared - users can place new bets)`);
 
     console.log('\n⚽ Matches for Jornada ' + currentJornada + ':');
     console.log('   Legend: 🏠 = Home | ✈️  = Away');
@@ -492,15 +492,22 @@ const seedDatabase = async () => {
       console.log(`      📆 ${date}`);
     });
 
-    console.log('\n📅 Available Jornadas in seed (5-17):');
+    console.log('\n📅 Available Jornadas in seed (4-17):');
     Object.keys(LIGA_MX_CLAUSURA_2026).forEach(j => {
-      const indicator = parseInt(j) === currentJornada ? ' 👈 CURRENT' : '';
+      const jNum = parseInt(j);
+      let indicator = '';
+      if (jNum === currentJornada) {
+        indicator = ' 👈 CURRENT';
+      } else if (jNum === lastWeekJornada) {
+        indicator = ' ✅ COMPLETED';
+      }
       console.log(`   • Jornada ${j}${indicator}`);
     });
 
-    console.log('\n🔑 Demo credentials:');
-    console.log('   Email: carlos@example.com');
-    console.log('   Password: password123');
+    console.log('\n💡 Usage:');
+    console.log('   node seed.js    # Resets schedules & bets, preserves users');
+    console.log('');
+    console.log('   ⚠️  Note: This clears all bets. Users will need to place new predictions.');
     console.log('');
 
     process.exit(0);

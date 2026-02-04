@@ -8,6 +8,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['quiniela-logo.png'],
+      devOptions: {
+        enabled: false,  // Disable PWA in development to suppress warnings
+        suppressWarnings: true
+      },
       manifest: {
         name: 'Quiniela - Liga MX',
         short_name: 'Quiniela',

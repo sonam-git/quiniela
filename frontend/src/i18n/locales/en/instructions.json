@@ -37,9 +37,18 @@
   },
   "scoring": {
     "title": "Scoring System",
-    "correctPrediction": "+1 point for each correct match prediction",
-    "tiebreaker": "Total goals prediction used as tiebreaker",
-    "winner": "Closest total goals wins in case of tie"
+    "correct": "Correct Prediction",
+    "point": "Point",
+    "perCorrect": "Per correct match prediction",
+    "tiebreaker": "Goal Tiebreaker",
+    "closestWins": "Closest Wins",
+    "usedWhenTied": "Used when points are tied"
+  },
+  "legend": {
+    "title": "Prediction Legend",
+    "homeWin": "L = Home Win (Local)",
+    "awayWin": "V = Away Win (Visitante)",
+    "draw": "E = Draw (Empate)"
   },
   "cta": {
     "ready": "Ready to start?",

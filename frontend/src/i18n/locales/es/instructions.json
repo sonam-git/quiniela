@@ -37,9 +37,18 @@
   },
   "scoring": {
     "title": "Sistema de Puntuación",
-    "correctPrediction": "+1 punto por cada predicción correcta de partido",
-    "tiebreaker": "Predicción de goles totales usada como desempate",
-    "winner": "Goles totales más cercanos gana en caso de empate"
+    "correct": "Predicción Correcta",
+    "point": "Punto",
+    "perCorrect": "Por cada predicción de partido correcta",
+    "tiebreaker": "Desempate por Goles",
+    "closestWins": "El Más Cercano Gana",
+    "usedWhenTied": "Se usa cuando hay empate en puntos"
+  },
+  "legend": {
+    "title": "Leyenda de Predicciones",
+    "homeWin": "L = Gana Local (Home)",
+    "awayWin": "V = Gana Visitante (Away)",
+    "draw": "E = Empate (Draw)"
   },
   "cta": {
     "ready": "¿Listo para comenzar?",

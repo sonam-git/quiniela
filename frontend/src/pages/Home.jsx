@@ -19,11 +19,25 @@ export default function Home() {
             : 'bg-gradient-to-br from-white via-emerald-50 to-teal-100'
         }`} />
         
-        {/* Pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]">
+        {/* Pattern overlay - hidden on small screens */}
+        <div className="absolute inset-0 opacity-[0.03] hidden lg:block">
           <div className="absolute inset-0" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }} />
+        </div>
+        
+        {/* Hero image as background - visible only on small screens */}
+        <div className="absolute inset-0 lg:hidden">
+          <img
+            src="/hero-quiniela.png"
+            alt=""
+            className="w-full h-full object-content opacity-80"
+          />
+          <div className={`absolute inset-0 ${
+            isDark 
+              ? 'bg-dark-700/85' 
+              : 'bg-white/85'
+          }`} />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
@@ -157,8 +171,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Hero Image */}
-            <div className="relative flex justify-center lg:justify-end">
+            {/* Hero Image - hidden on small screens */}
+            <div className="relative hidden lg:flex justify-center lg:justify-end">
               <div className={`relative rounded-3xl overflow-hidden shadow-2xl ring-1 transform hover:scale-[1.02] transition-transform duration-500 ${
                 isDark ? 'shadow-emerald-500/10 ring-dark-700' : 'shadow-emerald-500/20 ring-gray-200'
               }`}>
@@ -171,25 +185,6 @@ export default function Home() {
                 <div className={`absolute inset-0 bg-gradient-to-t ${
                   isDark ? 'from-dark-900/50 to-transparent' : 'from-black/10 to-transparent'
                 }`} />
-
-                {/* Floating Card */}
-                {/* <div className={`absolute bottom-6 left-6 right-6 sm:right-auto px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-sm ${
-                  isDark ? 'bg-transparent ring-1 ring-dark-600' : 'bg-transparent ring-1 ring-gray-200'
-                }`}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">
-                      🎯
-                    </div>
-                    <div>
-                      <p className={`text-center font-welcome ${isDark ? 'text-white' : 'text-gray-100'}`}>
-                        {t('floatingCard.testYourLuck')}
-                      </p>
-                      <p className={`text-sm ${isDark ? 'text-yellow-100' : 'text-yellow-100'}`}>
-                        {t('floatingCard.predictAndWin')}
-                      </p>
-                    </div>
-                  </div>
-                </div> */}
               </div>
             </div>
           </div>

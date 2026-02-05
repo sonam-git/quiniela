@@ -12,6 +12,7 @@ import enBet from './locales/en/bet.json'
 import enProfile from './locales/en/profile.json'
 import enAbout from './locales/en/about.json'
 import enInstructions from './locales/en/instructions.json'
+import enHowItWorks from './locales/en/howitworks.json'
 
 import esCommon from './locales/es/common.json'
 import esHome from './locales/es/home.json'
@@ -22,6 +23,7 @@ import esBet from './locales/es/bet.json'
 import esProfile from './locales/es/profile.json'
 import esAbout from './locales/es/about.json'
 import esInstructions from './locales/es/instructions.json'
+import esHowItWorks from './locales/es/howitworks.json'
 
 const resources = {
   en: {
@@ -33,7 +35,8 @@ const resources = {
     bet: enBet,
     profile: enProfile,
     about: enAbout,
-    instructions: enInstructions
+    instructions: enInstructions,
+    howitworks: enHowItWorks
   },
   es: {
     common: esCommon,
@@ -44,7 +47,8 @@ const resources = {
     bet: esBet,
     profile: esProfile,
     about: esAbout,
-    instructions: esInstructions
+    instructions: esInstructions,
+    howitworks: esHowItWorks
   }
 }
 
@@ -55,7 +59,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'home', 'auth', 'dashboard', 'admin', 'bet', 'profile', 'about', 'instructions'],
+    ns: ['common', 'home', 'auth', 'dashboard', 'admin', 'bet', 'profile', 'about', 'instructions', 'howitworks'],
     
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],

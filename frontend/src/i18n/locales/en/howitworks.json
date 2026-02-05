@@ -1,0 +1,131 @@
+{
+  "badge": "Game Mechanics",
+  "title": "How It Works",
+  "subtitle": "Understand the rules, scoring system, and fairness features that make Quiniela a transparent and fun prediction game.",
+  
+  "winner": {
+    "title": "How the Winner is Picked",
+    "intro": "The winner is determined by points first, then by the goal prediction tiebreaker. Here's how it works:",
+    "points": {
+      "title": "Points First",
+      "description": "Each correct match prediction (Home/Draw/Away) earns you 1 point. The player with the most points at the end of the week leads."
+    },
+    "tiebreaker": {
+      "title": "Goal Tiebreaker",
+      "description": "If players are tied on points, the one whose total goals prediction is closest to the actual total wins."
+    },
+    "split": {
+      "title": "Prize Split",
+      "description": "If players are still tied after the tiebreaker, the prize is split equally among all tied winners."
+    },
+    "example": {
+      "title": "Example:",
+      "player1": "Player A: 7 points, predicted 21 total goals",
+      "player2": "Player B: 7 points, predicted 25 total goals",
+      "result": "Actual total goals: 22 → Player A wins (closer: |21-22|=1 vs |25-22|=3)"
+    }
+  },
+
+  "goals": {
+    "title": "How Total Goals are Calculated",
+    "intro": "Your total goals prediction is compared against the sum of all goals scored in all 9 matches of the week. This includes goals from both teams in every match.",
+    "goals": "goals",
+    "example": {
+      "title": "Example calculation:",
+      "total": "Total = 3+0+5+2+2+3+1+4+1 = 21 goals"
+    },
+    "tip": {
+      "title": "Pro Tip:",
+      "description": "Liga MX averages about 2.5 goals per match, so 22-24 total goals is a common prediction for 9 matches."
+    }
+  },
+
+  "lockout": {
+    "title": "Countdown & Betting Lockout",
+    "intro": "To ensure fair play, betting closes 5 minutes before the first match of the week begins. The countdown timer on the Dashboard shows exactly how much time you have left.",
+    "before": {
+      "title": "Before Lockout",
+      "place": "Place new predictions",
+      "edit": "Edit existing predictions",
+      "change": "Change your total goals guess"
+    },
+    "after": {
+      "title": "After Lockout",
+      "noNew": "No new predictions allowed",
+      "noEdit": "Cannot edit existing predictions",
+      "noChange": "Cannot change total goals guess"
+    },
+    "note": "The lockout time is calculated from the server, so everyone sees the same countdown regardless of their timezone."
+  },
+
+  "fairness": {
+    "title": "Why the System is Fair & Safe",
+    "intro": "Quiniela is designed with fairness as the top priority. Multiple safeguards ensure no one can cheat or gain unfair advantages.",
+    "privacy": {
+      "title": "Prediction Privacy",
+      "description": "No one can see other players' predictions. Your choices are private until the week is settled. This prevents copying strategies."
+    },
+    "timing": {
+      "title": "Server-Side Lockout",
+      "description": "The betting lockout is enforced on the server, not just the app. Even if someone tries to manipulate the interface, the API rejects late bets."
+    },
+    "noCheat": {
+      "title": "No Late Changes",
+      "description": "Once the first match starts, predictions are permanently locked. No one—not even admins—can modify predictions after lockout."
+    }
+  },
+
+  "visibility": {
+    "title": "What You Can & Can't See",
+    "canSee": {
+      "title": "You CAN See",
+      "own": "Your own predictions and payment status",
+      "schedule": "The match schedule and kickoff times",
+      "leaderboard": "Current standings and points (after settlement)",
+      "results": "Final match results after games end"
+    },
+    "cantSee": {
+      "title": "You CAN'T See",
+      "others": "Other players' match predictions",
+      "goalPredictions": "Other players' total goal predictions",
+      "strategies": "Anyone's strategy before settlement"
+    },
+    "note": "This privacy design ensures everyone makes independent predictions based on their own analysis, not by copying others."
+  },
+
+  "settlement": {
+    "title": "Admin Settlement Process",
+    "intro": "After all matches in a week are completed, the administrator settles the week to finalize results and determine the winner.",
+    "process": {
+      "title": "Settlement Process:",
+      "step1": "Admin verifies all match results are correct (from API Football)",
+      "step2": "System calculates final points for all participants",
+      "step3": "Tiebreaker is applied if needed (closest total goals)",
+      "step4": "Winner(s) are announced and prize is distributed"
+    },
+    "note": "Settlement is typically done within 24 hours after the last match of the week ends."
+  },
+
+  "quickRef": {
+    "title": "Quick Reference",
+    "scoring": {
+      "title": "Scoring",
+      "correct": "Correct prediction = 1 point",
+      "max": "Maximum = 9 points (all correct)",
+      "tiebreaker": "Tiebreaker = Closest total goals"
+    },
+    "predictions": {
+      "title": "Prediction Codes",
+      "home": "Home Team Win (Local)",
+      "draw": "Draw (Empate)",
+      "away": "Away Team Win (Visitante)"
+    }
+  },
+
+  "cta": {
+    "title": "Ready to Play?",
+    "description": "Now that you understand how everything works, jump into the action!",
+    "howToPlay": "How to Play",
+    "goToDashboard": "Go to Dashboard"
+  }
+}

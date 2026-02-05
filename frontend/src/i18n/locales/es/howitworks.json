@@ -1,0 +1,131 @@
+{
+  "badge": "Mecánica del Juego",
+  "title": "Cómo Funciona",
+  "subtitle": "Comprende las reglas, el sistema de puntuación y las características de equidad que hacen de Quiniela un juego de predicciones transparente y divertido.",
+  
+  "winner": {
+    "title": "Cómo se Elige al Ganador",
+    "intro": "El ganador se determina primero por puntos, luego por el desempate de predicción de goles. Así funciona:",
+    "points": {
+      "title": "Puntos Primero",
+      "description": "Cada predicción correcta de partido (Local/Empate/Visitante) te da 1 punto. El jugador con más puntos al final de la semana lidera."
+    },
+    "tiebreaker": {
+      "title": "Desempate por Goles",
+      "description": "Si hay empate en puntos, gana quien haya predicho el total de goles más cercano al real."
+    },
+    "split": {
+      "title": "División del Premio",
+      "description": "Si aún hay empate después del desempate, el premio se divide equitativamente entre todos los ganadores empatados."
+    },
+    "example": {
+      "title": "Ejemplo:",
+      "player1": "Jugador A: 7 puntos, predijo 21 goles totales",
+      "player2": "Jugador B: 7 puntos, predijo 25 goles totales",
+      "result": "Goles totales reales: 22 → Jugador A gana (más cercano: |21-22|=1 vs |25-22|=3)"
+    }
+  },
+
+  "goals": {
+    "title": "Cómo se Calculan los Goles Totales",
+    "intro": "Tu predicción de goles totales se compara con la suma de todos los goles anotados en los 9 partidos de la semana. Esto incluye goles de ambos equipos en cada partido.",
+    "goals": "goles",
+    "example": {
+      "title": "Ejemplo de cálculo:",
+      "total": "Total = 3+0+5+2+2+3+1+4+1 = 21 goles"
+    },
+    "tip": {
+      "title": "Consejo:",
+      "description": "La Liga MX promedia aproximadamente 2.5 goles por partido, así que 22-24 goles totales es una predicción común para 9 partidos."
+    }
+  },
+
+  "lockout": {
+    "title": "Cuenta Regresiva y Cierre de Apuestas",
+    "intro": "Para asegurar un juego justo, las apuestas se cierran 5 minutos antes de que comience el primer partido de la semana. El temporizador en el Tablero muestra exactamente cuánto tiempo te queda.",
+    "before": {
+      "title": "Antes del Cierre",
+      "place": "Hacer nuevas predicciones",
+      "edit": "Editar predicciones existentes",
+      "change": "Cambiar tu predicción de goles totales"
+    },
+    "after": {
+      "title": "Después del Cierre",
+      "noNew": "No se permiten nuevas predicciones",
+      "noEdit": "No se pueden editar predicciones",
+      "noChange": "No se puede cambiar la predicción de goles"
+    },
+    "note": "El tiempo de cierre se calcula desde el servidor, así que todos ven la misma cuenta regresiva sin importar su zona horaria."
+  },
+
+  "fairness": {
+    "title": "Por Qué el Sistema es Justo y Seguro",
+    "intro": "Quiniela está diseñada con la equidad como máxima prioridad. Múltiples protecciones aseguran que nadie pueda hacer trampa o tener ventajas injustas.",
+    "privacy": {
+      "title": "Privacidad de Predicciones",
+      "description": "Nadie puede ver las predicciones de otros jugadores. Tus elecciones son privadas hasta que se liquide la semana. Esto evita copiar estrategias."
+    },
+    "timing": {
+      "title": "Cierre del Servidor",
+      "description": "El cierre de apuestas se aplica en el servidor, no solo en la app. Incluso si alguien manipula la interfaz, la API rechaza apuestas tardías."
+    },
+    "noCheat": {
+      "title": "Sin Cambios Tardíos",
+      "description": "Una vez que comienza el primer partido, las predicciones quedan bloqueadas permanentemente. Nadie—ni siquiera los admins—puede modificar predicciones después del cierre."
+    }
+  },
+
+  "visibility": {
+    "title": "Qué Puedes y No Puedes Ver",
+    "canSee": {
+      "title": "Puedes Ver",
+      "own": "Tus propias predicciones y estado de pago",
+      "schedule": "El calendario de partidos y horarios",
+      "leaderboard": "Clasificación actual y puntos (después de liquidación)",
+      "results": "Resultados finales después de los partidos"
+    },
+    "cantSee": {
+      "title": "NO Puedes Ver",
+      "others": "Las predicciones de otros jugadores",
+      "goalPredictions": "Las predicciones de goles de otros",
+      "strategies": "La estrategia de nadie antes de la liquidación"
+    },
+    "note": "Este diseño de privacidad asegura que todos hagan predicciones independientes basadas en su propio análisis, no copiando a otros."
+  },
+
+  "settlement": {
+    "title": "Proceso de Liquidación del Admin",
+    "intro": "Después de que todos los partidos de la semana terminen, el administrador liquida la semana para finalizar resultados y determinar al ganador.",
+    "process": {
+      "title": "Proceso de Liquidación:",
+      "step1": "El admin verifica que todos los resultados sean correctos (de API Football)",
+      "step2": "El sistema calcula los puntos finales de todos los participantes",
+      "step3": "Se aplica el desempate si es necesario (goles totales más cercanos)",
+      "step4": "Se anuncian los ganadores y se distribuye el premio"
+    },
+    "note": "La liquidación típicamente se hace dentro de las 24 horas después de que termina el último partido de la semana."
+  },
+
+  "quickRef": {
+    "title": "Referencia Rápida",
+    "scoring": {
+      "title": "Puntuación",
+      "correct": "Predicción correcta = 1 punto",
+      "max": "Máximo = 9 puntos (todas correctas)",
+      "tiebreaker": "Desempate = Goles totales más cercanos"
+    },
+    "predictions": {
+      "title": "Códigos de Predicción",
+      "home": "Victoria Local",
+      "draw": "Empate",
+      "away": "Victoria Visitante"
+    }
+  },
+
+  "cta": {
+    "title": "¿Listo para Jugar?",
+    "description": "Ahora que entiendes cómo funciona todo, ¡entra en acción!",
+    "howToPlay": "Cómo Jugar",
+    "goToDashboard": "Ir al Tablero"
+  }
+}

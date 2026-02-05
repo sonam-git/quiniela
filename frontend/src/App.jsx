@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard'
 import PlaceBet from './pages/PlaceBet'
 import About from './pages/About'
 import Instructions from './pages/Instructions'
+import HowItWorks from './pages/HowItWorks'
 import Admin from './pages/Admin'
 import Profile from './pages/Profile'
 
@@ -115,6 +116,8 @@ function AppContent() {
           />
           <Route path="/about" element={<About />} />
           <Route path="/instructions" element={<Instructions />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
           <Route 
             path="/admin" 
             element={

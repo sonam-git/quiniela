@@ -878,6 +878,8 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
 
     // Mark schedule as settled
     schedule.isSettled = true;
+    schedule.settledBy = req.user._id;
+    schedule.settledAt = new Date();
     await schedule.save();
 
     // Emit real-time update for week settled

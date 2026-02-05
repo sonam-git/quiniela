@@ -36,4 +36,49 @@ api.interceptors.response.use(
   }
 )
 
+// PDF download helper functions
+export const downloadPredictionPDF = async (weekNumber, year) => {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_URL}/pdf/prediction/${weekNumber}/${year}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || 'Failed to download PDF')
+  }
+  
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `predictions-jornada-${weekNumber}-${year}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+}
+
+export const downloadResultsPDF = async (weekNumber, year) => {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_URL}/pdf/results/${weekNumber}/${year}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || 'Failed to download PDF')
+  }
+  
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `results-jornada-${weekNumber}-${year}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+}
+
 export default api

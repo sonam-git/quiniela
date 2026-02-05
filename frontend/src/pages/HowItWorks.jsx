@@ -264,6 +264,67 @@ export default function HowItWorks() {
             </p>
           </Section>
 
+          {/* PDF Reports */}
+          <Section icon="📄" title={t('pdf.title')}>
+            <p>{t('pdf.intro')}</p>
+            <div className="grid sm:grid-cols-2 gap-4 mt-4">
+              <div className={`p-4 rounded-lg border ${isDark ? 'bg-dark-700 border-dark-600' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {t('pdf.predictions.title')}
+                  </span>
+                </div>
+                <p className="text-xs mb-2">{t('pdf.predictions.description')}</p>
+                <p className={`text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                  💡 {t('pdf.predictions.use')}
+                </p>
+              </div>
+              <div className={`p-4 rounded-lg border ${isDark ? 'bg-dark-700 border-dark-600' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {t('pdf.results.title')}
+                  </span>
+                </div>
+                <p className="text-xs mb-2">{t('pdf.results.description')}</p>
+                <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                  ✓ {t('pdf.results.verified')}
+                </p>
+              </div>
+            </div>
+            <div className={`mt-4 p-4 rounded-lg ${isDark ? 'bg-dark-700' : 'bg-gray-50'}`}>
+              <p className="font-medium mb-3">{t('pdf.download.title')}</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700'
+                  }`}>1</span>
+                  <span className="text-xs">{t('pdf.download.step1')}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700'
+                  }`}>2</span>
+                  <span className="text-xs">{t('pdf.download.step2')}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700'
+                  }`}>3</span>
+                  <span className="text-xs">{t('pdf.download.step3')}</span>
+                </div>
+              </div>
+            </div>
+            <p className={`mt-3 text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+              📋 {t('pdf.note')}
+            </p>
+          </Section>
+
           {/* Quick Reference */}
           <Section icon="📋" title={t('quickRef.title')}>
             <div className="grid sm:grid-cols-2 gap-4">

@@ -78,6 +78,15 @@ const scheduleSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  settledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  settledAt: {
+    type: Date,
+    default: null
+  },
   actualTotalGoals: {
     type: Number,
     default: null

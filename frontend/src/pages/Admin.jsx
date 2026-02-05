@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
-import api from '../services/api'
+import api, { downloadPredictionPDF, downloadResultsPDF } from '../services/api'
 import toast from 'react-hot-toast'
+import { EditIcon, CalendarIcon, CheckIcon } from './Profile'
 
 // Confirmation Modal Component
 function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText, confirmStyle, isLoading }) {
@@ -149,6 +150,9 @@ export default function Admin() {
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '' })
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false)
   const [announcementLoading, setAnnouncementLoading] = useState(false)
+  
+  // PDF download state
+  const [downloadingPDF, setDownloadingPDF] = useState(null) // Tracks which schedule PDF is downloading
   
   // Modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -856,6 +860,34 @@ export default function Admin() {
   }
 
   // Schedule Management Handlers
+  
+  // PDF Download handlers for Admin
+  const handleDownloadPredictionPDF = async (weekNumber, year) => {
+    const key = `pred-${weekNumber}-${year}`
+    setDownloadingPDF(key)
+    try {
+      await downloadPredictionPDF(weekNumber, year)
+      toast.success('Predictions PDF downloaded!')
+    } catch (error) {
+      toast.error(error.message || 'Failed to download PDF')
+    } finally {
+      setDownloadingPDF(null)
+    }
+  }
+
+  const handleDownloadResultsPDF = async (weekNumber, year) => {
+    const key = `res-${weekNumber}-${year}`
+    setDownloadingPDF(key)
+    try {
+      await downloadResultsPDF(weekNumber, year)
+      toast.success('Results PDF downloaded!')
+    } catch (error) {
+      toast.error(error.message || 'Failed to download PDF')
+    } finally {
+      setDownloadingPDF(null)
+    }
+  }
+  
   const handleEditScheduleMatch = (scheduleId, match) => {
     setSelectedSchedule(scheduleId)
     setEditingScheduleMatch(match._id)
@@ -1539,14 +1571,14 @@ export default function Admin() {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  <span>⚽</span>
+                  <CalendarIcon />
                   <span>Schedule</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                     matchesSubTab === 'schedule'
                       ? 'bg-white/20'
                       : isDark ? 'bg-dark-600' : 'bg-gray-200'
                   }`}>
-                    {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
+                    {schedule?.matches?.filter(m => m.isCompleted).length || 0} | {schedule?.matches?.length || 9}
                   </span>
                 </button>
                 
@@ -1563,7 +1595,7 @@ export default function Admin() {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  <span>📅</span>
+                 <EditIcon/>
                   <span>Update</span>
                 </button>
                 
@@ -1589,7 +1621,7 @@ export default function Admin() {
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  <span>🏆</span>
+                  <CheckIcon />
                   <span className="hidden xs:inline">Verify Week</span>
                   <span className="xs:hidden">Verify</span>
                   {schedule?.isSettled && (
@@ -1626,17 +1658,63 @@ export default function Admin() {
                       </div>
                     </div>
                     
-                    {/* Status Badge */}
-                    {schedule?.isSettled && (
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${
-                        isDark ? 'bg-green-900/30 text-green-400 ring-1 ring-green-800/50' : 'bg-green-50 text-green-700 ring-1 ring-green-200'
-                      }`}>
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Verified • {schedule.actualTotalGoals} goals
-                      </span>
-                    )}
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      {/* PDF Buttons */}
+                      <button
+                        onClick={() => handleDownloadPredictionPDF(weekInfo.weekNumber, weekInfo.year)}
+                        disabled={downloadingPDF === `pred-${weekInfo.weekNumber}-${weekInfo.year}` || !schedule}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          isDark
+                            ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 border border-blue-800/50'
+                            : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                        } disabled:opacity-50`}
+                        title="Download Predictions PDF"
+                      >
+                        {downloadingPDF === `pred-${weekInfo.weekNumber}-${weekInfo.year}` ? (
+                          <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        )}
+                        <span className="hidden sm:inline">PDF</span>
+                      </button>
+                      
+                      {schedule?.isSettled && (
+                        <button
+                          onClick={() => handleDownloadResultsPDF(weekInfo.weekNumber, weekInfo.year)}
+                          disabled={downloadingPDF === `res-${weekInfo.weekNumber}-${weekInfo.year}`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            isDark
+                              ? 'bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50 border border-emerald-800/50'
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                          } disabled:opacity-50`}
+                          title="Download Results PDF"
+                        >
+                          {downloadingPDF === `res-${weekInfo.weekNumber}-${weekInfo.year}` ? (
+                            <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          )}
+                          <span className="hidden sm:inline">Results</span>
+                        </button>
+                      )}
+                      
+                      {/* Status Badge */}
+                      {schedule?.isSettled && (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${
+                          isDark ? 'bg-green-900/30 text-green-400 ring-1 ring-green-800/50' : 'bg-green-50 text-green-700 ring-1 ring-green-200'
+                        }`}>
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span className="hidden sm:inline">Verified •</span> {schedule.actualTotalGoals} goals
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1794,7 +1872,7 @@ export default function Admin() {
                                     : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
                                 }`}
                               >
-                                ✏️ Edit
+                                <EditIcon /> Edit
                               </button>
                               {match.isCompleted && (
                                 <button
@@ -2175,22 +2253,69 @@ export default function Admin() {
                             )}
                           </div>
                           
-                          {/* Delete Button */}
-                          {!hasStarted && !sched.isSettled && (
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-1.5">
+                            {/* Predictions PDF Button */}
                             <button
-                              onClick={() => handleDeleteSchedule(sched._id)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                              onClick={() => handleDownloadPredictionPDF(sched.weekNumber, sched.year)}
+                              disabled={downloadingPDF === `pred-${sched.weekNumber}-${sched.year}`}
+                              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isDark
-                                  ? 'text-red-400 hover:bg-red-900/30'
-                                  : 'text-red-600 hover:bg-red-50'
-                              }`}
+                                  ? 'text-blue-400 hover:bg-blue-900/30'
+                                  : 'text-blue-600 hover:bg-blue-50'
+                              } disabled:opacity-50`}
+                              title="Download Predictions PDF"
                             >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              <span className="hidden sm:inline">Delete</span>
+                              {downloadingPDF === `pred-${sched.weekNumber}-${sched.year}` ? (
+                                <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                              ) : (
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              )}
+                              <span className="hidden sm:inline">Pred</span>
                             </button>
-                          )}
+                            
+                            {/* Results PDF Button - Only show if settled */}
+                            {sched.isSettled && (
+                              <button
+                                onClick={() => handleDownloadResultsPDF(sched.weekNumber, sched.year)}
+                                disabled={downloadingPDF === `res-${sched.weekNumber}-${sched.year}`}
+                                className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                  isDark
+                                    ? 'text-emerald-400 hover:bg-emerald-900/30'
+                                    : 'text-emerald-600 hover:bg-emerald-50'
+                                } disabled:opacity-50`}
+                                title="Download Results PDF"
+                              >
+                                {downloadingPDF === `res-${sched.weekNumber}-${sched.year}` ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                                ) : (
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                )}
+                                <span className="hidden sm:inline">Results</span>
+                              </button>
+                            )}
+                            
+                            {/* Delete Button */}
+                            {!hasStarted && !sched.isSettled && (
+                              <button
+                                onClick={() => handleDeleteSchedule(sched._id)}
+                                className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                  isDark
+                                    ? 'text-red-400 hover:bg-red-900/30'
+                                    : 'text-red-600 hover:bg-red-50'
+                                }`}
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span className="hidden sm:inline">Delete</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Matches List - Compact */}
@@ -2455,6 +2580,31 @@ export default function Admin() {
                         </svg>
                         <span>Verify & Finalize Results</span>
                       </button>
+                      
+                      {/* PDF Download Buttons */}
+                      <div className="mt-4 pt-4 border-t border-dashed flex flex-col gap-2">
+                        <p className={`text-xs font-medium text-center mb-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          Download Reports
+                        </p>
+                        <button
+                          onClick={() => handleDownloadPredictionPDF(weekInfo.weekNumber, weekInfo.year)}
+                          disabled={downloadingPDF === `pred-${weekInfo.weekNumber}-${weekInfo.year}`}
+                          className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            isDark
+                              ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 border border-blue-800/50'
+                              : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                          } disabled:opacity-50`}
+                        >
+                          {downloadingPDF === `pred-${weekInfo.weekNumber}-${weekInfo.year}` ? (
+                            <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          )}
+                          <span>Predictions PDF</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

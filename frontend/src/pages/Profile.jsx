@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api from '../services/api'
+import api, { downloadPredictionPDF, downloadResultsPDF } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
@@ -20,7 +20,7 @@ const EmailIcon = () => (
   </svg>
 )
 
-const CalendarIcon = () => (
+export const CalendarIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
@@ -50,7 +50,7 @@ const TrashIcon = () => (
   </svg>
 )
 
-const EditIcon = () => (
+export const EditIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
   </svg>
@@ -62,7 +62,7 @@ const BackIcon = () => (
   </svg>
 )
 
-const CheckIcon = () => (
+export const CheckIcon = () => (
   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
   </svg>
@@ -138,7 +138,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
 }
 
 export default function Profile() {
-  const { user, isDeveloper, refreshUser } = useAuth()
+  const { user, isAdmin, isDeveloper, refreshUser } = useAuth()
   const { isDark } = useTheme()
   const navigate = useNavigate()
   
@@ -146,9 +146,11 @@ export default function Profile() {
   const [myBet, setMyBet] = useState(null)
   const [schedule, setSchedule] = useState(null)
   const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0 })
-  const [lockStatus, setLockStatus] = useState({ locked: false })
+  const [lockStatus, setLockStatus] = useState({ locked: false, hasStarted: false })
+  const [isSettled, setIsSettled] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [downloadingPDF, setDownloadingPDF] = useState(false)
   
   // Developer upgrade state
   const [showDevUpgrade, setShowDevUpgrade] = useState(false)
@@ -209,8 +211,12 @@ export default function Profile() {
         weekNumber: betRes.data.weekNumber, 
         year: betRes.data.year 
       })
-      setLockStatus({ locked: betRes.data.locked })
+      setLockStatus({ 
+        locked: betRes.data.locked,
+        hasStarted: scheduleRes.data.hasStarted || false
+      })
       setSchedule(scheduleRes.data.schedule)
+      setIsSettled(scheduleRes.data.schedule?.isSettled || false)
       // Store announcements in state if you have a state for them
     } catch (error) {
       console.error('Error fetching profile data:', error)
@@ -418,6 +424,25 @@ export default function Profile() {
       setDevCode('')
     } finally {
       setUpgrading(false)
+    }
+  }
+
+  // PDF Download handler
+  const handleDownloadPDF = async () => {
+    try {
+      setDownloadingPDF(true)
+      if (isSettled) {
+        await downloadResultsPDF(weekInfo.weekNumber, weekInfo.year)
+        toast.success('Results PDF downloaded!')
+      } else {
+        await downloadPredictionPDF(weekInfo.weekNumber, weekInfo.year)
+        toast.success('Predictions PDF downloaded!')
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      toast.error('Failed to download PDF')
+    } finally {
+      setDownloadingPDF(false)
     }
   }
 
@@ -833,6 +858,37 @@ export default function Profile() {
                         🔒 {t('predictions.locked')}
                       </span>
                     )}
+                    {/* PDF Download Button */}
+                    <button
+                      onClick={handleDownloadPDF}
+                      disabled={downloadingPDF || (!isAdmin && !lockStatus.hasStarted)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        downloadingPDF || (!isAdmin && !lockStatus.hasStarted)
+                          ? 'opacity-50 cursor-not-allowed'
+                          : isDark
+                            ? 'bg-dark-700 hover:bg-dark-600 text-dark-200 border border-dark-600'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+                      }`}
+                      title={
+                        !isAdmin && !lockStatus.hasStarted 
+                          ? 'PDF only clickable after first game starts' 
+                          : isSettled 
+                            ? 'Download Results PDF' 
+                            : 'Download Predictions PDF'
+                      }
+                    >
+                      {downloadingPDF ? (
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      )}
+                      <span className="hidden sm:inline">PDF</span>
+                    </button>
                   </div>
                 )}
               </div>

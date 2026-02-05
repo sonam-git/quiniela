@@ -11,6 +11,7 @@ const scheduleRoutes = require('./routes/schedule');
 const resultsRoutes = require('./routes/results');
 const adminRoutes = require('./routes/admin');
 const announcementsRoutes = require('./routes/announcements');
+const pdfRoutes = require('./routes/pdf');
 const { initScheduler } = require('./services/scheduler');
 
 const app = express();
@@ -98,6 +99,7 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/results', resultsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/announcements', announcementsRoutes);
+app.use('/api/pdf', pdfRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

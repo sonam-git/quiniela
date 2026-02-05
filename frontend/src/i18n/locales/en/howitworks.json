@@ -106,6 +106,28 @@
     "note": "Settlement is typically done within 24 hours after the last match of the week ends."
   },
 
+  "pdf": {
+    "title": "PDF Reports",
+    "intro": "Download official PDF reports to keep a record of predictions and results for each week.",
+    "predictions": {
+      "title": "Predictions PDF",
+      "description": "Available before the first match starts. Shows all participants' predictions (L/E/V), total goals guess, and payment status.",
+      "use": "Use this to verify everyone's predictions are locked in before games begin."
+    },
+    "results": {
+      "title": "Results PDF",
+      "description": "Available after the week is settled. Shows final standings with points, correct/wrong predictions (green/red), and the winner highlighted in yellow.",
+      "verified": "Includes 'Approved and Verified by' with the admin's name and timestamp for authenticity."
+    },
+    "download": {
+      "title": "How to Download",
+      "step1": "Go to the Dashboard page",
+      "step2": "Look for the PDF download buttons in the week info section",
+      "step3": "Click 'Predictions PDF' before games or 'Results PDF' after settlement"
+    },
+    "note": "PDFs provide a transparent, printable record that can be shared with all participants."
+  },
+
   "quickRef": {
     "title": "Quick Reference",
     "scoring": {

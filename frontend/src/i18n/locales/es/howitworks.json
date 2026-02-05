@@ -106,6 +106,28 @@
     "note": "La liquidación típicamente se hace dentro de las 24 horas después de que termina el último partido de la semana."
   },
 
+  "pdf": {
+    "title": "Reportes PDF",
+    "intro": "Descarga reportes PDF oficiales para mantener un registro de predicciones y resultados de cada semana.",
+    "predictions": {
+      "title": "PDF de Predicciones",
+      "description": "Disponible antes de que comience el primer partido. Muestra las predicciones de todos los participantes (L/E/V), pronóstico de goles totales y estado de pago.",
+      "use": "Úsalo para verificar que las predicciones de todos estén bloqueadas antes de que comiencen los juegos."
+    },
+    "results": {
+      "title": "PDF de Resultados",
+      "description": "Disponible después de que la semana esté liquidada. Muestra las posiciones finales con puntos, predicciones correctas/incorrectas (verde/rojo), y el ganador resaltado en amarillo.",
+      "verified": "Incluye 'Aprobado y Verificado por' con el nombre del admin y la fecha/hora para autenticidad."
+    },
+    "download": {
+      "title": "Cómo Descargar",
+      "step1": "Ve a la página del Tablero",
+      "step2": "Busca los botones de descarga PDF en la sección de información de la semana",
+      "step3": "Haz clic en 'PDF de Predicciones' antes de los juegos o 'PDF de Resultados' después de la liquidación"
+    },
+    "note": "Los PDFs proporcionan un registro transparente e imprimible que se puede compartir con todos los participantes."
+  },
+
   "quickRef": {
     "title": "Referencia Rápida",
     "scoring": {

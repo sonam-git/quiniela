@@ -173,7 +173,7 @@ export default function Home() {
                 }`} />
 
                 {/* Floating Card */}
-                <div className={`absolute bottom-6 left-6 right-6 sm:right-auto px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-sm ${
+                {/* <div className={`absolute bottom-6 left-6 right-6 sm:right-auto px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-sm ${
                   isDark ? 'bg-transparent ring-1 ring-dark-600' : 'bg-transparent ring-1 ring-gray-200'
                 }`}>
                   <div className="flex items-center gap-4">
@@ -189,7 +189,7 @@ export default function Home() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

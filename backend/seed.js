@@ -118,13 +118,13 @@ const LIGA_MX_CLAUSURA_2026 = {
     startDate: '2026-02-20',
     matches: [
       { home: 'Tigres UANL', away: 'Pachuca', date: '2026-02-20', time: '17:00' },
-      { home: 'Club América', away: 'Puebla', date: '2026-02-20', time: '19:06' },
+      { home: 'Puebla', away: 'Club América', date: '2026-02-20', time: '19:06' },
       { home: 'Atlas', away: 'Atl. San Luis', date: '2026-02-21', time: '15:00' },
       { home: 'Club León', away: 'Santos Laguna', date: '2026-02-21', time: '17:00' },
       { home: 'Necaxa', away: 'Toluca', date: '2026-02-21', time: '17:00' },
       { home: 'Cruz Azul', away: 'Guadalajara Chivas', date: '2026-02-21', time: '19:00' },
-      { home: 'Monterrey', away: 'UNAM Pumas', date: '2026-02-22', time: '15:00' },
-      { home: 'FC Juárez', away: 'Querétaro', date: '2026-02-22', time: '17:00' },
+      { home: 'UNAM Pumas', away: 'Monterrey', date: '2026-02-22', time: '15:00' },
+      { home: 'Querétaro', away: 'FC Juárez', date: '2026-02-22', time: '17:00' },
       { home: 'Club Tijuana', away: 'Mazatlán FC', date: '2026-02-22', time: '19:06' }
     ]
   },
@@ -134,12 +134,12 @@ const LIGA_MX_CLAUSURA_2026 = {
     matches: [
       { home: 'Mazatlán FC', away: 'Pachuca', date: '2026-02-27', time: '17:00' },
       { home: 'Querétaro', away: 'Santos Laguna', date: '2026-02-27', time: '17:00' },
-      { home: 'Atlas', away: 'FC Juárez', date: '2026-02-27', time: '19:00' },
+      { home: 'FC Juárez', away: 'Atlas', date: '2026-02-27', time: '19:00' },
       { home: 'Club Tijuana', away: 'UNAM Pumas', date: '2026-02-27', time: '19:06' },
       { home: 'Atl. San Luis', away: 'Puebla', date: '2026-02-28', time: '15:00' },
-      { home: 'Guadalajara Chivas', away: 'Toluca', date: '2026-02-28', time: '15:00' },
+      { home: 'Toluca', away: 'Guadalajara Chivas', date: '2026-02-28', time: '15:00' },
       { home: 'Club León', away: 'Necaxa', date: '2026-02-28', time: '17:00' },
-      { home: 'Cruz Azul', away: 'Monterrey', date: '2026-02-28', time: '17:00' },
+      { home: 'Monterrey', away: 'Cruz Azul', date: '2026-02-28', time: '17:00' },
       { home: 'Club América', away: 'Tigres UANL', date: '2026-02-28', time: '19:00' }
     ]
   },
@@ -147,29 +147,29 @@ const LIGA_MX_CLAUSURA_2026 = {
   9: {
     startDate: '2026-03-03',
     matches: [
-      { home: 'Necaxa', away: 'Pachuca', date: '2026-03-03', time: '17:00' },
-      { home: 'Cruz Azul', away: 'Santos Laguna', date: '2026-03-03', time: '17:00' },
+      { home: 'Pachuca', away: 'Necaxa', date: '2026-03-03', time: '17:00' },
+      { home: 'Santos Laguna', away: 'Cruz Azul', date: '2026-03-03', time: '17:00' },
       { home: 'Atl. San Luis', away: 'Mazatlán FC', date: '2026-03-03', time: '19:00' },
-      { home: 'Toluca', away: 'UNAM Pumas', date: '2026-03-03', time: '19:00' },
+      { home: 'UNAM Pumas', away: 'Toluca', date: '2026-03-03', time: '19:00' },
       { home: 'Monterrey', away: 'Querétaro', date: '2026-03-04', time: '17:00' },
       { home: 'Puebla', away: 'Tigres UANL', date: '2026-03-04', time: '17:00' },
       { home: 'Atlas', away: 'Club Tijuana', date: '2026-03-04', time: '19:00' },
       { home: 'Club América', away: 'FC Juárez', date: '2026-03-04', time: '19:00' },
-      { home: 'Club León', away: 'Guadalajara Chivas', date: '2026-03-18', time: '19:07' } // Rescheduled
+      { home: 'Guadalajara Chivas', away: 'Club León', date: '2026-03-18', time: '19:07' } // Rescheduled
     ]
   },
   // Jornada 10 - March 6-8, 2026
   10: {
     startDate: '2026-03-06',
     matches: [
-      { home: 'Club León', away: 'Mazatlán FC', date: '2026-03-06', time: '17:00' },
+      { home: 'Mazatlán FC', away: 'Club León', date: '2026-03-06', time: '17:00' },
       { home: 'Necaxa', away: 'UNAM Pumas', date: '2026-03-06', time: '19:00' },
-      { home: 'Atl. San Luis', away: 'Cruz Azul', date: '2026-03-07', time: '15:00' },
+      { home: 'Cruz Azul', away: 'Atl. San Luis', date: '2026-03-07', time: '15:00' },
       { home: 'Pachuca', away: 'Puebla', date: '2026-03-07', time: '15:00' },
       { home: 'Atlas', away: 'Guadalajara Chivas', date: '2026-03-07', time: '17:00' },
-      { home: 'Monterrey', away: 'Tigres UANL', date: '2026-03-07', time: '19:00' },
-      { home: 'Club América', away: 'Querétaro', date: '2026-03-08', time: '16:00' },
-      { home: 'FC Juárez', away: 'Toluca', date: '2026-03-08', time: '18:00' },
+      { home: 'Tigres UANL', away: 'Monterrey', date: '2026-03-07', time: '19:00' },
+      { home: 'Querétaro', away: 'Club América', date: '2026-03-08', time: '16:00' },
+      { home: 'Toluca', away: 'FC Juárez', date: '2026-03-08', time: '18:00' },
       { home: 'Club Tijuana', away: 'Santos Laguna', date: '2026-03-08', time: '20:00' }
     ]
   },
@@ -177,14 +177,14 @@ const LIGA_MX_CLAUSURA_2026 = {
   11: {
     startDate: '2026-03-13',
     matches: [
-      { home: 'Necaxa', away: 'Puebla', date: '2026-03-13', time: '18:00' },
-      { home: 'Querétaro', away: 'Tigres UANL', date: '2026-03-13', time: '18:00' },
+      { home: 'Puebla', away: 'Necaxa', date: '2026-03-13', time: '18:00' },
+      { home: 'Tigres UANL', away: 'Querétaro', date: '2026-03-13', time: '18:00' },
       { home: 'FC Juárez', away: 'Monterrey', date: '2026-03-13', time: '20:00' },
       { home: 'Atl. San Luis', away: 'Pachuca', date: '2026-03-14', time: '16:00' },
       { home: 'Guadalajara Chivas', away: 'Santos Laguna', date: '2026-03-14', time: '16:07' },
       { home: 'Club León', away: 'Club Tijuana', date: '2026-03-14', time: '18:00' },
-      { home: 'Atlas', away: 'Toluca', date: '2026-03-14', time: '18:00' },
-      { home: 'Cruz Azul', away: 'UNAM Pumas', date: '2026-03-14', time: '20:00' },
+      { home: 'Toluca', away: 'Atlas', date: '2026-03-14', time: '18:00' },
+      { home: 'UNAM Pumas', away: 'Cruz Azul', date: '2026-03-14', time: '20:00' },
       { home: 'Club América', away: 'Mazatlán FC', date: '2026-03-15', time: '18:00' }
     ]
   },
@@ -192,14 +192,14 @@ const LIGA_MX_CLAUSURA_2026 = {
   12: {
     startDate: '2026-03-20',
     matches: [
-      { home: 'Club Tijuana', away: 'Necaxa', date: '2026-03-20', time: '18:00' },
-      { home: 'Cruz Azul', away: 'Mazatlán FC', date: '2026-03-20', time: '20:06' },
+      { home: 'Necaxa', away: 'Club Tijuana', date: '2026-03-20', time: '18:00' },
+      { home: 'Mazatlán FC', away: 'Cruz Azul', date: '2026-03-20', time: '20:06' },
       { home: 'Atlas', away: 'Querétaro', date: '2026-03-21', time: '16:00' },
       { home: 'Pachuca', away: 'Toluca', date: '2026-03-21', time: '16:00' },
       { home: 'Atl. San Luis', away: 'Club León', date: '2026-03-21', time: '18:00' },
-      { home: 'Guadalajara Chivas', away: 'Monterrey', date: '2026-03-21', time: '18:00' },
-      { home: 'Club América', away: 'UNAM Pumas', date: '2026-03-21', time: '20:00' },
-      { home: 'Puebla', away: 'Santos Laguna', date: '2026-03-22', time: '16:00' },
+      { home: 'Monterrey', away: 'Guadalajara Chivas', date: '2026-03-21', time: '18:00' },
+      { home: 'UNAM Pumas', away: 'Club América', date: '2026-03-21', time: '20:00' },
+      { home: 'Santos Laguna', away: 'Puebla', date: '2026-03-22', time: '16:00' },
       { home: 'FC Juárez', away: 'Tigres UANL', date: '2026-03-22', time: '18:00' }
     ]
   },
@@ -207,13 +207,13 @@ const LIGA_MX_CLAUSURA_2026 = {
   13: {
     startDate: '2026-04-03',
     matches: [
-      { home: 'FC Juárez', away: 'Puebla', date: '2026-04-03', time: '18:00' },
-      { home: 'Mazatlán FC', away: 'Necaxa', date: '2026-04-03', time: '20:00' },
+      { home: 'Puebla', away: 'FC Juárez', date: '2026-04-03', time: '18:00' },
+      { home: 'Necaxa', away: 'Mazatlán FC', date: '2026-04-03', time: '20:00' },
       { home: 'Club Tijuana', away: 'Tigres UANL', date: '2026-04-03', time: '20:06' },
-      { home: 'Atl. San Luis', away: 'Monterrey', date: '2026-04-04', time: '16:00' },
-      { home: 'Atlas', away: 'Club León', date: '2026-04-04', time: '18:00' },
+      { home: 'Monterrey', away: 'Atl. San Luis', date: '2026-04-04', time: '16:00' },
+      { home: 'Club León', away: 'Atlas', date: '2026-04-04', time: '18:00' },
       { home: 'Cruz Azul', away: 'Pachuca', date: '2026-04-04', time: '18:00' },
-      { home: 'Club América', away: 'Santos Laguna', date: '2026-04-04', time: '20:00' },
+      { home: 'Santos Laguna', away: 'Club América', date: '2026-04-04', time: '20:00' },
       { home: 'Querétaro', away: 'Toluca', date: '2026-04-05', time: '17:00' },
       { home: 'Guadalajara Chivas', away: 'UNAM Pumas', date: '2026-04-05', time: '19:07' }
     ]
@@ -222,15 +222,15 @@ const LIGA_MX_CLAUSURA_2026 = {
   14: {
     startDate: '2026-04-10',
     matches: [
-      { home: 'Club León', away: 'Puebla', date: '2026-04-10', time: '18:00' },
-      { home: 'Club Tijuana', away: 'FC Juárez', date: '2026-04-10', time: '20:06' },
-      { home: 'Necaxa', away: 'Querétaro', date: '2026-04-11', time: '16:00' },
-      { home: 'Guadalajara Chivas', away: 'Tigres UANL', date: '2026-04-11', time: '16:00' },
+      { home: 'Puebla', away: 'Club León', date: '2026-04-10', time: '18:00' },
+      { home: 'FC Juárez', away: 'Club Tijuana', date: '2026-04-10', time: '20:06' },
+      { home: 'Querétaro', away: 'Necaxa', date: '2026-04-11', time: '16:00' },
+      { home: 'Tigres UANL', away: 'Guadalajara Chivas', date: '2026-04-11', time: '16:00' },
       { home: 'Atlas', away: 'Monterrey', date: '2026-04-11', time: '18:00' },
       { home: 'Pachuca', away: 'Santos Laguna', date: '2026-04-11', time: '18:00' },
       { home: 'Club América', away: 'Cruz Azul', date: '2026-04-11', time: '20:00' },
-      { home: 'Mazatlán FC', away: 'UNAM Pumas', date: '2026-04-12', time: '11:00' },
-      { home: 'Atl. San Luis', away: 'Toluca', date: '2026-04-12', time: '18:00' }
+      { home: 'UNAM Pumas', away: 'Mazatlán FC', date: '2026-04-12', time: '11:00' },
+      { home: 'Toluca', away: 'Atl. San Luis', date: '2026-04-12', time: '18:00' }
     ]
   },
   // Jornada 15 - April 17-19, 2026
@@ -240,42 +240,42 @@ const LIGA_MX_CLAUSURA_2026 = {
       { home: 'Atl. San Luis', away: 'UNAM Pumas', date: '2026-04-17', time: '18:00' },
       { home: 'Mazatlán FC', away: 'Querétaro', date: '2026-04-17', time: '18:00' },
       { home: 'Necaxa', away: 'Tigres UANL', date: '2026-04-17', time: '20:00' },
-      { home: 'Club Tijuana', away: 'Cruz Azul', date: '2026-04-18', time: '16:00' },
+      { home: 'Cruz Azul', away: 'Club Tijuana', date: '2026-04-18', time: '16:00' },
       { home: 'Monterrey', away: 'Pachuca', date: '2026-04-18', time: '18:00' },
       { home: 'Guadalajara Chivas', away: 'Puebla', date: '2026-04-18', time: '18:07' },
       { home: 'Club América', away: 'Toluca', date: '2026-04-18', time: '20:00' },
       { home: 'Club León', away: 'FC Juárez', date: '2026-04-18', time: '20:00' },
-      { home: 'Atlas', away: 'Santos Laguna', date: '2026-04-19', time: '16:00' }
+      { home: 'Santos Laguna', away: 'Atlas', date: '2026-04-19', time: '16:00' }
     ]
   },
   // Jornada 16 - April 21-22, 2026
   16: {
     startDate: '2026-04-21',
     matches: [
-      { home: 'Cruz Azul', away: 'Querétaro', date: '2026-04-21', time: '18:00' },
-      { home: 'FC Juárez', away: 'UNAM Pumas', date: '2026-04-21', time: '18:00' },
+      { home: 'Querétaro', away: 'Cruz Azul', date: '2026-04-21', time: '18:00' },
+      { home: 'UNAM Pumas', away: 'FC Juárez', date: '2026-04-21', time: '18:00' },
       { home: 'Monterrey', away: 'Puebla', date: '2026-04-21', time: '20:00' },
-      { home: 'Club América', away: 'Club León', date: '2026-04-21', time: '20:06' },
+      { home: 'Club León', away: 'Club América', date: '2026-04-21', time: '20:06' },
       { home: 'Atl. San Luis', away: 'Santos Laguna', date: '2026-04-22', time: '18:00' },
       { home: 'Atlas', away: 'Tigres UANL', date: '2026-04-22', time: '18:00' },
       { home: 'Mazatlán FC', away: 'Toluca', date: '2026-04-22', time: '18:00' },
       { home: 'Club Tijuana', away: 'Pachuca', date: '2026-04-22', time: '20:00' },
-      { home: 'Guadalajara Chivas', away: 'Necaxa', date: '2026-04-22', time: '20:00' }
+      { home: 'Necaxa', away: 'Guadalajara Chivas', date: '2026-04-22', time: '20:00' }
     ]
   },
   // Jornada 17 - April 25-26, 2026 (Final regular season matchday)
   17: {
     startDate: '2026-04-25',
     matches: [
-      { home: 'Tigres UANL', away: 'Club América', date: '2026-04-25', time: '18:00' },
-      { home: 'UNAM Pumas', away: 'Guadalajara Chivas', date: '2026-04-25', time: '18:00' },
-      { home: 'Santos Laguna', away: 'Cruz Azul', date: '2026-04-25', time: '20:00' },
-      { home: 'Toluca', away: 'Atlas', date: '2026-04-25', time: '20:00' },
-      { home: 'Querétaro', away: 'Atl. San Luis', date: '2026-04-26', time: '16:00' },
-      { home: 'Pachuca', away: 'Club León', date: '2026-04-26', time: '16:00' },
-      { home: 'Puebla', away: 'Club Tijuana', date: '2026-04-26', time: '18:00' },
-      { home: 'Monterrey', away: 'Mazatlán FC', date: '2026-04-26', time: '18:00' },
-      { home: 'Necaxa', away: 'FC Juárez', date: '2026-04-26', time: '20:00' }
+      { home: 'Puebla', away: 'Querétaro', date: '2026-04-24', time: '20:00' },
+      { home: 'Pachuca', away: 'UNAM Pumas', date: '2026-04-25', time: '16:00' },
+      { home: 'Tigres UANL', away: 'Mazatlán FC', date: '2026-04-25', time: '16:00' },
+      { home: 'Toluca', away: 'Club León', date: '2026-04-25', time: '18:00' },
+      { home: 'Guadalajara Chivas', away: 'Tijuana', date: '2026-04-25', time: '18:07' },
+      { home: 'Club América', away: 'Atlas', date: '2026-04-25', time: '20:00' },
+      { home: 'FC Juárez', away: 'Atl. San Luis', date: '2026-04-25', time: '20:00' },
+      { home: 'Santos Laguna', away: 'Monterrey', date: '2026-04-26', time: '16:00' },
+      { home: 'Cruz Azul', away: 'Necaxa', date: '2026-04-26', time: '16:00' }
     ]
   }
 };

@@ -1650,7 +1650,7 @@ export default function Admin() {
                       </div>
                       <div>
                         <h2 className={`text-base sm:text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          Match Scores
+                          Match Result
                         </h2>
                         <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
                           Week {weekInfo.weekNumber} • Enter scores for each match
@@ -1661,6 +1661,7 @@ export default function Admin() {
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
                       {/* PDF Buttons */}
+                     
                       <button
                         onClick={() => handleDownloadPredictionPDF(weekInfo.weekNumber, weekInfo.year)}
                         disabled={downloadingPDF === `pred-${weekInfo.weekNumber}-${weekInfo.year}` || !schedule}
@@ -1680,7 +1681,9 @@ export default function Admin() {
                         )}
                         <span className="hidden sm:inline">PDF</span>
                       </button>
-                      
+                        <p className={` text-left text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          You can download the PDF file before and after the game completion here.
+                        </p>
                       {schedule?.isSettled && (
                         <button
                           onClick={() => handleDownloadResultsPDF(weekInfo.weekNumber, weekInfo.year)}
@@ -1866,7 +1869,7 @@ export default function Admin() {
                             <>
                               <button
                                 onClick={() => handleEditMatch(match)}
-                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                                   isDark
                                     ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
                                     : 'bg-blue-100 text-blue-600 hover:bg-blue-200'

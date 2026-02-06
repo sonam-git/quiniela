@@ -13,6 +13,7 @@ export default defineConfig({
         suppressWarnings: true
       },
       manifest: {
+        id: '/',
         name: 'Quiniela - Liga MX',
         short_name: 'Quiniela',
         description: 'Liga MX Soccer Prediction App - Compete with friends!',
@@ -49,6 +50,29 @@ export default defineConfig({
           }
         ],
         categories: ['sports', 'games', 'entertainment'],
+        shortcuts: [
+          {
+            name: 'Dashboard',
+            short_name: 'Dashboard',
+            description: 'View your predictions and standings',
+            url: '/dashboard',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Place Bet',
+            short_name: 'Bet',
+            description: 'Make your predictions for upcoming matches',
+            url: '/bet',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'How It Works',
+            short_name: 'Help',
+            description: 'Learn how to play Quiniela',
+            url: '/how-it-works',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
+        ],
         screenshots: [
           {
             src: 'screenshot-wide.png',
@@ -61,6 +85,18 @@ export default defineConfig({
             sizes: '720x1280',
             type: 'image/png',
             form_factor: 'narrow'
+          }
+        ],
+        prefer_related_applications: false,
+        related_applications: [
+          {
+            platform: 'play',
+            url: 'https://play.google.com/store/apps/details?id=com.quiniela.ligamx',
+            id: 'com.quiniela.ligamx'
+          },
+          {
+            platform: 'itunes',
+            url: 'https://apps.apple.com/app/quiniela-liga-mx/id0000000000'
           }
         ]
       },

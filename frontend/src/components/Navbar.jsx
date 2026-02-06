@@ -243,7 +243,7 @@ export default function Navbar() {
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+    <nav className={`sticky top-0 z-50 transition-all duration-300 safe-top ${
       isDark 
         ? 'bg-dark-800/95 backdrop-blur-md border-b border-dark-700/50' 
         : 'bg-white/95 backdrop-blur-md border-b border-gray-200/50'

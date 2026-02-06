@@ -1,0 +1,23 @@
+.vercel
+
+# Capacitor native projects
+android/
+ios/
+
+# Keystore - DO NOT COMMIT
+*.jks
+*.keystore
+keystore.properties
+
+# Build outputs
+dist/
+
+# Dependencies
+node_modules/
+
+# Playstore assets folder (large files)
+playstore-assets/*.apk
+playstore-assets/*.aab
+
+# Keep APK in public for download
+!public/download/*.apk

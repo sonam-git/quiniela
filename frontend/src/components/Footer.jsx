@@ -8,7 +8,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className={`border-t ${isDark ? 'bg-dark-900 border-dark-800' : 'bg-gray-50 border-gray-200'}`}>
+    <footer className={`border-t safe-bottom ${isDark ? 'bg-dark-900 border-dark-800' : 'bg-gray-50 border-gray-200'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Footer Content */}

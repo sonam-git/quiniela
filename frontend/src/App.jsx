@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
+import { useAndroidBackButton } from './hooks/useAndroidBackButton'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -74,6 +75,9 @@ function AppContent() {
   const { user } = useAuth()
   const { isDark } = useTheme()
   const isOnline = useOnlineStatus()
+  
+  // Handle Android hardware back button
+  useAndroidBackButton()
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${

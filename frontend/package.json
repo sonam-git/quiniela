@@ -7,9 +7,25 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:assets": "capacitor-assets generate",
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "cap:android": "npm run build && npx cap sync android && npx cap open android",
+    "cap:build:ios": "npm run build && npx cap sync ios",
+    "cap:build:android": "npm run build && npx cap sync android",
+    "playstore:assets": "node generate-playstore-assets.js",
+    "playstore:build": "npm run build && npx cap sync android && echo 'Now open Android Studio: npx cap open android'"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.2",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^8.0.2",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.2",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.2",
@@ -27,6 +43,7 @@
     "vite": "^6.0.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "sharp": "^0.34.5",
     "vite-plugin-pwa": "^1.2.0"
   }

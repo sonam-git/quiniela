@@ -7,6 +7,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
   const { t } = useTranslation('dashboard')
   const [expandedCard, setExpandedCard] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
+  const [statsExpanded, setStatsExpanded] = useState(false)
   
   // For last week view, always show predictions (all games are completed)
   const effectiveHasStarted = isLastWeek ? true : hasStarted
@@ -138,8 +139,8 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
   return (
     <div className="space-y-5">
       
-      {/* Summary Stats Bar */}
-      <div className={`rounded-xl border overflow-hidden ${
+      {/* Summary Stats Bar - Desktop */}
+      <div className={`hidden md:block rounded-xl border overflow-hidden ${
         isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
       }`}>
         <div className={`px-4 py-3 flex flex-wrap items-center justify-between gap-3 ${
@@ -350,6 +351,261 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
             </div>
           )}
         </div>
+      </div>
+
+      {/* Summary Stats Bar - Mobile Collapsible */}
+      <div className={`md:hidden rounded-xl border overflow-hidden ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
+      }`}>
+        {/* Header - Always visible with key stats */}
+        <button
+          onClick={() => setStatsExpanded(!statsExpanded)}
+          className={`w-full px-4 py-3 flex items-center justify-between gap-3 transition-colors ${
+            isDark ? 'bg-gradient-to-r from-dark-800 to-dark-700 active:bg-dark-700' : 'bg-gradient-to-r from-gray-50 to-white active:bg-gray-100'
+          }`}
+        >
+          {/* Quick Stats Summary */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Compact stat pills */}
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold ${
+              isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-700'
+            }`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {bets.length}
+            </div>
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold ${
+              hasCompletedMatches
+                ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                : isDark ? 'bg-dark-600 text-dark-300' : 'bg-gray-100 text-gray-600'
+            }`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {completedMatchesCount}/{totalMatchesCount}
+            </div>
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+              isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+            }`}>
+              <span>$</span>
+              {bets.length * betAmount}
+            </div>
+          </div>
+          
+          {/* Leader mini badge */}
+          {sortedBets.length > 0 && hasCompletedMatches && sortedBets[0]?.totalPoints > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🏆</span>
+              <span className={`text-xs font-semibold truncate max-w-[60px] ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                {sortedBets[0]?.userId?.name?.split(' ')[0] || '?'}
+              </span>
+            </div>
+          )}
+          
+          {/* Expand/Collapse indicator */}
+          <svg 
+            className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${
+              statsExpanded ? 'rotate-180' : ''
+            } ${isDark ? 'text-dark-400' : 'text-gray-400'}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Expanded Content */}
+        {statsExpanded && (
+          <div className={`px-4 pb-4 pt-2 space-y-3 border-t ${isDark ? 'border-dark-700' : 'border-gray-100'}`}>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Participants */}
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${
+                isDark ? 'bg-dark-700/80 border border-dark-600' : 'bg-white border border-gray-200 shadow-sm'
+              }`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  isDark ? 'bg-purple-500/20' : 'bg-purple-100'
+                }`}>
+                  <svg className={`w-4 h-4 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('stats.participants')}</p>
+                  <p className={`text-lg font-bold -mt-0.5 ${isDark ? 'text-white' : 'text-gray-900'}`}>{bets.length}</p>
+                </div>
+              </div>
+              
+              {/* Matches Progress */}
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${
+                isDark ? 'bg-dark-700/80 border border-dark-600' : 'bg-white border border-gray-200 shadow-sm'
+              }`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  hasCompletedMatches
+                    ? isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                    : isDark ? 'bg-dark-600' : 'bg-gray-100'
+                }`}>
+                  <svg className={`w-4 h-4 ${
+                    hasCompletedMatches
+                      ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                      : isDark ? 'text-dark-400' : 'text-gray-400'
+                  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('stats.matches')}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-lg font-bold -mt-0.5 ${
+                      hasCompletedMatches
+                        ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                        : isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {completedMatchesCount}/{totalMatchesCount}
+                    </p>
+                    {hasCompletedMatches && completedMatchesCount < totalMatchesCount && (
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Actual Goals */}
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${
+                isDark ? 'bg-dark-700/80 border border-dark-600' : 'bg-white border border-gray-200 shadow-sm'
+              }`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  hasCompletedMatches
+                    ? isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                    : isDark ? 'bg-dark-600' : 'bg-gray-100'
+                }`}>
+                  <span className="text-base">⚽</span>
+                </div>
+                <div>
+                  <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Actual Goals</p>
+                  <p className={`text-lg font-bold -mt-0.5 ${
+                    hasCompletedMatches
+                      ? isDark ? 'text-blue-400' : 'text-blue-600'
+                      : isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {schedule.matches
+                      .filter(m => m.isCompleted)
+                      .reduce((total, m) => total + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Prize Pool */}
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${
+                isDark ? 'bg-dark-700/80 border border-dark-600' : 'bg-white border border-gray-200 shadow-sm'
+              }`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  isDark ? 'bg-amber-500/20' : 'bg-amber-100'
+                }`}>
+                  <svg className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('stats.prize') || 'Prize'}</p>
+                  <p className={`text-lg font-bold -mt-0.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                    ${bets.length * betAmount}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Leader Badge - Mobile */}
+            {sortedBets.length > 0 && (
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+                hasCompletedMatches && sortedBets[0]?.totalPoints > 0
+                  ? isDark 
+                    ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/30' 
+                    : 'bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200'
+                  : isDark
+                    ? 'bg-dark-700/80 border border-dark-600'
+                    : 'bg-gray-50 border border-gray-200'
+              }`}>
+                <span className="text-xl">🏆</span>
+                {hasCompletedMatches && sortedBets[0]?.totalPoints > 0 ? (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {/* Check for ties */}
+                    {(() => {
+                      const leadPoints = sortedBets[0]?.totalPoints
+                      const leadLiveGoalDiff = sortedBets[0]?.liveGoalDifference
+                      const winners = sortedBets.filter(b => 
+                        b.totalPoints === leadPoints && 
+                        b.liveGoalDifference === leadLiveGoalDiff
+                      )
+                      const isTie = winners.length > 1 && isSettled
+                      
+                      if (isTie) {
+                        const winnerNames = winners.map(w => w.userId?.name || 'Unknown')
+                        const displayNames = winnerNames.length <= 2 
+                          ? winnerNames.join(' & ')
+                          : `${winnerNames[0]} & ${winnerNames.length - 1} more`
+                        
+                        return (
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex -space-x-1.5">
+                              {winners.slice(0, 2).map((winner, i) => (
+                                <div 
+                                  key={winner._id}
+                                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-gradient-to-br from-amber-400 to-amber-600 ring-2 ${
+                                    isDark ? 'ring-dark-800' : 'ring-white'
+                                  }`}
+                                  style={{ zIndex: 2 - i }}
+                                >
+                                  {winner.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                🎉 {displayNames}
+                              </p>
+                              <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                                {leadPoints} pts • Tied!
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      }
+                      
+                      return (
+                        <>
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-amber-400 to-amber-600`}>
+                            {sortedBets[0]?.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              {sortedBets[0]?.userId?.name || 'Unknown'}
+                            </p>
+                            <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                              {sortedBets[0]?.totalPoints} {t('table.points')}
+                              {hasCompletedMatches && (
+                                <span className="ml-1 opacity-75">• ±{sortedBets[0]?.liveGoalDifference ?? 0}</span>
+                              )}
+                            </p>
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    {t('table.leaderAfterFirst')}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Desktop Table */}
@@ -642,7 +898,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                     </div>
                     <div className="min-w-0">
                       <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {bet.userId?.name || 'Unknown'}
+                        {bet.userId?.name[0].toUpperCase() + bet.userId?.name.slice(1) || 'Unknown'}
                       </p>
                       {/* Mini Stats */}
                       <div className="flex items-center gap-2 mt-0.5">

@@ -1711,6 +1711,9 @@ export default function Admin() {
                     
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
+                           <p className={` text-left text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          You can download the PDF file before and after the game completion here.
+                        </p>
                       {/* PDF Buttons */}
                      
                       <button
@@ -1730,11 +1733,9 @@ export default function Admin() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         )}
-                        <span className="hidden sm:inline">PDF</span>
+                        <span className="hidden sm:inline">Prediction</span>
                       </button>
-                        <p className={` text-left text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                          You can download the PDF file before and after the game completion here.
-                        </p>
+                   
                       {schedule?.isSettled && (
                         <button
                           onClick={() => handleDownloadResultsPDF(weekInfo.weekNumber, weekInfo.year)}

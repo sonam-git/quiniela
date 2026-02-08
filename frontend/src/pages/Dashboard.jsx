@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import QuinielaTable from '../components/QuinielaTable'
 import { BetIcon } from '../components/Navbar'
+import { CalendarIcon } from './Profile'
 import toast from 'react-hot-toast'
 
 export default function Dashboard() {
@@ -1117,12 +1118,13 @@ export default function Dashboard() {
               isDark ? 'border-dark-700' : 'border-gray-200'
             }`}>
               <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                <span>🏆</span> Jornada {weekInfo.weekNumber} Standing
+                <span><CalendarIcon/></span> Week {weekInfo.weekNumber} 
               </h2>
               <div className="flex items-center gap-3">
-                <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                {/* <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
                   <span>👥</span> {bets.length} participant{bets.length !== 1 ? 's' : ''}
-                </span>
+                </span> */}
+                <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Download a quiniela PDF</span>  
                 {/* PDF Download Button - Disabled for non-admin until first game starts */}
                 {bets.length > 0 && (isAdmin || lockStatus.hasStarted) && (
                   <button

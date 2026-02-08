@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api, { downloadPredictionPDF, downloadResultsPDF } from '../services/api'
+import api, { downloadPredictionPDF, downloadResultsPDF, getBetAmount } from '../services/api'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
@@ -27,6 +27,7 @@ export default function Dashboard() {
     const saved = localStorage.getItem('dismissedAnnouncements')
     return saved ? JSON.parse(saved) : []
   })
+  const [betAmount, setBetAmount] = useState(20) // Default bet amount
   
   // Last week data
   const [lastWeekSchedule, setLastWeekSchedule] = useState(null)
@@ -82,10 +83,11 @@ export default function Dashboard() {
   const fetchData = useCallback(async () => {
     try {
       setError(null)
-      const [scheduleRes, betsRes, announcementsRes] = await Promise.all([
+      const [scheduleRes, betsRes, announcementsRes, betAmountValue] = await Promise.all([
         api.get('/schedule/current'),
         api.get('/bets/current'),
-        api.get('/announcements')
+        api.get('/announcements'),
+        getBetAmount().catch(() => 20) // Default to 20 if settings not available
       ])
 
       setSchedule(scheduleRes.data.schedule)
@@ -101,6 +103,7 @@ export default function Dashboard() {
         year: scheduleRes.data.year
       })
       setAnnouncements(announcementsRes.data.announcements || [])
+      setBetAmount(betAmountValue || 20)
       
       // Fetch last week data (optional - won't fail if not available)
       try {
@@ -323,6 +326,14 @@ export default function Dashboard() {
     }
   }, [weekInfo.weekNumber, weekInfo.year, schedule?._id])
 
+  // Handle settings update (e.g., bet amount changes)
+  const handleSettingsUpdate = useCallback((data) => {
+    console.log('⚙️ Dashboard: Settings update:', data)
+    if (data?.key === 'betAmount' && data?.value) {
+      setBetAmount(data.value)
+    }
+  }, [])
+
   // Real-time updates - targeted handlers to minimize re-renders
   useRealTimeUpdates({
     onScheduleUpdate: handleScheduleUpdate,
@@ -333,7 +344,8 @@ export default function Dashboard() {
     onResultsUpdate: handleResultsUpdate,
     onPaymentsUpdate: handlePaymentsUpdate,
     onAnnouncementUpdate: handleAnnouncementUpdate,
-    onSettled: handleSettledUpdate
+    onSettled: handleSettledUpdate,
+    onSettingsUpdate: handleSettingsUpdate
   })
 
   useEffect(() => {
@@ -1153,6 +1165,7 @@ export default function Dashboard() {
                 isSettled={isSettled}
                 hasStarted={lockStatus.hasStarted}
                 currentUserId={user?.id}
+                betAmount={betAmount}
               />
             </div>
           </div>
@@ -1274,6 +1287,7 @@ export default function Dashboard() {
                     hasStarted={true}
                     currentUserId={user?.id}
                     isLastWeek={true}
+                    betAmount={betAmount}
                   />
                 </div>
                 

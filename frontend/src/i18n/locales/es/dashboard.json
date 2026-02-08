@@ -57,7 +57,8 @@
     "topScore": "Mejor Puntaje",
     "totalMatches": "Total Partidos",
     "completed": "Completados",
-    "totalGoals": "Goles Totales"
+    "totalGoals": "Goles Totales",
+    "prize": "Premio"
   },
   "status": {
     "bettingOpen": "Apuestas Abiertas",

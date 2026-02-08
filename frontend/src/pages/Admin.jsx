@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
-import api, { downloadPredictionPDF, downloadResultsPDF } from '../services/api'
+import api, { downloadPredictionPDF, downloadResultsPDF, getBetAmount, updateBetAmount } from '../services/api'
 import toast from 'react-hot-toast'
 import { EditIcon, CalendarIcon, CheckIcon } from './Profile'
 
@@ -154,6 +154,12 @@ export default function Admin() {
   // PDF download state
   const [downloadingPDF, setDownloadingPDF] = useState(null) // Tracks which schedule PDF is downloading
   
+  // Bet amount settings state
+  const [betAmount, setBetAmount] = useState(20)
+  const [editingBetAmount, setEditingBetAmount] = useState(false)
+  const [newBetAmount, setNewBetAmount] = useState(20)
+  const [betAmountLoading, setBetAmountLoading] = useState(false)
+  
   // Modal state
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -193,10 +199,11 @@ export default function Admin() {
         api.get('/admin/payments'),
         api.get('/admin/announcements'),
         api.get('/admin/schedule').catch(() => ({ data: { schedule: null } })),
-        api.get('/admin/schedules').catch(() => ({ data: { schedules: [] } }))
+        api.get('/admin/schedules').catch(() => ({ data: { schedules: [] } })),
+        getBetAmount().catch(() => ({ betAmount: 20 }))
       ]
       
-      const [usersRes, betsRes, paymentsRes, announcementsRes, scheduleRes, schedulesRes] = await Promise.all(baseRequests)
+      const [usersRes, betsRes, paymentsRes, announcementsRes, scheduleRes, schedulesRes, betAmountRes] = await Promise.all(baseRequests)
       
       setUsers(usersRes.data.users)
       setBets(betsRes.data.bets)
@@ -205,6 +212,11 @@ export default function Admin() {
       setAnnouncements(announcementsRes.data.announcements || [])
       setSchedule(scheduleRes.data.schedule)
       setAllSchedules(schedulesRes.data.schedules || [])
+      
+      // Set bet amount from settings
+      const fetchedBetAmount = betAmountRes?.betAmount || 20
+      setBetAmount(fetchedBetAmount)
+      setNewBetAmount(fetchedBetAmount)
       
       // Only fetch codes if user is a developer
       if (isDeveloper) {
@@ -486,6 +498,18 @@ export default function Admin() {
     }
   }, [isAdmin])
 
+  // Handle settings update (e.g., bet amount changes)
+  const handleSettingsUpdate = useCallback((data) => {
+    if (!isAdmin) return
+    
+    console.log('⚙️ Admin: Settings update received:', data)
+    
+    if (data?.key === 'betAmount' && data?.value) {
+      setBetAmount(data.value)
+      setNewBetAmount(data.value)
+    }
+  }, [isAdmin])
+
   useRealTimeUpdates({
     onPaymentsUpdate: handlePaymentsUpdate,
     onBetsUpdate: handleBetsUpdate,
@@ -496,7 +520,8 @@ export default function Admin() {
     onResultsUpdate: handleResultsUpdate,
     onAnnouncementUpdate: handleAnnouncementUpdate,
     onAdminUpdate: handleAdminUpdate,
-    onSettled: handleWeekSettled
+    onSettled: handleWeekSettled,
+    onSettingsUpdate: handleSettingsUpdate
   })
 
   const handleTogglePayment = async (betId, currentStatus) => {
@@ -725,6 +750,32 @@ export default function Admin() {
         }
       }
     })
+  }
+
+  // Bet amount handler
+  const handleSaveBetAmount = async () => {
+    const amount = parseFloat(newBetAmount)
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount greater than 0')
+      return
+    }
+
+    try {
+      setBetAmountLoading(true)
+      await updateBetAmount(amount)
+      setBetAmount(amount)
+      setEditingBetAmount(false)
+      toast.success('Bet amount updated successfully!')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update bet amount')
+    } finally {
+      setBetAmountLoading(false)
+    }
+  }
+
+  const handleCancelBetAmountEdit = () => {
+    setNewBetAmount(betAmount)
+    setEditingBetAmount(false)
   }
 
   // Match score handlers
@@ -2687,6 +2738,118 @@ export default function Admin() {
                       : 0}%` 
                   }}
                 />
+              </div>
+            </div>
+
+            {/* Bet Amount Configuration */}
+            <div className={`px-6 py-4 border-b ${isDark ? 'border-dark-700 bg-dark-800/30' : 'border-gray-100 bg-white/50'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    isDark ? 'bg-gradient-to-br from-amber-600 to-yellow-700' : 'bg-gradient-to-br from-amber-500 to-yellow-600'
+                  } shadow-md`}>
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Bet Amount
+                    </h3>
+                    <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      Entry fee per participant (used to calculate prize pool)
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {editingBetAmount ? (
+                    <>
+                      <div className="relative">
+                        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium ${
+                          isDark ? 'text-dark-400' : 'text-gray-500'
+                        }`}>$</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={newBetAmount}
+                          onChange={(e) => setNewBetAmount(e.target.value)}
+                          className={`w-28 pl-7 pr-3 py-2 rounded-lg text-sm font-medium border focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                            isDark 
+                              ? 'bg-dark-700 border-dark-600 text-white placeholder-dark-400' 
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                          }`}
+                          placeholder="20"
+                          disabled={betAmountLoading}
+                        />
+                      </div>
+                      <button
+                        onClick={handleSaveBetAmount}
+                        disabled={betAmountLoading}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                          isDark 
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
+                            : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {betAmountLoading ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <CheckIcon className="w-4 h-4" />
+                        )}
+                        <span>Save</span>
+                      </button>
+                      <button
+                        onClick={handleCancelBetAmountEdit}
+                        disabled={betAmountLoading}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          isDark 
+                            ? 'bg-dark-700 hover:bg-dark-600 text-dark-300 border border-dark-600' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        } disabled:opacity-50`}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className={`px-4 py-2 rounded-lg font-bold text-lg ${
+                        isDark 
+                          ? 'bg-amber-900/30 text-amber-400 border border-amber-800/50' 
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        ${betAmount.toFixed(2)}
+                      </div>
+                      <button
+                        onClick={() => setEditingBetAmount(true)}
+                        className={`p-2 rounded-lg transition-all ${
+                          isDark 
+                            ? 'bg-dark-700 hover:bg-dark-600 text-dark-300 border border-dark-600' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                        title="Edit bet amount"
+                      >
+                        <EditIcon className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Prize Pool Preview */}
+              <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    Current Prize Pool
+                  </span>
+                  <span className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    ${(payments.filter(p => p.hasBet).length * betAmount).toFixed(2)}
+                  </span>
+                </div>
+                <p className={`text-xs mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+                  {payments.filter(p => p.hasBet).length} participants × ${betAmount.toFixed(2)} = Prize Pool
+                </p>
               </div>
             </div>
 

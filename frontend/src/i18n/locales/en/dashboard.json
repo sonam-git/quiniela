@@ -57,7 +57,8 @@
     "topScore": "Top Score",
     "totalMatches": "Total Matches",
     "completed": "Completed",
-    "totalGoals": "Total Goals"
+    "totalGoals": "Total Goals",
+    "prize": "Prize"
   },
   "status": {
     "bettingOpen": "Betting Open",

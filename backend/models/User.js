@@ -10,11 +10,18 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
     unique: true,
+    sparse: true, // Allows multiple null values
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+  },
+  phone: {
+    type: String,
+    unique: true,
+    sparse: true, // Allows multiple null values
+    trim: true,
+    match: [/^[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/, 'Please enter a valid phone number']
   },
   password: {
     type: String,
@@ -33,6 +40,14 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+// Validate that either email or phone is provided
+userSchema.pre('validate', function(next) {
+  if (!this.email && !this.phone) {
+    this.invalidate('email', 'Either email or phone number is required');
+  }
+  next();
 });
 
 // Hash password before saving

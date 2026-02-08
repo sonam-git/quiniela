@@ -38,7 +38,19 @@
     "withBets": "With Bets",
     "noBet": "No Bet",
     "noUsers": "No users found",
-    "noUsersMessage": "Users will appear here once they register"
+    "noUsersMessage": "Users will appear here once they register",
+    "betAmount": {
+      "title": "Bet Amount",
+      "description": "Entry fee per participant (used to calculate prize pool)",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit bet amount",
+      "prizePool": "Current Prize Pool",
+      "prizePoolCalc": "{{count}} participants × ${{amount}} = Prize Pool",
+      "updated": "Bet amount updated successfully!",
+      "invalidAmount": "Please enter a valid amount greater than 0",
+      "updateFailed": "Failed to update bet amount"
+    }
   },
   "settings": {
     "title": "Access Codes",

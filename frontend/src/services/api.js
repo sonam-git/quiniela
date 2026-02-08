@@ -81,4 +81,20 @@ export const downloadResultsPDF = async (weekNumber, year) => {
   document.body.removeChild(a)
 }
 
+// Settings API helpers
+export const getSettings = async () => {
+  const response = await api.get('/admin/settings')
+  return response.data.settings
+}
+
+export const getBetAmount = async () => {
+  const response = await api.get('/admin/settings/betAmount')
+  return response.data.value
+}
+
+export const updateBetAmount = async (amount) => {
+  const response = await api.put('/admin/settings/betAmount', { amount })
+  return response.data
+}
+
 export default api

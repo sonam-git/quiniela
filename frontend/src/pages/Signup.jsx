@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 
 export default function Signup() {
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [emailOrPhone, setEmailOrPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -25,6 +25,11 @@ export default function Signup() {
       return
     }
 
+    if (!emailOrPhone.trim()) {
+      toast.error(t('errors.emailOrPhoneRequired') || 'Please provide email or phone number')
+      return
+    }
+
     if (password !== confirmPassword) {
       toast.error(t('errors.passwordsMismatch'))
       return
@@ -37,7 +42,7 @@ export default function Signup() {
 
     startTransition(async () => {
       try {
-        await signup(name, email, password, inviteCode)
+        await signup(name, emailOrPhone, password, inviteCode)
         toast.success(t('signup.success'))
         navigate('/')
       } catch (error) {
@@ -162,14 +167,14 @@ export default function Signup() {
                 <label className={`block text-sm font-medium mb-1.5 ${
                   isDark ? 'text-dark-200' : 'text-gray-700'
                 }`}>
-                  {t('signup.email')}
+                  {t('signup.emailOrPhone') || 'Email or Phone'}
                 </label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
                   className={inputClassName}
-                  placeholder={t('signup.emailPlaceholder')}
+                  placeholder={t('signup.emailOrPhonePlaceholder') || "you@example.com or +1234567890"}
                   required
                 />
               </div>

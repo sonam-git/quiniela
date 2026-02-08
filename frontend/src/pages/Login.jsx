@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext'
 import toast from 'react-hot-toast'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [adminCode, setAdminCode] = useState('')
   const [showAdminCode, setShowAdminCode] = useState(false)
@@ -21,7 +21,7 @@ export default function Login() {
 
     startTransition(async () => {
       try {
-        await login(email, password, adminCode.trim() || null)
+        await login(identifier, password, adminCode.trim() || null)
         toast.success(t('login.welcomeBack'))
         navigate('/')
       } catch (error) {
@@ -123,19 +123,19 @@ export default function Login() {
                 <label className={`block text-sm font-medium mb-1.5 ${
                   isDark ? 'text-dark-200' : 'text-gray-700'
                 }`}>
-                  {t('login.email')}
+                  {t('login.emailOrPhone') || 'Email or Phone'}
                 </label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className={`w-full px-3 py-2.5 rounded-lg text-sm transition-colors
                     focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                     isDark 
                       ? 'bg-dark-700 border border-dark-600 text-dark-100 placeholder-dark-400' 
                       : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400'
                   }`}
-                  placeholder="you@example.com"
+                  placeholder={t('login.emailOrPhonePlaceholder') || "you@example.com or +1234567890"}
                   required
                 />
               </div>

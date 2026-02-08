@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../context/ThemeContext'
 
-export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId, isLastWeek = false }) {
+export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId, isLastWeek = false, betAmount = 20 }) {
   const { isDark } = useTheme()
   const { t } = useTranslation('dashboard')
   const [expandedCard, setExpandedCard] = useState(null)
@@ -229,6 +229,25 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                     </span>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Prize Pool */}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+              isDark ? 'bg-dark-700/80 border border-dark-600' : 'bg-white border border-gray-200 shadow-sm'
+            }`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                isDark ? 'bg-amber-500/20' : 'bg-amber-100'
+              }`}>
+                <svg className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('stats.prize') || 'Prize'}</p>
+                <p className={`text-lg font-bold -mt-0.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                  ${bets.length * betAmount}
+                </p>
               </div>
             </div>  
           </div>

@@ -14,6 +14,7 @@ import socket, { connectSocket, disconnectSocket } from '../services/socket'
  * @param {Function} handlers.onPaymentsUpdate - Called when payment status changes
  * @param {Function} handlers.onAdminUpdate - Called when admin status changes
  * @param {Function} handlers.onSettled - Called when week is settled
+ * @param {Function} handlers.onSettingsUpdate - Called when settings are updated
  */
 export function useRealTimeUpdates(handlers = {}) {
   // Use refs to store handlers so we don't need them in dependency array
@@ -69,6 +70,10 @@ export function useRealTimeUpdates(handlers = {}) {
       console.log('🔌 Received week:settled', data)
       handlersRef.current.onSettled?.(data)
     }
+    const settingsHandler = (data) => {
+      console.log('🔌 Received settings:update', data)
+      handlersRef.current.onSettingsUpdate?.(data)
+    }
 
     // Set up event listeners
     socket.on('schedule:update', scheduleHandler)
@@ -81,6 +86,7 @@ export function useRealTimeUpdates(handlers = {}) {
     socket.on('payments:update', paymentsHandler)
     socket.on('admin:update', adminHandler)
     socket.on('week:settled', settledHandler)
+    socket.on('settings:update', settingsHandler)
 
     // Cleanup on unmount
     return () => {
@@ -94,6 +100,7 @@ export function useRealTimeUpdates(handlers = {}) {
       socket.off('payments:update', paymentsHandler)
       socket.off('admin:update', adminHandler)
       socket.off('week:settled', settledHandler)
+      socket.off('settings:update', settingsHandler)
     }
   }, []) // Empty dependency array - handlers are accessed via ref
 

@@ -21,12 +21,21 @@ const getCodes = () => {
 // Developer code from environment variable
 const DEV_CODE = process.env.DEV_CODE || 'DEV2026';
 
+// Helper to detect if input is email or phone
+const isEmail = (input) => {
+  return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(input);
+};
+
+const isPhone = (input) => {
+  return /^[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(input);
+};
+
 // @route   POST /api/auth/signup
 // @desc    Register a new user
 // @access  Public
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, inviteCode } = req.body;
+    const { name, email, phone, password, inviteCode } = req.body;
     const { SIGNUP_CODE } = getCodes();
 
     // Check if using developer code
@@ -37,20 +46,38 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'Invalid invite code. Please enter a valid code to sign up.' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+    // Validate that either email or phone is provided
+    if (!email && !phone) {
+      return res.status(400).json({ message: 'Please provide either an email or phone number' });
+    }
+
+    // Check if user already exists with email or phone
+    if (email) {
+      const existingEmailUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingEmailUser) {
+        return res.status(400).json({ message: 'User already exists with this email' });
+      }
+    }
+    
+    if (phone) {
+      const existingPhoneUser = await User.findOne({ phone });
+      if (existingPhoneUser) {
+        return res.status(400).json({ message: 'User already exists with this phone number' });
+      }
     }
 
     // Create new user - if using DEV code, make them developer AND admin
-    const user = new User({ 
+    const userData = { 
       name, 
-      email, 
       password,
       isAdmin: isDeveloperSignup,
       isDeveloper: isDeveloperSignup
-    });
+    };
+    
+    if (email) userData.email = email.toLowerCase();
+    if (phone) userData.phone = phone;
+
+    const user = new User(userData);
     await user.save();
 
     // Generate JWT
@@ -66,7 +93,8 @@ router.post('/signup', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
+        email: user.email || null,
+        phone: user.phone || null,
         isAdmin: user.isAdmin,
         isDeveloper: user.isDeveloper
       }
@@ -86,16 +114,33 @@ router.post('/signup', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, adminCode } = req.body;
+    const { email, phone, identifier, password, adminCode } = req.body;
     const { ADMIN_CODE } = getCodes();
 
+    // Support both old (email) and new (identifier) login methods
+    const loginIdentifier = identifier || email || phone;
+
     // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+    if (!loginIdentifier || !password) {
+      return res.status(400).json({ message: 'Please provide email/phone and password' });
     }
 
-    // Find user
-    const user = await User.findOne({ email });
+    // Find user by email or phone
+    let user;
+    if (isEmail(loginIdentifier)) {
+      user = await User.findOne({ email: loginIdentifier.toLowerCase() });
+    } else if (isPhone(loginIdentifier)) {
+      user = await User.findOne({ phone: loginIdentifier });
+    } else {
+      // Try both
+      user = await User.findOne({ 
+        $or: [
+          { email: loginIdentifier.toLowerCase() },
+          { phone: loginIdentifier }
+        ]
+      });
+    }
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -134,7 +179,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
+        email: user.email || null,
+        phone: user.phone || null,
         isAdmin: isAdminSession || user.isAdmin,
         isDeveloper: user.isDeveloper || false
       }
@@ -153,7 +199,8 @@ router.get('/me', auth, async (req, res) => {
     user: {
       id: req.user._id,
       name: req.user.name,
-      email: req.user.email,
+      email: req.user.email || null,
+      phone: req.user.phone || null,
       isAdmin: req.user.isAdmin || false,
       isDeveloper: req.user.isDeveloper || false
     }

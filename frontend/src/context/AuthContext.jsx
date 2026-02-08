@@ -63,8 +63,8 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }
 
-  const login = async (email, password, adminCode = null) => {
-    const payload = { email, password }
+  const login = async (identifier, password, adminCode = null) => {
+    const payload = { identifier, password }
     if (adminCode) {
       payload.adminCode = adminCode
     }
@@ -76,8 +76,22 @@ export function AuthProvider({ children }) {
     return response.data
   }
 
-  const signup = async (name, email, password, inviteCode) => {
-    const response = await api.post('/auth/signup', { name, email, password, inviteCode })
+  const signup = async (name, emailOrPhone, password, inviteCode) => {
+    // Detect if it's an email or phone number
+    const isEmail = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(emailOrPhone)
+    const payload = { 
+      name, 
+      password, 
+      inviteCode 
+    }
+    
+    if (isEmail) {
+      payload.email = emailOrPhone
+    } else {
+      payload.phone = emailOrPhone
+    }
+    
+    const response = await api.post('/auth/signup', payload)
     localStorage.setItem('token', response.data.token)
     startTransition(() => {
       setUser(response.data.user)

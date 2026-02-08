@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Bet = require('../models/Bet');
 const Schedule = require('../models/Schedule');
 const Announcement = require('../models/Announcement');
+const Settings = require('../models/Settings');
 
 const router = express.Router();
 
@@ -1127,6 +1128,77 @@ router.post('/schedules/refresh', auth, adminAuth, async (req, res) => {
     }
   } catch (error) {
     console.error('Refresh schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ==================== SETTINGS ROUTES ====================
+
+// @route   GET /api/admin/settings
+// @desc    Get all settings (public ones without auth, all with auth)
+// @access  Public/Admin
+router.get('/settings', async (req, res) => {
+  try {
+    // Get bet amount setting (default to 20 if not set)
+    const betAmount = await Settings.getSetting('betAmount', 20);
+    
+    res.json({ 
+      settings: {
+        betAmount
+      }
+    });
+  } catch (error) {
+    console.error('Get settings error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/settings/:key
+// @desc    Get a specific setting
+// @access  Public
+router.get('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const defaultValues = {
+      betAmount: 20
+    };
+    
+    const value = await Settings.getSetting(key, defaultValues[key] || null);
+    
+    res.json({ key, value });
+  } catch (error) {
+    console.error('Get setting error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/settings/betAmount
+// @desc    Update the bet amount
+// @access  Admin
+router.put('/settings/betAmount', auth, adminAuth, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    
+    // Validate amount
+    if (typeof amount !== 'number' || amount < 0) {
+      return res.status(400).json({ message: 'Invalid bet amount. Must be a positive number.' });
+    }
+    
+    // Update the setting
+    const setting = await Settings.setSetting('betAmount', amount, req.user._id);
+    
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('settings:update', { key: 'betAmount', value: amount });
+    }
+    
+    res.json({ 
+      message: 'Bet amount updated successfully',
+      betAmount: amount
+    });
+  } catch (error) {
+    console.error('Update bet amount error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -38,7 +38,19 @@
     "withBets": "Con Predicciones",
     "noBet": "Sin Predicción",
     "noUsers": "No se encontraron usuarios",
-    "noUsersMessage": "Los usuarios aparecerán aquí una vez que se registren"
+    "noUsersMessage": "Los usuarios aparecerán aquí una vez que se registren",
+    "betAmount": {
+      "title": "Monto de Apuesta",
+      "description": "Cuota de entrada por participante (usado para calcular el pozo)",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "edit": "Editar monto de apuesta",
+      "prizePool": "Pozo de Premios Actual",
+      "prizePoolCalc": "{{count}} participantes × ${{amount}} = Pozo de Premios",
+      "updated": "¡Monto de apuesta actualizado exitosamente!",
+      "invalidAmount": "Por favor ingresa un monto válido mayor a 0",
+      "updateFailed": "Error al actualizar monto de apuesta"
+    }
   },
   "settings": {
     "title": "Códigos de Acceso",

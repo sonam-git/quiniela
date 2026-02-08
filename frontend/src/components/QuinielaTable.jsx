@@ -11,6 +11,44 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
   // For last week view, always show predictions (all games are completed)
   const effectiveHasStarted = isLastWeek ? true : hasStarted
 
+  // Calculate actual goals scored so far from completed matches
+  const actualGoalsSoFar = schedule.matches
+    .filter(m => m.isCompleted)
+    .reduce((total, m) => total + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0)
+
+  // Calculate dynamic ranking data for each bet
+  // This compares each user's predicted total goals with the actual goals so far
+  const betsWithDynamicRanking = bets.map(bet => {
+    const predictedGoals = bet.totalGoals || 0
+    // How far is their prediction from actual goals so far?
+    // Lower difference = better (closer prediction)
+    const liveGoalDifference = Math.abs(predictedGoals - actualGoalsSoFar)
+    
+    return {
+      ...bet,
+      liveGoalDifference,
+      // Show if prediction is over or under actual
+      goalDirection: predictedGoals > actualGoalsSoFar ? 'over' : predictedGoals < actualGoalsSoFar ? 'under' : 'exact'
+    }
+  })
+
+  // Sort bets dynamically: first by points (desc), then by live goal difference (asc - closer is better)
+  const sortedBets = [...betsWithDynamicRanking].sort((a, b) => {
+    // Primary sort: points (higher is better)
+    if (b.totalPoints !== a.totalPoints) {
+      return b.totalPoints - a.totalPoints
+    }
+    // Secondary sort: live goal difference (lower is better - closer to actual)
+    if (a.liveGoalDifference !== b.liveGoalDifference) {
+      return a.liveGoalDifference - b.liveGoalDifference
+    }
+    // Tertiary: if settled and goal difference exists, use that
+    if (isSettled && a.goalDifference != null && b.goalDifference != null) {
+      return a.goalDifference - b.goalDifference
+    }
+    return 0
+  })
+
   // Map prediction to display text
   const getPredictionDisplay = (prediction, match) => {
     switch (prediction) {
@@ -162,12 +200,43 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 </div>
               </div>
             </div>
+            {/* Actual Goals */}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+              isDark ? 'bg-dark-700/80 border border-dark-600' : 'bg-white border border-gray-200 shadow-sm'
+            }`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                hasCompletedMatches
+                  ? isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                  : isDark ? 'bg-dark-600' : 'bg-gray-100'
+              }`}>
+                <span className="text-base">⚽</span>
+              </div>
+              <div>
+                <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{'Actual Goals'}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className={`text-lg font-bold -mt-0.5 ${
+                    hasCompletedMatches
+                      ? isDark ? 'text-blue-400' : 'text-blue-600'
+                      : isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {schedule.matches
+                      .filter(m => m.isCompleted)
+                      .reduce((total, m) => total + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0)}
+                  </p>
+                  {hasCompletedMatches && (
+                    <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      ({completedMatchesCount} {t('stats.matches') || 'matches'})
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>  
           </div>
           
           {/* Leader Badge */}
-          {bets.length > 0 && (
+          {sortedBets.length > 0 && (
             <div className={`flex items-center gap-3 px-4 py-2 rounded-xl ${
-              hasCompletedMatches && bets[0]?.totalPoints > 0
+              hasCompletedMatches && sortedBets[0]?.totalPoints > 0
                 ? isDark 
                   ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/30' 
                   : 'bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200'
@@ -176,16 +245,16 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                   : 'bg-gray-50 border border-gray-200'
             }`}>
               <span className="text-xl">🏆</span>
-              {hasCompletedMatches && bets[0]?.totalPoints > 0 ? (
+              {hasCompletedMatches && sortedBets[0]?.totalPoints > 0 ? (
                 <div className="flex items-center gap-2">
                   {/* Check for ties - multiple winners with same points and goal difference */}
                   {(() => {
-                    const leadPoints = bets[0]?.totalPoints
-                    const leadGoalDiff = bets[0]?.goalDifference
-                    // Find all users with the same points AND same goal difference
-                    const winners = bets.filter(b => 
+                    const leadPoints = sortedBets[0]?.totalPoints
+                    const leadLiveGoalDiff = sortedBets[0]?.liveGoalDifference
+                    // Find all users with the same points AND same live goal difference
+                    const winners = sortedBets.filter(b => 
                       b.totalPoints === leadPoints && 
-                      (leadGoalDiff === null || b.goalDifference === leadGoalDiff)
+                      b.liveGoalDifference === leadLiveGoalDiff
                     )
                     const isTie = winners.length > 1 && isSettled
                     
@@ -226,27 +295,27 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                               🎉 {displayNames}
                             </p>
                             <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                              {leadPoints} {t('table.points')} • ±{leadGoalDiff ?? 0} {t('standings.goals') || 'goals'} (Tied!)
+                              {leadPoints} {t('table.points')} • ±{leadLiveGoalDiff ?? 0} {t('standings.goals') || 'goals'} (Tied!)
                             </p>
                           </div>
                         </div>
                       )
                     }
                     
-                    // Single winner
+                    // Single leader - show live goal difference during games
                     return (
                       <>
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-amber-400 to-amber-600`}>
-                          {bets[0]?.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                          {sortedBets[0]?.userId?.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <div>
                           <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                            {bets[0]?.userId?.name || 'Unknown'}
+                            {sortedBets[0]?.userId?.name || 'Unknown'}
                           </p>
                           <p className={`text-xs font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                            {bets[0]?.totalPoints} {t('table.points')}
-                            {isSettled && bets[0]?.goalDifference !== null && (
-                              <span className="ml-1 opacity-75">• ±{bets[0]?.goalDifference}</span>
+                            {sortedBets[0]?.totalPoints} {t('table.points')}
+                            {hasCompletedMatches && (
+                              <span className="ml-1 opacity-75">• ±{sortedBets[0]?.liveGoalDifference ?? 0} from actual</span>
                             )}
                           </p>
                         </div>
@@ -285,9 +354,17 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 <th className={`px-3 py-3.5 text-center text-xs font-semibold uppercase tracking-wider ${
                   isDark ? 'text-dark-300' : 'text-gray-500'
                 }`}>
-                  <div className="flex items-center justify-center gap-1">
+                  <div 
+                    className="flex items-center justify-center gap-1 cursor-help"
+                    title={hasCompletedMatches ? `Predicted goals vs Actual (${actualGoalsSoFar}). Shows +/- from actual goals so far.` : 'Total goals predicted'}
+                  >
                     <span>⚽</span>
                     <span>{t('standings.goals')}</span>
+                    {hasCompletedMatches && (
+                      <span className={`text-[10px] px-1 rounded ${isDark ? 'bg-dark-600 text-dark-400' : 'bg-gray-200 text-gray-500'}`}>
+                        /{actualGoalsSoFar}
+                      </span>
+                    )}
                   </div>
                 </th>
                 {schedule.matches.map((match, index) => (
@@ -322,7 +399,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
               </tr>
             </thead>
             <tbody className={`divide-y ${isDark ? 'divide-dark-700/50' : 'divide-gray-100'}`}>
-              {bets.map((bet, index) => (
+              {sortedBets.map((bet, index) => (
                 <tr
                   key={bet._id}
                   onMouseEnter={() => setHoveredRow(bet._id)}
@@ -376,17 +453,32 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                   {/* Goals */}
                   <td className="px-3 py-3 text-center">
                     {canSeePredictions(bet) ? (
-                      <div className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-semibold ${
-                        isSettled && bet.goalDifference !== null 
-                          ? bet.goalDifference === 0 
-                            ? isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-                            : isDark ? 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
-                          : isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
-                      }`}>
+                      <div 
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-semibold ${
+                          hasCompletedMatches
+                            ? bet.liveGoalDifference === 0 
+                              ? isDark ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+                              : bet.liveGoalDifference <= 3
+                                ? isDark ? 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+                                : isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
+                            : isDark ? 'bg-dark-700 text-dark-200' : 'bg-gray-100 text-gray-700'
+                        }`}
+                        title={hasCompletedMatches ? `Predicted: ${bet.totalGoals} | Actual so far: ${actualGoalsSoFar} | Difference: ${bet.liveGoalDifference}` : `Predicted total goals: ${bet.totalGoals}`}
+                      >
                         {bet.totalGoals}
-                        {isSettled && bet.goalDifference !== null && (
-                          <span className="text-xs opacity-75 ml-0.5">
-                            {bet.goalDifference === 0 ? '✓' : `±${bet.goalDifference}`}
+                        {hasCompletedMatches && (
+                          <span className={`text-xs ml-0.5 ${
+                            bet.goalDirection === 'exact' 
+                              ? 'text-emerald-500' 
+                              : bet.goalDirection === 'over' 
+                                ? isDark ? 'text-amber-400' : 'text-amber-600'
+                                : isDark ? 'text-blue-400' : 'text-blue-600'
+                          }`}>
+                            {bet.goalDirection === 'exact' 
+                              ? '✓' 
+                              : bet.goalDirection === 'over' 
+                                ? `+${bet.liveGoalDifference}` 
+                                : `-${bet.liveGoalDifference}`}
                           </span>
                         )}
                       </div>
@@ -488,7 +580,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
-        {bets.map((bet, index) => {
+        {sortedBets.map((bet, index) => {
           const isExpanded = expandedCard === bet._id
           const correctCount = schedule.matches.filter(m => m.isCompleted && findPrediction(bet.predictions, m._id) === m.result).length
           const wrongCount = schedule.matches.filter(m => m.isCompleted && findPrediction(bet.predictions, m._id) && findPrediction(bet.predictions, m._id) !== m.result).length
@@ -619,7 +711,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                 }`}>
                   {/* Check if there are multiple winners (tied) */}
                   {(() => {
-                    const winnersCount = bets.filter(b => b.isWinner).length
+                    const winnersCount = sortedBets.filter(b => b.isWinner).length
                     if (winnersCount > 1) {
                       return `🏆 ${t('table.coChampion') || 'CO-CHAMPION'} 🏆`
                     }
@@ -636,14 +728,26 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                     <>
                       {/* Stats Row */}
                       <div className="grid grid-cols-4 gap-2 pt-4">
-                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
+                        <div className={`p-3 rounded-lg text-center ${
+                          hasCompletedMatches && bet.liveGoalDifference === 0
+                            ? isDark ? 'bg-emerald-500/15' : 'bg-emerald-50'
+                            : isDark ? 'bg-dark-700/50' : 'bg-gray-50'
+                        }`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{bet.totalGoals}</p>
                           <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('table.goals')}</p>
-                          {isSettled && bet.goalDifference !== null && (
+                          {hasCompletedMatches && (
                             <p className={`text-xs mt-0.5 ${
-                              bet.goalDifference === 0 ? 'text-emerald-500' : isDark ? 'text-blue-400' : 'text-blue-600'
+                              bet.goalDirection === 'exact' 
+                                ? 'text-emerald-500' 
+                                : bet.goalDirection === 'over'
+                                  ? isDark ? 'text-amber-400' : 'text-amber-600'
+                                  : isDark ? 'text-blue-400' : 'text-blue-600'
                             }`}>
-                              {bet.goalDifference === 0 ? `✓ ${t('table.exact')}` : `±${bet.goalDifference}`}
+                              {bet.goalDirection === 'exact' 
+                                ? `✓ ${t('table.exact') || 'exact'}` 
+                                : bet.goalDirection === 'over'
+                                  ? `+${bet.liveGoalDifference}`
+                                  : `-${bet.liveGoalDifference}`}
                             </p>
                           )}
                         </div>
@@ -748,7 +852,7 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                         {t('status.confirmed')}
                       </span>
                     ) : (
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold ${
                         isDark ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30' : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
                       }`}>
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

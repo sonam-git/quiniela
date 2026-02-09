@@ -250,7 +250,7 @@ export function GuestBetModal({
               </span>
             </div>
             
-            <div className={`divide-y max-h-64 overflow-y-auto ${isDark ? 'divide-dark-600' : 'divide-gray-200'}`}>
+            <div className={`divide-y ${isDark ? 'divide-dark-600' : 'divide-gray-200'}`}>
               {schedule?.matches?.map((match, index) => (
                 <div key={match._id} className="p-3">
                   <div className="flex items-center justify-between mb-2">

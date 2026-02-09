@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../context/ThemeContext'
 
 export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, currentUserId, isLastWeek = false, betAmount = 20 }) {
   const { isDark } = useTheme()
   const { t } = useTranslation('dashboard')
+  const navigate = useNavigate()
   const [expandedCard, setExpandedCard] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
   const [statsExpanded, setStatsExpanded] = useState(false)
@@ -728,7 +730,12 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          <p 
+                            className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'} ${
+                              isCurrentUserBet(bet) ? 'cursor-pointer hover:underline' : ''
+                            }`}
+                            onClick={() => isCurrentUserBet(bet) && navigate('/profile')}
+                          >
                             {getDisplayName(bet)}
                           </p>
                           {bet.isGuestBet && (
@@ -925,7 +932,17 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <p 
+                          className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'} ${
+                            isCurrentUserBet(bet) ? 'cursor-pointer hover:underline' : ''
+                          }`}
+                          onClick={(e) => {
+                            if (isCurrentUserBet(bet)) {
+                              e.stopPropagation()
+                              navigate('/profile')
+                            }
+                          }}
+                        >
                           {getDisplayName(bet)}
                         </p>
                         {bet.isGuestBet && (

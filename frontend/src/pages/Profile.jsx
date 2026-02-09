@@ -511,16 +511,16 @@ export default function Profile() {
       setSchedule(scheduleRes.data.schedule)
       setIsSettled(scheduleRes.data.schedule?.isSettled || false)
       
-      // Auto-select first guest if on guest tab and none selected
-      if (guestBetsRes.guestBets?.length > 0 && !selectedGuestId) {
-        setSelectedGuestId(guestBetsRes.guestBets[0]._id)
+      // Auto-select first guest if none selected yet
+      if (guestBetsRes.guestBets?.length > 0) {
+        setSelectedGuestId(prev => prev || guestBetsRes.guestBets[0]._id)
       }
     } catch (error) {
       console.error('Error fetching profile data:', error)
     } finally {
       setLoading(false)
     }
-  }, [selectedGuestId])
+  }, []) // Remove selectedGuestId dependency - use functional update instead
 
   useEffect(() => {
     fetchData()
@@ -654,23 +654,28 @@ export default function Profile() {
     // Handle guest bet deletions (from user or admin)
     if (data?.action === 'delete' && data?.betId && data?.isGuestBet) {
       // Check if this guest bet belongs to current user
-      const isMyGuestBet = guestBets.some(gb => gb._id === data.betId)
-      if (isMyGuestBet) {
-        setGuestBets(prev => prev.filter(gb => gb._id !== data.betId))
+      setGuestBets(prev => {
+        const isMyGuestBet = prev.some(gb => gb._id === data.betId)
+        if (!isMyGuestBet) return prev
+        
+        const filtered = prev.filter(gb => gb._id !== data.betId)
+        
         // If deleted guest was selected, select another or switch tab
-        if (selectedGuestId === data.betId) {
-          setGuestBets(prev => {
-            if (prev.length > 0) {
-              setSelectedGuestId(prev[0]._id)
+        setSelectedGuestId(currentSelected => {
+          if (currentSelected === data.betId) {
+            if (filtered.length > 0) {
+              return filtered[0]._id
             } else {
               setActiveTab('my')
-              setSelectedGuestId(null)
+              return null
             }
-            return prev
-          })
-        }
+          }
+          return currentSelected
+        })
+        
         toast.success(`Guest prediction removed`, { id: 'guest-deleted', duration: 2000 })
-      }
+        return filtered
+      })
       return
     }
     
@@ -708,7 +713,7 @@ export default function Profile() {
         }).catch(console.error)
       }
     }
-  }, [user?._id, myBet?._id, selectedGuestId, guestBets])
+  }, [user?._id, myBet?._id]) // Removed selectedGuestId and guestBets - using functional updates
 
   const handleSettledUpdate = useCallback((data) => {
     console.log('✅ Week settled:', data)
@@ -1387,7 +1392,7 @@ export default function Profile() {
                           <>
                             <Link
                               to="/place-bet"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                              className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
                             >
                               <EditIcon />
                               <span className="hidden sm:inline">{t('predictions.updatePrediction')}</span>
@@ -1395,14 +1400,14 @@ export default function Profile() {
                             </Link>
                             <button
                               onClick={() => openDeleteModal('my')}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                                 isDark 
                                   ? 'text-red-400 hover:bg-red-500/10 border border-red-500/30' 
                                   : 'text-red-600 hover:bg-red-50 border border-red-200'
                               }`}
                             >
                               <TrashIcon />
-                              <span className="hidden sm:inline">{t('predictions.delete')}</span>
+                              <span>{t('predictions.delete')}</span>
                             </button>
                           </>
                         )}
@@ -1417,7 +1422,7 @@ export default function Profile() {
                         <button
                           onClick={() => handleDownloadPDF()}
                           disabled={downloadingPDF || (!isAdmin && !lockStatus.hasStarted)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                             downloadingPDF || (!isAdmin && !lockStatus.hasStarted)
                               ? 'opacity-50 cursor-not-allowed'
                               : isDark
@@ -1442,7 +1447,7 @@ export default function Profile() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           )}
-                          <span className="hidden sm:inline">PDF</span>
+                          <span>PDF</span>
                         </button>
                       </div>
                     )}
@@ -1575,21 +1580,21 @@ export default function Profile() {
                               <>
                                 <button
                                   onClick={() => handleOpenGuestModal(selectedGuestBet)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+                                  className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors"
                                 >
                                   <EditIcon />
-                                  <span className="hidden sm:inline">Edit</span>
+                                  <span>Edit</span>
                                 </button>
                                 <button
                                   onClick={() => openDeleteModal('guest', selectedGuestBet._id, selectedGuestBet.participantName)}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                                     isDark 
                                       ? 'text-red-400 hover:bg-red-500/10 border border-red-500/30' 
                                       : 'text-red-600 hover:bg-red-50 border border-red-200'
                                   }`}
                                 >
                                   <TrashIcon />
-                                  <span className="hidden sm:inline">Delete</span>
+                                  <span>Delete</span>
                                 </button>
                               </>
                             )}
@@ -1604,7 +1609,7 @@ export default function Profile() {
                             <button
                               onClick={() => handleDownloadPDF(selectedGuestBet)}
                               disabled={downloadingPDF || (!isAdmin && !lockStatus.hasStarted)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                              className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                                 downloadingPDF || (!isAdmin && !lockStatus.hasStarted)
                                   ? 'opacity-50 cursor-not-allowed'
                                   : isDark
@@ -1622,7 +1627,7 @@ export default function Profile() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                               )}
-                              <span className="hidden sm:inline">PDF</span>
+                              <span>PDF</span>
                             </button>
                           </div>
                         </div>

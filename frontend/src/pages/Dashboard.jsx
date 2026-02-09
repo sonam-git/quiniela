@@ -853,7 +853,8 @@ export default function Dashboard() {
 
         {/* Page Header */}
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Large screen layout - everything in one row */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className={`text-2xl font-brand flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -960,13 +961,126 @@ export default function Dashboard() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                         </svg>
-                        <span className="hidden sm:inline">{tBet('guest.addGuest')}</span>
+                        {tBet('guest.addGuest')}
                       </button>
                     </>
                   )}
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Small/Medium screen layout */}
+          <div className="lg:hidden space-y-3">
+            {/* Row 1: Dashboard heading (left) + Live countdown (right) */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h1 className={`text-xl sm:text-2xl font-brand flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+                  </svg>
+                  {t('title')}
+                </h1>
+                <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                  {t('subtitle', { week: weekInfo.weekNumber, year: weekInfo.year })}
+                </p>
+              </div>
+
+              {/* Right side: Status/Countdown */}
+              <div className="flex items-center gap-2">
+                {lockStatus.isBettingLocked ? (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
+                    isDark 
+                      ? 'bg-red-900/30 text-red-400 border border-red-800/50' 
+                      : 'bg-red-50 text-red-700 border border-red-200'
+                  }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    {t('status.bettingClosed')}
+                  </span>
+                ) : (
+                  <>
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                      isDark 
+                        ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' 
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                      </span>
+                      LIVE
+                    </span>
+                    {countdown && (
+                      <div className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-xs ${
+                        isDark 
+                          ? 'bg-dark-700 border border-dark-600' 
+                          : 'bg-white border border-gray-200 shadow-sm'
+                      }`}>
+                        <svg className={`w-3 h-3 mr-0.5 ${isDark ? 'text-dark-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {countdown.days > 0 && (
+                          <>
+                            <span className={`font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              {String(countdown.days).padStart(2, '0')}
+                            </span>
+                            <span className={`text-[8px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>d</span>
+                            <span className={`font-bold ${isDark ? 'text-dark-500' : 'text-gray-300'}`}>:</span>
+                          </>
+                        )}
+                        <span className={`font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {String(countdown.hours).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[8px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>h</span>
+                        <span className={`font-bold animate-pulse ${isDark ? 'text-dark-500' : 'text-gray-300'}`}>:</span>
+                        <span className={`font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {String(countdown.minutes).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[8px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>m</span>
+                        <span className={`font-bold animate-pulse ${isDark ? 'text-dark-500' : 'text-gray-300'}`}>:</span>
+                        <span className={`font-mono font-bold tabular-nums ${
+                          countdown.hours === 0 && countdown.minutes < 10 
+                            ? 'text-red-500' 
+                            : isDark ? 'text-emerald-400' : 'text-emerald-600'
+                        }`}>
+                          {String(countdown.seconds).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[8px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>s</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Row 2: Two buttons in equal columns */}
+            {!lockStatus.isBettingLocked && (
+              <div className="grid grid-cols-2 gap-3">
+                <Link
+                  to="/place-bet"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                >
+                  <BetIcon />
+                  <span>{bets.some(bet => {
+                    const odId = user?._id || user?.id
+                    const betUserId = bet.userId?._id || bet.userId
+                    return odId && betUserId && betUserId.toString() === odId.toString()
+                  }) ? t('cta.updateBetShort') : t('cta.placeBet')}</span>
+                </Link>
+                <button
+                  onClick={handleOpenGuestModal}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  <span>{tBet('guest.addGuest')}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

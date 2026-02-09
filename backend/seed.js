@@ -67,35 +67,20 @@ const convertApiFixtures = (fixtures) => {
 // Format: { home: 'HomeTeam 🏠', away: 'AwayTeam ✈️', date: 'YYYY-MM-DD', time: 'HH:MM' }
 // For completed matches: result: 'teamA' | 'teamB' | 'draw', scoreA, scoreB
 const LIGA_MX_CLAUSURA_2026 = {
-  // Jornada 4 - January 30-31, 2026 (COMPLETED)
-  4: {
-    startDate: '2026-01-30',
-    completed: true,
-    matches: [
-      { home: 'Club Puebla', away: 'Deportivo Toluca', date: '2026-01-30', time: '17:00', scoreA: 0, scoreB: 0, result: 'draw' },
-      { home: 'Pumas UNAM', away: 'Club Santos Laguna', date: '2026-01-30', time: '19:00', scoreA: 4, scoreB: 0, result: 'teamA' },
-      { home: 'FC Juarez', away: 'CF Cruz Azul', date: '2026-01-30', time: '21:00', scoreA: 3, scoreB: 4, result: 'teamB' },
-      { home: 'CF America', away: 'Club Necaxa', date: '2026-01-31', time: '13:00', scoreA: 2, scoreB: 0, result: 'teamA' },
-      { home: 'Atlas', away: 'Mazatlan', date: '2026-01-31', time: '15:00', scoreA: 1, scoreB: 0, result: 'teamA' },
-      { home: 'Atletico San Luis', away: 'CD Guadalajara', date: '2026-01-31', time: '17:00', scoreA: 2, scoreB: 3, result: 'teamB' },
-      { home: 'CF Monterrey', away: 'Club Tijuana', date: '2026-01-31', time: '19:00', scoreA: 2, scoreB: 2, result: 'draw' },
-      { home: 'Club Leon', away: 'Tigres UANL', date: '2026-01-31', time: '19:00', scoreA: 1, scoreB: 2, result: 'teamB' },
-      { home: 'Queretaro', away: 'CF Pachuca', date: '2026-02-01', time: '12:00', scoreA: 0, scoreB: 0, result: 'draw' }
-    ]
-  },
-  // Jornada 5 - February 6-7, 2026
+  // Jornada 5 - February 6-7, 2026 (COMPLETED - matches already played)
   5: {
     startDate: '2026-02-06',
+    completed: true,
     matches: [
-      { home: 'Necaxa', away: 'Atl. San Luis', date: '2026-02-06', time: '17:00' },
-      { home: 'Tigres UANL', away: 'Santos Laguna', date: '2026-02-06', time: '17:00' },
-      { home: 'Club Tijuana', away: 'Puebla', date: '2026-02-06', time: '19:00' },
-      { home: 'Mazatlán FC', away: 'Guadalajara Chivas', date: '2026-02-06', time: '19:06' },
-      { home: 'Querétaro', away: 'Club León', date: '2026-02-07', time: '15:00' },
-      { home: 'Toluca', away: 'Cruz Azul', date: '2026-02-07', time: '15:00' },
-      { home: 'Atlas', away: 'UNAM Pumas', date: '2026-02-07', time: '17:00' },
-      { home: 'Pachuca', away: 'FC Juárez', date: '2026-02-07', time: '17:00' },
-      { home: 'Club América', away: 'Monterrey', date: '2026-02-07', time: '19:00' }
+      { home: 'Necaxa', away: 'Atl. San Luis', date: '2026-02-06', time: '17:00', scoreA: 4, scoreB: 1, result: 'teamA' },
+      { home: 'Tigres UANL', away: 'Santos Laguna', date: '2026-02-06', time: '17:00', scoreA: 5, scoreB: 1, result: 'teamA' },
+      { home: 'Club Tijuana', away: 'Puebla', date: '2026-02-06', time: '19:00', scoreA: 0, scoreB: 0, result: 'teamA' },
+      { home: 'Mazatlán FC', away: 'Guadalajara Chivas', date: '2026-02-06', time: '19:06', scoreA: 1, scoreB: 1, result: 'draw' },
+      { home: 'Querétaro', away: 'Club León', date: '2026-02-07', time: '15:00', scoreA: 0, scoreB: 2, result: 'teamB' },
+      { home: 'Toluca', away: 'Cruz Azul', date: '2026-02-07', time: '15:00', scoreA: 2, scoreB: 2, result: 'draw' },
+      { home: 'Atlas', away: 'UNAM Pumas', date: '2026-02-07', time: '17:00', scoreA: 1, scoreB: 3, result: 'teamB' },
+      { home: 'Pachuca', away: 'FC Juárez', date: '2026-02-07', time: '17:00', scoreA: 2, scoreB: 0, result: 'teamA' },
+      { home: 'Club América', away: 'Monterrey', date: '2026-02-07', time: '19:00', scoreA: 3, scoreB: 1, result: 'teamA' }
     ]
   },
   // Jornada 6 - February 13-15, 2026
@@ -398,6 +383,18 @@ const seedDatabase = async () => {
       source = 'static (Liga MX Clausura 2026)';
     }
 
+    // Check if current jornada is already completed (matches have passed)
+    const currentJornadaData = LIGA_MX_CLAUSURA_2026[currentJornada];
+    const isCurrentJornadaCompleted = currentJornadaData?.completed || false;
+    
+    // Calculate total goals for current jornada if completed
+    let currentJornadaTotalGoals = null;
+    if (isCurrentJornadaCompleted) {
+      currentJornadaTotalGoals = matches.reduce((sum, match) => {
+        return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+      }, 0);
+    }
+
     // Ensure exactly 9 matches
     if (matches.length < 9) {
       console.log(`⚠️  Only ${matches.length} matches found, padding to 9...`);
@@ -419,19 +416,25 @@ const seedDatabase = async () => {
     }
 
     // Create schedule for current week (using calendar week number for route compatibility)
+    // Mark as settled if jornada is already completed
     const schedule = await Schedule.create({
       weekNumber: calendarWeek,  // Use calendar week for route lookup
       year,
       jornada: currentJornada,   // Store jornada for reference
       matches: matches.slice(0, 9),
       dataSource: source.includes('API') ? 'api' : 'hardcoded',
-      isSettled: false,
-      actualTotalGoals: null
+      isSettled: isCurrentJornadaCompleted,
+      settledAt: isCurrentJornadaCompleted ? new Date() : null,
+      actualTotalGoals: currentJornadaTotalGoals
     });
 
     console.log(`\n✅ Schedule created (Source: ${source})`);
     console.log(`   Jornada: ${currentJornada}, Week: ${calendarWeek}, Year: ${year}`);
     console.log(`   Matches: ${schedule.matches.length}`);
+    if (isCurrentJornadaCompleted) {
+      console.log(`   Status: SETTLED (matches already completed)`);
+      console.log(`   Total Goals: ${currentJornadaTotalGoals}`);
+    }
 
     // Also create last week's schedule (Jornada 4) with completed results
     const lastWeekJornada = currentJornada - 1;
@@ -462,6 +465,29 @@ const seedDatabase = async () => {
       console.log(`   Status: Settled ✓`);
     }
 
+    // Also create NEXT week's schedule (for when current week is settled)
+    const nextWeekJornada = currentJornada + 1;
+    let nextWeekSchedule = null;
+    
+    if (LIGA_MX_CLAUSURA_2026[nextWeekJornada]) {
+      const nextWeekMatches = getStaticSchedule(nextWeekJornada);
+      const nextWeekCalendarWeek = calendarWeek + 1;
+      
+      nextWeekSchedule = await Schedule.create({
+        weekNumber: nextWeekCalendarWeek,
+        year,
+        jornada: nextWeekJornada,
+        matches: nextWeekMatches.slice(0, 9),
+        dataSource: 'hardcoded',
+        isSettled: false,
+        actualTotalGoals: null
+      });
+      
+      console.log(`\n✅ Next week's schedule created (Jornada ${nextWeekJornada})`);
+      console.log(`   Week: ${nextWeekCalendarWeek}, Year: ${year}`);
+      console.log(`   Status: Ready for betting after current week settles`);
+    }
+
     // Summary
     console.log('\n' + '═'.repeat(55));
     console.log('✅ DATABASE SEEDED SUCCESSFULLY!');
@@ -472,6 +498,9 @@ const seedDatabase = async () => {
     console.log(`   • Current Week: Jornada ${currentJornada} (Week ${calendarWeek}/${year})`);
     if (lastWeekSchedule) {
       console.log(`   • Last Week: Jornada ${lastWeekJornada} (Week ${calendarWeek - 1}/${year}) - SETTLED`);
+    }
+    if (nextWeekSchedule) {
+      console.log(`   • Next Week: Jornada ${nextWeekJornada} (Week ${calendarWeek + 1}/${year}) - READY`);
     }
     console.log(`   • Data source: ${source}`);
     console.log(`   • Matches per week: 9`);

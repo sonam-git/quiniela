@@ -10,6 +10,7 @@ import socket, { connectSocket, disconnectSocket } from '../services/socket'
  * @param {Function} handlers.onScheduleDeleted - Called when a schedule is deleted
  * @param {Function} handlers.onBetsUpdate - Called when bets are updated
  * @param {Function} handlers.onResultsUpdate - Called when match results are updated
+ * @param {Function} handlers.onResultsDeleted - Called when settled results are deleted
  * @param {Function} handlers.onAnnouncementUpdate - Called when announcements change
  * @param {Function} handlers.onPaymentsUpdate - Called when payment status changes
  * @param {Function} handlers.onAdminUpdate - Called when admin status changes
@@ -60,6 +61,7 @@ export function useRealTimeUpdates(handlers = {}) {
     }
     const paymentsHandler = (data) => {
       console.log('🔌 Received payments:update', data)
+      console.log('🔌 Handler exists:', !!handlersRef.current.onPaymentsUpdate)
       handlersRef.current.onPaymentsUpdate?.(data)
     }
     const adminHandler = (data) => {
@@ -74,6 +76,10 @@ export function useRealTimeUpdates(handlers = {}) {
       console.log('🔌 Received settings:update', data)
       handlersRef.current.onSettingsUpdate?.(data)
     }
+    const resultsDeletedHandler = (data) => {
+      console.log('🔌 Received results:deleted', data)
+      handlersRef.current.onResultsDeleted?.(data)
+    }
 
     // Set up event listeners
     socket.on('schedule:update', scheduleHandler)
@@ -82,6 +88,7 @@ export function useRealTimeUpdates(handlers = {}) {
     socket.on('schedule:deleted', scheduleDeletedHandler)
     socket.on('bets:update', betsHandler)
     socket.on('results:update', resultsHandler)
+    socket.on('results:deleted', resultsDeletedHandler)
     socket.on('announcement:update', announcementHandler)
     socket.on('payments:update', paymentsHandler)
     socket.on('admin:update', adminHandler)
@@ -96,6 +103,7 @@ export function useRealTimeUpdates(handlers = {}) {
       socket.off('schedule:deleted', scheduleDeletedHandler)
       socket.off('bets:update', betsHandler)
       socket.off('results:update', resultsHandler)
+      socket.off('results:deleted', resultsDeletedHandler)
       socket.off('announcement:update', announcementHandler)
       socket.off('payments:update', paymentsHandler)
       socket.off('admin:update', adminHandler)

@@ -87,6 +87,10 @@ const scheduleSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  autoSettled: {
+    type: Boolean,
+    default: false
+  },
   actualTotalGoals: {
     type: Number,
     default: null

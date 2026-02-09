@@ -12,6 +12,20 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
   // For last week view, always show predictions (all games are completed)
   const effectiveHasStarted = isLastWeek ? true : hasStarted
 
+  // Helper to get the display name for a bet (guest name or registered user name)
+  const getDisplayName = (bet) => {
+    if (bet.isGuestBet && bet.participantName) {
+      return bet.participantName
+    }
+    return bet.userId?.name || 'Unknown'
+  }
+
+  // Helper to get the first letter for avatar
+  const getAvatarLetter = (bet) => {
+    const name = getDisplayName(bet)
+    return name.charAt(0).toUpperCase() || '?'
+  }
+
   // Calculate actual goals scored so far from completed matches
   const actualGoalsSoFar = schedule.matches
     .filter(m => m.isCompleted)
@@ -706,14 +720,25 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                       <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white ${
                         bet.isWinner && isSettled 
                           ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/25' 
-                          : 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/20'
+                          : bet.isGuestBet
+                            ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-md shadow-purple-500/20'
+                            : 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/20'
                       }`}>
-                        {bet.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                        {getAvatarLetter(bet)}
                       </div>
                       <div className="min-w-0">
-                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          {bet.userId?.name || 'Unknown'}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {getDisplayName(bet)}
+                          </p>
+                          {bet.isGuestBet && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                              isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'
+                            }`}>
+                              {t('table.guest') || 'Guest'}
+                            </span>
+                          )}
+                        </div>
                         {bet.isWinner && isSettled && (
                           <span className={`inline-flex items-center gap-1 text-xs font-medium ${
                             isDark ? 'text-amber-400' : 'text-amber-600'
@@ -892,14 +917,25 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                     <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
                       bet.isWinner && isSettled 
                         ? 'bg-gradient-to-br from-amber-400 to-amber-600' 
-                        : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                        : bet.isGuestBet
+                          ? 'bg-gradient-to-br from-violet-500 to-purple-600'
+                          : 'bg-gradient-to-br from-emerald-500 to-teal-600'
                     }`}>
-                      {bet.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                      {getAvatarLetter(bet)}
                     </div>
                     <div className="min-w-0">
-                      <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {bet.userId?.name[0].toUpperCase() + bet.userId?.name.slice(1) || 'Unknown'}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {getDisplayName(bet)}
+                        </p>
+                        {bet.isGuestBet && (
+                          <span className={`text-[9px] px-1 py-0.5 rounded-full font-medium ${
+                            isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'
+                          }`}>
+                            {t('table.guest') || 'Guest'}
+                          </span>
+                        )}
+                      </div>
                       {/* Mini Stats */}
                       <div className="flex items-center gap-2 mt-0.5">
                         {canSeePredictions(bet) ? (

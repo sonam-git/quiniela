@@ -97,4 +97,47 @@ export const updateBetAmount = async (amount) => {
   return response.data
 }
 
+// Guest Bet API helpers
+export const getMyGuestBets = async () => {
+  const response = await api.get('/bets/my/guests')
+  return response.data
+}
+
+export const createGuestBet = async (guestData) => {
+  const response = await api.post('/bets/guest', guestData)
+  return response.data
+}
+
+export const updateGuestBet = async (betId, guestData) => {
+  const response = await api.put(`/bets/guest/${betId}`, guestData)
+  return response.data
+}
+
+export const deleteGuestBet = async (betId) => {
+  const response = await api.delete(`/bets/guest/${betId}`)
+  return response.data
+}
+
+// Admin delete bet (any bet including guest bets)
+export const adminDeleteBet = async (betId, isGuestBet = false) => {
+  const response = await api.delete(`/admin/bets/${betId}${isGuestBet ? '?isGuestBet=true' : ''}`)
+  return response.data
+}
+
+// Settled Results API helpers
+export const getSettledResults = async () => {
+  const response = await api.get('/schedule/settled-results')
+  return response.data
+}
+
+export const getSettledResultsBets = async () => {
+  const response = await api.get('/bets/settled-results')
+  return response.data
+}
+
+export const deleteSettledResults = async () => {
+  const response = await api.delete('/admin/schedule/settled-results')
+  return response.data
+}
+
 export default api

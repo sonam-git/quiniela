@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import api, { downloadPredictionPDF, downloadResultsPDF, getBetAmount } from '../services/api'
+import api, { downloadPredictionPDF, downloadResultsPDF, getBetAmount, getSettledResults, getSettledResultsBets, deleteSettledResults, getMyGuestBets, createGuestBet, updateGuestBet } from '../services/api'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
 import QuinielaTable from '../components/QuinielaTable'
+import { GuestBetModal } from '../components/GuestBetModal'
 import { BetIcon } from '../components/Navbar'
 import { CalendarIcon } from './Profile'
 import toast from 'react-hot-toast'
@@ -30,16 +31,26 @@ export default function Dashboard() {
   })
   const [betAmount, setBetAmount] = useState(20) // Default bet amount
   
-  // Last week data
-  const [lastWeekSchedule, setLastWeekSchedule] = useState(null)
-  const [lastWeekBets, setLastWeekBets] = useState([])
-  const [lastWeekInfo, setLastWeekInfo] = useState({ weekNumber: 0, year: 0 })
-  const [hasLastWeekData, setHasLastWeekData] = useState(false)
+  // Settled results data (for Results tab)
+  const [resultsSchedule, setResultsSchedule] = useState(null)
+  const [resultsBets, setResultsBets] = useState([])
+  const [resultsInfo, setResultsInfo] = useState({ weekNumber: 0, year: 0, jornada: 0, settledAt: null })
+  const [hasResults, setHasResults] = useState(false)
   const [downloadingPDF, setDownloadingPDF] = useState(false)
+  const [deletingResults, setDeletingResults] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  
+  // Guest bet modal state
+  const [guestBetModal, setGuestBetModal] = useState({
+    isOpen: false,
+    editingGuest: null
+  })
+  const [isSubmittingGuest, setIsSubmittingGuest] = useState(false)
   
   const { isDark } = useTheme()
   const { user, isAdmin } = useAuth()
   const { t } = useTranslation('dashboard')
+  const { t: tBet } = useTranslation('bet')
 
   // PDF Download handlers
   const handleDownloadPredictionPDF = async () => {
@@ -69,10 +80,10 @@ export default function Dashboard() {
   }
 
   const handleDownloadLastWeekResultsPDF = async () => {
-    if (!lastWeekInfo.weekNumber || !lastWeekInfo.year) return
+    if (!resultsInfo.weekNumber || !resultsInfo.year) return
     setDownloadingPDF(true)
     try {
-      await downloadResultsPDF(lastWeekInfo.weekNumber, lastWeekInfo.year)
+      await downloadResultsPDF(resultsInfo.weekNumber, resultsInfo.year)
       toast.success('PDF downloaded successfully!')
     } catch (error) {
       toast.error(error.message || 'Failed to download PDF')
@@ -81,9 +92,91 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteResults = async () => {
+    setDeletingResults(true)
+    try {
+      await deleteSettledResults()
+      toast.success(t('results.deleteSuccess', 'Results deleted successfully'))
+      // Only clear results-related state, don't refresh the whole page
+      setHasResults(false)
+      setResultsSchedule(null)
+      setResultsBets([])
+      setShowDeleteConfirm(false)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete results')
+    } finally {
+      setDeletingResults(false)
+    }
+  }
+
+  // Guest bet modal handlers
+  const handleOpenGuestModal = () => {
+    setGuestBetModal({
+      isOpen: true,
+      editingGuest: null
+    })
+  }
+
+  const handleCloseGuestModal = () => {
+    setGuestBetModal({
+      isOpen: false,
+      editingGuest: null
+    })
+  }
+
+  const handleGuestBetSubmit = async (guestData, existingGuestId) => {
+    setIsSubmittingGuest(true)
+    try {
+      if (existingGuestId) {
+        await updateGuestBet(existingGuestId, guestData)
+        toast.success(tBet('guest.success.updated', { name: guestData.participantName }))
+      } else {
+        await createGuestBet(guestData)
+        toast.success(tBet('guest.success.created', { name: guestData.participantName }))
+      }
+      handleCloseGuestModal()
+      // Refresh bets to show new guest bet
+      fetchData()
+    } catch (error) {
+      if (error.response?.data?.message?.includes('already exists')) {
+        toast.error(tBet('guest.errors.alreadyExists'))
+      } else {
+        toast.error(error.response?.data?.message || tBet('errors.submitFailed'))
+      }
+    } finally {
+      setIsSubmittingGuest(false)
+    }
+  }
+
   const fetchData = useCallback(async () => {
     try {
       setError(null)
+      
+      // First, always try to fetch settled results (for Results tab)
+      // This should work even if current schedule doesn't exist
+      try {
+        const [settledScheduleRes, settledBetsRes] = await Promise.all([
+          getSettledResults(),
+          getSettledResultsBets()
+        ])
+        
+        setResultsSchedule(settledScheduleRes.schedule)
+        setResultsBets(settledBetsRes.bets)
+        setResultsInfo({
+          weekNumber: settledScheduleRes.weekNumber,
+          year: settledScheduleRes.year,
+          jornada: settledScheduleRes.jornada,
+          settledAt: settledScheduleRes.settledAt
+        })
+        setHasResults(true)
+      } catch (resultsError) {
+        // No settled results available - that's OK
+        setHasResults(false)
+        setResultsSchedule(null)
+        setResultsBets([])
+      }
+      
+      // Now fetch current schedule and bets
       const [scheduleRes, betsRes, announcementsRes, betAmountValue] = await Promise.all([
         api.get('/schedule/current'),
         api.get('/bets/current'),
@@ -105,25 +198,6 @@ export default function Dashboard() {
       })
       setAnnouncements(announcementsRes.data.announcements || [])
       setBetAmount(betAmountValue || 20)
-      
-      // Fetch last week data (optional - won't fail if not available)
-      try {
-        const [lastWeekScheduleRes, lastWeekBetsRes] = await Promise.all([
-          api.get('/schedule/last-week'),
-          api.get('/bets/last-week')
-        ])
-        
-        setLastWeekSchedule(lastWeekScheduleRes.data.schedule)
-        setLastWeekBets(lastWeekBetsRes.data.bets)
-        setLastWeekInfo({
-          weekNumber: lastWeekScheduleRes.data.weekNumber,
-          year: lastWeekScheduleRes.data.year
-        })
-        setHasLastWeekData(true)
-      } catch (lastWeekError) {
-        // Last week data not available - that's OK
-        setHasLastWeekData(false)
-      }
     } catch (error) {
       if (error.response?.status === 404) {
         setError({
@@ -183,32 +257,105 @@ export default function Dashboard() {
 
   const handlePaymentsUpdate = useCallback((data) => {
     console.log('💳 Dashboard: Payment update received:', data)
+    
+    // Normalize paid value - handle both `paid` boolean and `status` string
+    const isPaid = data?.paid ?? (data?.status === 'paid')
+    
+    // Helper to match by userId
+    const matchByUserId = (bet, targetUserId) => {
+      const betUserId = typeof bet.userId === 'object' 
+        ? (bet.userId?._id?.toString?.() || bet.userId?._id)
+        : (bet.userId?.toString?.() || bet.userId)
+      return betUserId === targetUserId
+    }
+    
     // Update only the affected bet's payment status
     if (data?.betId) {
-      setBets(prev => prev.map(bet => 
-        bet._id === data.betId 
-          ? { ...bet, paid: data.paid }
-          : bet
-      ))
+      // Convert both IDs to strings for comparison
+      const targetBetId = data.betId?.toString?.() || data.betId
+      const targetUserId = data.userId?.toString?.() || data.userId
+      console.log('💳 Dashboard: Looking for betId:', targetBetId, 'or userId:', targetUserId)
+      
+      setBets(prev => {
+        console.log('💳 Dashboard: Prev bets IDs:', prev.map(b => b._id))
+        let foundMatch = false
+        
+        const updated = prev.map(bet => {
+          const betId = bet._id?.toString?.() || bet._id
+          
+          // Try matching by betId first
+          if (betId === targetBetId) {
+            console.log('💳 Dashboard: Found matching bet by betId, updating paid from', bet.paid, 'to:', isPaid)
+            foundMatch = true
+            return { ...bet, paid: isPaid }
+          }
+          
+          // If no betId match but we have userId, try matching by userId
+          if (!foundMatch && targetUserId && matchByUserId(bet, targetUserId)) {
+            console.log('💳 Dashboard: Found matching bet by userId, updating paid from', bet.paid, 'to:', isPaid)
+            foundMatch = true
+            return { ...bet, paid: isPaid }
+          }
+          
+          return bet
+        })
+        
+        if (!foundMatch) {
+          console.log('💳 Dashboard: No matching bet found for betId or userId')
+        }
+        
+        return updated
+      })
     } else if (data?.bets) {
       // Batch update
       setBets(prev => prev.map(bet => {
-        const update = data.bets.find(b => b.betId === bet._id)
-        return update ? { ...bet, paid: update.paid } : bet
+        const betId = bet._id?.toString?.() || bet._id
+        const update = data.bets.find(b => (b.betId?.toString?.() || b.betId) === betId)
+        return update ? { ...bet, paid: update.paid ?? (update.status === 'paid') } : bet
       }))
     } else if (data?.userId) {
-      // Update by user ID
-      setBets(prev => prev.map(bet => 
-        bet.userId === data.userId 
-          ? { ...bet, paid: data.paid }
-          : bet
-      ))
+      // Update by user ID only
+      const targetUserId = data.userId?.toString?.() || data.userId
+      console.log('💳 Dashboard: Looking for userId:', targetUserId)
+      setBets(prev => {
+        const updated = prev.map(bet => {
+          if (matchByUserId(bet, targetUserId)) {
+            console.log('💳 Dashboard: Found matching bet by userId, updating paid to:', isPaid)
+            return { ...bet, paid: isPaid }
+          }
+          return bet
+        })
+        return updated
+      })
     }
   }, [])
 
   const handleBetsUpdate = useCallback((data) => {
     console.log('🎯 Dashboard: Bets update received:', data)
-    // Update specific bet or add new one
+    
+    // Handle action-based updates
+    if (data?.action === 'delete' && data?.betId) {
+      // Bet deleted - remove from list
+      setBets(prev => prev.filter(b => b._id !== data.betId))
+      if (data?.isGuestBet) {
+        toast.success(`Guest prediction removed`, { id: 'bet-deleted', duration: 2000 })
+      }
+      return
+    }
+    
+    if (data?.action === 'create' || data?.action === 'update') {
+      // New bet created or updated - refetch to get full data including guest bets
+      api.get('/bets/current').then(res => {
+        setBets(res.data.bets)
+        setIsSettled(res.data.isSettled)
+        if (data?.action === 'create' && data?.isGuestBet) {
+          toast.success('New guest prediction added', { id: 'bet-created', duration: 2000 })
+        }
+      }).catch(console.error)
+      return
+    }
+    
+    // Legacy handlers for backward compatibility
     if (data?.bet) {
       setBets(prev => {
         const exists = prev.find(b => b._id === data.bet._id)
@@ -300,15 +447,61 @@ export default function Dashboard() {
 
   const handleSettledUpdate = useCallback((data) => {
     console.log('✅ Dashboard: Week settled:', data)
-    if (data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year) {
-      setIsSettled(true)
-      // Refetch bets to get final scores
-      api.get('/bets/current').then(res => {
-        setBets(res.data.bets)
-      }).catch(console.error)
-      toast.success('Week has been settled! Final results are in.', { id: 'settled', duration: 4000 })
-    }
-  }, [weekInfo.weekNumber, weekInfo.year])
+    
+    // Update the Results tab with the settled week data
+    Promise.all([getSettledResults(), getSettledResultsBets()])
+      .then(([scheduleRes, betsRes]) => {
+        setResultsSchedule(scheduleRes.schedule)
+        setResultsBets(betsRes.bets)
+        setResultsInfo({
+          weekNumber: scheduleRes.weekNumber,
+          year: scheduleRes.year,
+          jornada: scheduleRes.jornada,
+          settledAt: scheduleRes.settledAt
+        })
+        setHasResults(true)
+      })
+      .catch(console.error)
+    
+    // Fetch the new current schedule (next jornada) for the Standings tab
+    Promise.all([
+      api.get('/schedule/current'),
+      api.get('/bets/current')
+    ]).then(([scheduleRes, betsRes]) => {
+      // Update schedule to the new week
+      setSchedule(scheduleRes.data.schedule)
+      setBets(betsRes.data.bets)
+      setIsSettled(betsRes.data.isSettled)
+      setWeekInfo({
+        weekNumber: scheduleRes.data.weekNumber,
+        year: scheduleRes.data.year
+      })
+      setLockStatus({
+        isBettingLocked: scheduleRes.data.isBettingLocked,
+        hasStarted: scheduleRes.data.hasStarted,
+        lockoutTime: scheduleRes.data.lockoutTime
+      })
+      setError(null)
+    }).catch(error => {
+      // If no new schedule exists yet, that's OK - admin will create it
+      if (error.response?.status === 404) {
+        setSchedule(null)
+        setBets([])
+        setIsSettled(false)
+      }
+    })
+    
+    toast.success('Week has been settled! Check Results tab for final standings.', { id: 'settled', duration: 4000 })
+  }, [])
+
+  // Handle results deleted event
+  const handleResultsDeleted = useCallback((data) => {
+    console.log('🗑️ Dashboard: Results deleted:', data)
+    setHasResults(false)
+    setResultsSchedule(null)
+    setResultsBets([])
+    toast.info('Results have been cleared by admin', { id: 'results-deleted', duration: 4000 })
+  }, [])
 
   // Handle schedule deleted event
   const handleScheduleDeleted = useCallback((data) => {
@@ -336,7 +529,7 @@ export default function Dashboard() {
   }, [])
 
   // Real-time updates - targeted handlers to minimize re-renders
-  useRealTimeUpdates({
+  const { isConnected, socketId } = useRealTimeUpdates({
     onScheduleUpdate: handleScheduleUpdate,
     onScheduleCreated: handleScheduleCreated,
     onScheduleUpdated: handleScheduleUpdate,
@@ -346,8 +539,14 @@ export default function Dashboard() {
     onPaymentsUpdate: handlePaymentsUpdate,
     onAnnouncementUpdate: handleAnnouncementUpdate,
     onSettled: handleSettledUpdate,
-    onSettingsUpdate: handleSettingsUpdate
+    onSettingsUpdate: handleSettingsUpdate,
+    onResultsDeleted: handleResultsDeleted
   })
+
+  // Log socket connection status on mount
+  useEffect(() => {
+    console.log('📊 Dashboard mounted - Socket connected:', isConnected, 'ID:', socketId)
+  }, [isConnected, socketId])
 
   useEffect(() => {
     fetchData()
@@ -355,6 +554,13 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
+
+  // Auto-switch to results tab if there's no current schedule but there are settled results
+  useEffect(() => {
+    if (!loading && !schedule && hasResults && error?.type === 'not_found') {
+      setActiveTab('results')
+    }
+  }, [loading, schedule, hasResults, error])
 
   const dismissAnnouncement = (id) => {
     const updated = [...dismissedAnnouncements, id]
@@ -396,10 +602,16 @@ export default function Dashboard() {
   
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown(getTimeUntilLockout())
+      const newCountdown = getTimeUntilLockout()
+      setCountdown(newCountdown)
+      
+      // Auto-lock betting when countdown reaches zero
+      if (!newCountdown && lockStatus.lockoutTime && !lockStatus.isBettingLocked) {
+        setLockStatus(prev => ({ ...prev, isBettingLocked: true, hasStarted: true }))
+      }
     }, 1000)
     return () => clearInterval(timer)
-  }, [lockStatus.lockoutTime])
+  }, [lockStatus.lockoutTime, lockStatus.isBettingLocked])
 
   // Calculate current leader based on points and goals difference tiebreaker
   const getCurrentLeader = () => {
@@ -471,7 +683,9 @@ export default function Dashboard() {
     )
   }
 
-  if (error) {
+  // Only show full-page error for network/server errors, or if there's no schedule AND no results
+  // If there's no current schedule but there ARE settled results, show the dashboard with results
+  if (error && (error.type !== 'not_found' || !hasResults)) {
     const errorIcons = {
       not_found: (
         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -727,16 +941,28 @@ export default function Dashboard() {
                   )}
 
                   {!lockStatus.isBettingLocked && (
-                    <Link
-                      to="/place-bet"
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
-                    >
-                      <BetIcon /> {bets.some(bet => {
-                        const odId = user?._id || user?.id
-                        const betUserId = bet.userId?._id || bet.userId
-                        return odId && betUserId && betUserId.toString() === odId.toString()
-                      }) ? t('cta.updateBetShort') : t('cta.placeBet')}
-                    </Link>
+                    <>
+                      <Link
+                        to="/place-bet"
+                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                      >
+                        <BetIcon /> {bets.some(bet => {
+                          const odId = user?._id || user?.id
+                          const betUserId = bet.userId?._id || bet.userId
+                          return odId && betUserId && betUserId.toString() === odId.toString()
+                        }) ? t('cta.updateBetShort') : t('cta.placeBet')}
+                      </Link>
+                      <button
+                        onClick={handleOpenGuestModal}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+                        title={tBet('guest.addGuest')}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        <span className="hidden sm:inline">{tBet('guest.addGuest')}</span>
+                      </button>
+                    </>
                   )}
                 </div>
               )}
@@ -769,11 +995,11 @@ export default function Dashboard() {
                 <span className="sm:hidden">{t('tabs.standingsShort', t('tabs.standings'))}</span>
               </button>
               
-              {/* Last Week Tab - Always shown */}
+              {/* Results Tab - Always shown */}
               <button
-                onClick={() => setActiveTab('lastWeek')}
+                onClick={() => setActiveTab('results')}
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'lastWeek'
+                  activeTab === 'results'
                     ? isDark
                       ? 'bg-amber-600 text-white shadow-lg'
                       : 'bg-white text-gray-900 shadow-md'
@@ -783,10 +1009,10 @@ export default function Dashboard() {
                 }`}
               >
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="hidden sm:inline">{t('tabs.lastWeek', 'Last Week')}</span>
-                <span className="sm:hidden">{t('tabs.lastWeekShort', 'Prev')}</span>
+                <span className="hidden sm:inline">{t('tabs.results', 'Results')}</span>
+                <span className="sm:hidden">{t('tabs.resultsShort', 'Results')}</span>
               </button>
               
               <button
@@ -1121,29 +1347,19 @@ export default function Dashboard() {
                 <span><CalendarIcon/></span> Week {weekInfo.weekNumber} 
               </h2>
               <div className="flex items-center gap-3">
-                {/* <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  <span>👥</span> {bets.length} participant{bets.length !== 1 ? 's' : ''}
-                </span> */}
-                <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Download a quiniela PDF</span>  
-                {/* PDF Download Button - Disabled for non-admin until first game starts */}
-                {bets.length > 0 && (isAdmin || lockStatus.hasStarted) && (
+                {/* PDF Download Button - Always visible when there are bets, disabled for non-admin until first game starts */}
+                {bets.length > 0 && (
                   <button
                     onClick={isSettled ? handleDownloadResultsPDF : handleDownloadPredictionPDF}
-                    disabled={downloadingPDF || (!isAdmin && !lockStatus.hasStarted)}
+                    disabled={downloadingPDF}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      downloadingPDF || (!isAdmin && !lockStatus.hasStarted)
+                      downloadingPDF
                         ? 'opacity-50 cursor-not-allowed'
                         : isDark
                           ? 'bg-dark-700 hover:bg-dark-600 text-dark-200 border border-dark-600'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                     }`}
-                    title={
-                      !isAdmin && !lockStatus.hasStarted 
-                        ? 'PDF available after first game starts' 
-                        : isSettled 
-                          ? 'Download Results PDF' 
-                          : 'Download Predictions PDF'
-                    }
+                    title={isSettled ? 'Download Results PDF' : 'Download Predictions PDF'}
                   >
                     {downloadingPDF ? (
                       <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1194,33 +1410,34 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Last Week Tab Content */}
-        {activeTab === 'lastWeek' && (
+        {/* Results Tab Content */}
+        {activeTab === 'results' && (
           <div className={`rounded-xl border ${
             isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
           }`}>
-            {hasLastWeekData && lastWeekSchedule ? (
+            {hasResults && resultsSchedule ? (
               <>
                 {/* Header with data */}
-                <div className={`px-5 py-4 border-b flex items-center justify-between ${
+                <div className={`px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
                   isDark ? 'border-dark-700' : 'border-gray-200'
                 }`}>
                   <div className="flex items-center gap-3">
                     <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      <span>📜</span> {t('lastWeek.title', { week: lastWeekInfo.weekNumber })}
+                      <span>🏆</span> {t('results.title', { week: resultsInfo.jornada || resultsInfo.weekNumber })}
                     </h2>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-100 text-amber-700'
                     }`}>
-                      {t('lastWeek.finalResults', 'Final Results')}
+                      {t('results.finalResults', 'Final Results')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      <span>👥</span> {lastWeekBets.length} participant{lastWeekBets.length !== 1 ? 's' : ''}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs flex items-center gap-1.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      <span>👥</span> {resultsBets.length} participant{resultsBets.length !== 1 ? 's' : ''}
                     </span>
-                    {/* Last Week PDF Download Button */}
-                    {lastWeekBets.length > 0 && lastWeekSchedule.isSettled && (
+                    
+                    {/* Results PDF Download Button */}
+                    {resultsBets.length > 0 && (
                       <button
                         onClick={handleDownloadLastWeekResultsPDF}
                         disabled={downloadingPDF}
@@ -1231,7 +1448,7 @@ export default function Dashboard() {
                               ? 'bg-dark-700 hover:bg-dark-600 text-dark-200 border border-dark-600'
                               : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                         }`}
-                        title="Download Results PDF"
+                        title={t('results.downloadPDF', 'Download PDF')}
                       >
                         {downloadingPDF ? (
                           <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1246,45 +1463,115 @@ export default function Dashboard() {
                         PDF
                       </button>
                     )}
+                    
+                    {/* Admin Delete Results Button */}
+                    {isAdmin && (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          isDark
+                            ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900/50'
+                            : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
+                        }`}
+                        title={t('results.deleteResults', 'Delete Results')}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        {t('results.deleteResults', 'Delete')}
+                      </button>
+                    )}
                   </div>
                 </div>
                 
-                {/* Last Week Summary Stats */}
-                <div className={`px-5 py-3 border-b flex flex-wrap items-center gap-4 ${
-                  isDark ? 'border-dark-700 bg-dark-700/30' : 'border-gray-100 bg-gray-50'
+                {/* Results Summary Stats - Winner Highlight */}
+                <div className={`px-5 py-4 border-b ${
+                  isDark ? 'border-dark-700 bg-gradient-to-r from-yellow-900/20 to-amber-900/20' : 'border-gray-100 bg-gradient-to-r from-yellow-50 to-amber-50'
                 }`}>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      {t('lastWeek.totalGoals', 'Total Goals')}:
-                    </span>
-                    <span className={`text-sm font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                      {lastWeekSchedule.actualTotalGoals ?? '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      {t('lastWeek.matchesPlayed', 'Matches Played')}:
-                    </span>
-                    <span className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                      {lastWeekSchedule.matches?.filter(m => m.isCompleted).length || 0}/{lastWeekSchedule.matches?.length || 0}
-                    </span>
-                  </div>
-                  {lastWeekBets.length > 0 && lastWeekBets[0].totalPoints !== undefined && (
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        🏆 {t('lastWeek.winner', 'Winner')}:
-                      </span>
-                      <span className={`text-sm font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                        {lastWeekBets[0].userId?.name || 'Unknown'} ({lastWeekBets[0].totalPoints} pts)
-                      </span>
+                  {/* Winner Section */}
+                  {resultsBets.length > 0 && resultsBets[0].totalPoints !== undefined && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                          isDark ? 'bg-yellow-900/50 border-2 border-yellow-500' : 'bg-yellow-100 border-2 border-yellow-400'
+                        }`}>
+                          <span className="text-2xl">🏆</span>
+                        </div>
+                        <div>
+                          <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-yellow-500' : 'text-yellow-600'}`}>
+                            {resultsBets.filter(b => b.isWinner).length > 1 
+                              ? t('results.coChampions', 'Co-Champions')
+                              : t('results.winner', 'Winner')}
+                          </p>
+                          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {resultsBets.filter(b => b.isWinner).map(b => 
+                              b.isGuestBet ? b.participantName : (b.userId?.name || 'Unknown')
+                            ).join(', ')}
+                          </p>
+                          <p className={`text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            {resultsBets[0].totalPoints} {t('results.pointsLabel', 'pts')} · 
+                            {t('results.goalDiff', 'Goal Diff')}: {resultsBets[0].goalDifference}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-center sm:text-right">
+                        <div className={`px-4 py-2 rounded-lg ${isDark ? 'bg-dark-700/50' : 'bg-white/70'}`}>
+                          <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            {t('results.totalGoals', 'Total Goals')}
+                          </p>
+                          <p className={`text-xl font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                            {resultsSchedule.actualTotalGoals ?? '—'}
+                          </p>
+                        </div>
+                        <div className={`px-4 py-2 rounded-lg ${isDark ? 'bg-dark-700/50' : 'bg-white/70'}`}>
+                          <p className={`text-xs font-medium ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            {t('results.prize', 'Prize')}
+                          </p>
+                          <p className={`text-xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            ${resultsBets.length * betAmount}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
+
+                {/* Match Results Summary */}
+                <div className={`px-5 py-3 border-b ${isDark ? 'border-dark-700' : 'border-gray-100'}`}>
+                  <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    {t('results.matchResults', 'Match Results')}
+                  </h3>
+                  <div className="grid grid-cols-3 sm:grid-cols-9 gap-2">
+                    {resultsSchedule.matches?.map((match, idx) => (
+                      <div
+                        key={match._id}
+                        className={`p-2 rounded-lg text-center ${
+                          isDark ? 'bg-dark-700/50' : 'bg-gray-50'
+                        }`}
+                      >
+                        <p className={`text-[10px] truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          {idx + 1}. {match.teamA?.substring(0, 3).toUpperCase()}
+                        </p>
+                        <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {match.scoreTeamA ?? '-'} - {match.scoreTeamB ?? '-'}
+                        </p>
+                        <p className={`text-[10px] truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          {match.teamB?.substring(0, 3).toUpperCase()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 
+                {/* Detailed QuinielaTable */}
                 <div className="p-4">
+                  <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <span>📊</span> {t('results.detailedReport', 'Detailed Report')}
+                  </h3>
                   <QuinielaTable 
-                    bets={lastWeekBets} 
-                    schedule={lastWeekSchedule} 
+                    bets={resultsBets} 
+                    schedule={resultsSchedule} 
                     isSettled={true}
                     hasStarted={true}
                     currentUserId={user?.id}
@@ -1293,47 +1580,102 @@ export default function Dashboard() {
                   />
                 </div>
                 
-                {/* Info footer */}
-                <div className={`px-5 py-3 border-t ${
-                  isDark ? 'border-dark-700 bg-dark-700/20' : 'border-gray-100 bg-gray-50/50'
-                }`}>
-                  <p className={`text-xs text-center ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                    <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {t('lastWeek.autoRemoveNotice', 'This data will be automatically removed when the next week ends.')}
-                  </p>
-                </div>
+                {/* Settled info footer */}
+                {resultsInfo.settledAt && (
+                  <div className={`px-5 py-3 border-t ${
+                    isDark ? 'border-dark-700 bg-dark-700/20' : 'border-gray-100 bg-gray-50/50'
+                  }`}>
+                    <p className={`text-xs text-center ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                      <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {t('results.settledOn', { date: new Date(resultsInfo.settledAt).toLocaleDateString() })}
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
-              /* Placeholder when no last week data */
+              /* Placeholder when no results */
               <div className="p-8 text-center">
                 <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center ${
                   isDark ? 'bg-dark-700' : 'bg-gray-100'
                 }`}>
                   <svg className={`w-10 h-10 ${isDark ? 'text-dark-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 
                 <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('lastWeek.noDataTitle', 'No Results Yet')}
+                  {t('results.noResultsTitle', 'No Results Available')}
                 </h3>
                 
                 <p className={`text-sm mb-4 max-w-md mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  {t('lastWeek.noDataDescription', 'Last week\'s results will appear here once the current jornada is completed. Results are available for one week after each jornada ends.')}
+                  {t('results.noResultsDescription', 'Results will appear here after the admin settles the current week. Check back after all matches are completed.')}
                 </p>
                 
                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${
                   isDark ? 'bg-dark-700 text-dark-300' : 'bg-gray-100 text-gray-600'
                 }`}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {t('lastWeek.checkBackLater', 'Check back after this week\'s matches are complete')}
+                  {t('results.checkBackLater', 'Waiting for week to be settled')}
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Delete Results Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div 
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowDeleteConfirm(false)}
+            />
+            <div className={`relative w-full max-w-sm rounded-2xl shadow-2xl ${
+              isDark ? 'bg-dark-800 border border-dark-700' : 'bg-white'
+            }`}>
+              <div className="p-6">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  isDark ? 'bg-red-900/30' : 'bg-red-100'
+                }`}>
+                  <span className="text-3xl">🗑️</span>
+                </div>
+                
+                <h3 className={`text-lg font-semibold text-center mb-2 ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {t('results.deleteResults', 'Delete Results')}
+                </h3>
+                
+                <p className={`text-sm text-center mb-6 ${
+                  isDark ? 'text-dark-300' : 'text-gray-600'
+                }`}>
+                  {t('results.deleteConfirm', 'Are you sure you want to delete these results? This action cannot be undone.')}
+                </p>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
+                      isDark 
+                        ? 'bg-dark-700 text-dark-200 hover:bg-dark-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteResults}
+                    disabled={deletingResults}
+                    className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                  >
+                    {deletingResults ? '...' : t('results.deleteResults', 'Delete')}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1355,6 +1697,18 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Guest Bet Modal */}
+      <GuestBetModal
+        isOpen={guestBetModal.isOpen}
+        onClose={handleCloseGuestModal}
+        schedule={schedule}
+        weekInfo={weekInfo}
+        isDark={isDark}
+        onSubmit={handleGuestBetSubmit}
+        editingGuest={guestBetModal.editingGuest}
+        isSubmitting={isSubmittingGuest}
+      />
     </div>
   )
 }

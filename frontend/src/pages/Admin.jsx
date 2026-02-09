@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates'
-import api, { downloadPredictionPDF, downloadResultsPDF, getBetAmount, updateBetAmount } from '../services/api'
+import api, { downloadPredictionPDF, downloadResultsPDF, getBetAmount, updateBetAmount, adminDeleteBet } from '../services/api'
 import toast from 'react-hot-toast'
 import { EditIcon, CalendarIcon, CheckIcon } from './Profile'
 
@@ -249,21 +249,57 @@ export default function Admin() {
     
     console.log('💳 Admin: Payment update received:', data)
     
+    // Handle guest bet updates (by betId)
+    if (data?.betId && !data?.userId) {
+      const targetBetId = data.betId?.toString?.() || data.betId
+      const pendingChange = pendingChangesRef.current.get(targetBetId)
+      if (pendingChange) {
+        const timeSinceChange = Date.now() - pendingChange.timestamp
+        if (timeSinceChange < 5000 && pendingChange.status === (data.paid ? 'paid' : 'pending')) {
+          console.log('Skipping socket update for pending guest change:', targetBetId)
+          pendingChangesRef.current.delete(targetBetId)
+          return
+        }
+      }
+      
+      // Update payments state for guest bets
+      setPayments(prev => prev.map(p => {
+        const pBetId = p.betId?.toString?.() || p.betId
+        if (pBetId === targetBetId) {
+          return { 
+            ...p, 
+            paid: data.paid,
+            paymentStatus: data.paid ? 'paid' : 'pending'
+          }
+        }
+        return p
+      }))
+      
+      // Also update bets state
+      setBets(prev => prev.map(b => {
+        const bId = b._id?.toString?.() || b._id
+        return bId === targetBetId ? { ...b, paid: data.paid } : b
+      }))
+      return
+    }
+    
     if (data?.userId) {
+      const targetUserId = data.userId?.toString?.() || data.userId
       // Check if this is a pending change we initiated (skip to avoid double-update)
-      const pendingChange = pendingChangesRef.current.get(data.userId)
+      const pendingChange = pendingChangesRef.current.get(targetUserId)
       if (pendingChange) {
         const timeSinceChange = Date.now() - pendingChange.timestamp
         if (timeSinceChange < 5000 && pendingChange.status === data.status) {
-          console.log('Skipping socket update for pending change:', data.userId)
-          pendingChangesRef.current.delete(data.userId)
+          console.log('Skipping socket update for pending change:', targetUserId)
+          pendingChangesRef.current.delete(targetUserId)
           return
         }
       }
       
       // Update payments state locally
       setPayments(prev => prev.map(p => {
-        if (p.userId === data.userId || p.userId?.toString() === data.userId) {
+        const pUserId = p.userId?.toString?.() || p.userId
+        if (pUserId === targetUserId) {
           return { 
             ...p, 
             paid: data.paid ?? (data.status === 'paid'),
@@ -276,9 +312,11 @@ export default function Admin() {
       
       // Also update bets state if betId provided
       if (data.betId) {
-        setBets(prev => prev.map(b => 
-          b._id === data.betId ? { ...b, paid: data.paid ?? (data.status === 'paid') } : b
-        ))
+        const targetBetId = data.betId?.toString?.() || data.betId
+        setBets(prev => prev.map(b => {
+          const bId = b._id?.toString?.() || b._id
+          return bId === targetBetId ? { ...b, paid: data.paid ?? (data.status === 'paid') } : b
+        }))
       }
     }
   }, [isAdmin])
@@ -338,6 +376,41 @@ export default function Admin() {
     
     console.log('🎯 Admin: Bets update received:', data)
     
+    // Handle action-based updates
+    if (data?.action === 'delete' && data?.betId) {
+      // Remove deleted bet from both bets and payments
+      setBets(prev => prev.filter(b => b._id !== data.betId))
+      setPayments(prev => prev.filter(p => p.betId !== data.betId))
+      if (data?.isGuestBet) {
+        toast.success(`Guest prediction for "${data.participantName || 'guest'}" removed`, { id: 'bet-deleted', duration: 2000 })
+      }
+      return
+    }
+    
+    if (data?.action === 'create') {
+      // New bet created - refetch payments and bets
+      Promise.all([
+        api.get('/admin/bets'),
+        api.get('/admin/payments')
+      ]).then(([betsRes, paymentsRes]) => {
+        setBets(betsRes.data.bets)
+        setPayments(paymentsRes.data.payments || [])
+        if (data?.isGuestBet) {
+          toast.success(`New guest prediction added by ${data.participantName || 'a user'}`, { id: 'bet-created', duration: 2000 })
+        }
+      }).catch(console.error)
+      return
+    }
+    
+    if (data?.action === 'update') {
+      // Bet updated - refetch bets
+      api.get('/admin/bets').then(res => {
+        setBets(res.data.bets)
+      }).catch(console.error)
+      return
+    }
+    
+    // Legacy handlers for backward compatibility
     if (data?.bet) {
       setBets(prev => {
         const exists = prev.find(b => b._id === data.bet._id)
@@ -349,11 +422,6 @@ export default function Admin() {
       })
     } else if (data?.betId && data?.deleted) {
       setBets(prev => prev.filter(b => b._id !== data.betId))
-    } else if (data?.action === 'create' || data?.action === 'update') {
-      // New bet created or updated - refetch just bets
-      api.get('/admin/bets').then(res => {
-        setBets(res.data.bets)
-      }).catch(console.error)
     }
   }, [isAdmin])
 
@@ -599,6 +667,52 @@ export default function Admin() {
     }
   }
 
+  // Handle payment status change for guest bets (uses betId instead of userId)
+  const handleChangeGuestPaymentStatus = async (betId, newStatus) => {
+    const currentPayment = payments.find(p => p.betId === betId || p.betId?.toString() === betId)
+    const previousStatus = currentPayment?.paymentStatus || 'pending'
+    
+    try {
+      // Record this as a pending change
+      pendingChangesRef.current.set(betId, {
+        status: newStatus,
+        timestamp: Date.now()
+      })
+      
+      // Optimistically update the UI
+      setPayments(prev => prev.map(p => {
+        if (p.betId === betId || p.betId?.toString() === betId) {
+          return { 
+            ...p, 
+            paid: newStatus === 'paid',
+            paymentStatus: newStatus
+          }
+        }
+        return p
+      }))
+      
+      await api.patch(`/admin/bets/${betId}/payment`, { paid: newStatus === 'paid', isGuestBet: true })
+      const statusLabels = { paid: 'Paid', pending: 'Pending' }
+      toast.success(`Guest payment status updated to ${statusLabels[newStatus]}`)
+    } catch (error) {
+      // Remove pending change on error
+      pendingChangesRef.current.delete(betId)
+      
+      // Revert on error
+      setPayments(prev => prev.map(p => {
+        if (p.betId === betId || p.betId?.toString() === betId) {
+          return { 
+            ...p, 
+            paid: previousStatus === 'paid',
+            paymentStatus: previousStatus
+          }
+        }
+        return p
+      }))
+      toast.error(error.response?.data?.message || 'Failed to update guest payment status')
+    }
+  }
+
   const handleDeleteUser = async (userId, userName) => {
     setConfirmModal({
       isOpen: true,
@@ -617,6 +731,30 @@ export default function Admin() {
           setBets(prev => prev.filter(b => b.userId !== userId && b.userId?._id !== userId))
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to delete user')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
+        }
+      }
+    })
+  }
+
+  const handleDeleteGuestBet = async (betId, guestName) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Guest Prediction',
+      message: `Are you sure you want to delete the prediction for "${guestName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      confirmStyle: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isLoading: true }))
+        try {
+          await adminDeleteBet(betId, true) // Pass isGuestBet = true for guest bets
+          toast.success(`Guest prediction for "${guestName}" deleted`)
+          // Update state locally
+          setPayments(prev => prev.filter(p => p.betId !== betId))
+          setBets(prev => prev.filter(b => b._id !== betId))
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Failed to delete guest bet')
         } finally {
           setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
         }
@@ -2907,7 +3045,7 @@ export default function Admin() {
                   ) : (
                     payments.map((payment) => (
                       <tr 
-                        key={payment.userId} 
+                        key={payment.isGuestBet ? `guest_${payment.betId}` : payment.userId} 
                         className={`transition-all duration-200 ${
                           payment.paymentStatus === 'paid'
                             ? isDark 
@@ -2926,11 +3064,13 @@ export default function Admin() {
                           <div className="flex items-center gap-3">
                             <div className="relative">
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-md ${
-                                payment.paymentStatus === 'paid'
-                                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                                  : payment.paymentStatus === 'pending'
-                                    ? 'bg-gradient-to-br from-amber-500 to-orange-600'
-                                    : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                                payment.isGuestBet
+                                  ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
+                                  : payment.paymentStatus === 'paid'
+                                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                                    : payment.paymentStatus === 'pending'
+                                      ? 'bg-gradient-to-br from-amber-500 to-orange-600'
+                                      : 'bg-gradient-to-br from-gray-400 to-gray-600'
                               }`}>
                                 {payment.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
@@ -2941,7 +3081,12 @@ export default function Admin() {
                                   </svg>
                                 </div>
                               )}
-                              {payment.isAdmin && (
+                              {payment.isGuestBet && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800 bg-purple-500">
+                                  <span className="text-[8px]">👤</span>
+                                </div>
+                              )}
+                              {!payment.isGuestBet && payment.isAdmin && (
                                 <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800 ${
                                   payment.isDeveloper ? 'bg-purple-500' : 'bg-amber-500'
                                 }`}>
@@ -2950,9 +3095,23 @@ export default function Admin() {
                               )}
                             </div>
                             <div>
-                              <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {payment.name || 'Unknown User'}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                  {payment.name || 'Unknown User'}
+                                </p>
+                                {payment.isGuestBet && (
+                                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                    isDark ? 'bg-purple-900/50 text-purple-300' : 'bg-purple-100 text-purple-700'
+                                  }`}>
+                                    Guest
+                                  </span>
+                                )}
+                              </div>
+                              {payment.isGuestBet && payment.managedBy && (
+                                <p className={`text-xs mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                                  Managed by: {payment.managedBy}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -2991,28 +3150,60 @@ export default function Admin() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <select
-                            value={payment.paymentStatus || 'na'}
-                            onChange={(e) => handleChangePaymentStatus(payment.userId, e.target.value)}
-                            className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
-                              isDark 
-                                ? 'bg-dark-700 border border-dark-600 text-dark-100' 
-                                : 'bg-white border border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <option value="na">N/A</option>
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                          </select>
-                          {payment.hasBet && (
-                            <span className={`block text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                              ✓ Has bet
-                            </span>
-                          )}
-                          {payment.isPlaceholder && !payment.hasBet && (
-                            <span className={`block text-xs mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                              Payment only
-                            </span>
+                          {payment.isGuestBet ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <select
+                                value={payment.paymentStatus || 'pending'}
+                                onChange={(e) => handleChangeGuestPaymentStatus(payment.betId, e.target.value)}
+                                className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
+                                  isDark 
+                                    ? 'bg-dark-700 border border-dark-600 text-dark-100' 
+                                    : 'bg-white border border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                              </select>
+                              <button
+                                onClick={() => handleDeleteGuestBet(payment.betId, payment.name)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  isDark 
+                                    ? 'hover:bg-red-500/20 text-red-400 hover:text-red-300' 
+                                    : 'hover:bg-red-50 text-red-500 hover:text-red-600'
+                                }`}
+                                title={`Delete ${payment.name}'s prediction`}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <select
+                                value={payment.paymentStatus || 'na'}
+                                onChange={(e) => handleChangePaymentStatus(payment.userId, e.target.value)}
+                                className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
+                                  isDark 
+                                    ? 'bg-dark-700 border border-dark-600 text-dark-100' 
+                                    : 'bg-white border border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="na">N/A</option>
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                              </select>
+                              {payment.hasBet && (
+                                <span className={`block text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                  ✓ Has bet
+                                </span>
+                              )}
+                              {payment.isPlaceholder && !payment.hasBet && (
+                                <span className={`block text-xs mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                                  Payment only
+                                </span>
+                              )}
+                            </>
                           )}
                         </td>
                       </tr>
@@ -3031,11 +3222,11 @@ export default function Admin() {
                   <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      Total Users: {payments.length}
+                      Total: {payments.length}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                      With Bets: {payments.filter(p => p.hasBet).length}
+                      Guests: {payments.filter(p => p.isGuestBet).length}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -3047,7 +3238,7 @@ export default function Admin() {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-gray-500"></span>
-                      No Bet: {payments.filter(p => !p.hasBet).length}
+                      No Bet: {payments.filter(p => !p.hasBet && !p.isGuestBet).length}
                     </span>
                   </div>
                 </div>

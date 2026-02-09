@@ -13,21 +13,19 @@ const predictionSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
-const betSchema = new mongoose.Schema({
-  userId: {
+const guestBetSchema = new mongoose.Schema({
+  // The registered user who submitted this guest bet
+  sponsorUserId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  // Guest participant support - allows registered users to submit bets for guests
+  // Guest participant name
   participantName: {
     type: String,
+    required: true,
     trim: true,
-    default: null // null means use the registered user's name
-  },
-  isGuestBet: {
-    type: Boolean,
-    default: false
+    minlength: [2, 'Guest name must be at least 2 characters']
   },
   scheduleId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -45,7 +43,7 @@ const betSchema = new mongoose.Schema({
   },
   totalGoals: {
     type: Number,
-    required: function() { return !this.isPlaceholder; },
+    required: true,
     min: [0, 'Total goals cannot be negative'],
     default: 0
   },
@@ -53,16 +51,10 @@ const betSchema = new mongoose.Schema({
     type: [predictionSchema],
     validate: {
       validator: function(v) {
-        // Placeholder bets don't need 9 predictions
-        if (this.isPlaceholder) return true;
         return v.length === 9;
       },
       message: 'Must have exactly 9 match predictions'
     }
-  },
-  isPlaceholder: {
-    type: Boolean,
-    default: false
   },
   // Scoring fields
   totalPoints: {
@@ -91,14 +83,18 @@ const betSchema = new mongoose.Schema({
   }
 });
 
-// Compound index to ensure one bet per participant per week
-// For regular users: one bet per userId per week (participantName = null)
-// For guests: one bet per participantName per sponsoring user per week
-betSchema.index({ userId: 1, weekNumber: 1, year: 1, participantName: 1 }, { unique: true });
+// Compound index to ensure one guest bet per participant name per sponsor per week
+guestBetSchema.index({ sponsorUserId: 1, participantName: 1, weekNumber: 1, year: 1 }, { unique: true });
 
-betSchema.pre('save', function(next) {
+// Index for querying all guest bets by sponsor
+guestBetSchema.index({ sponsorUserId: 1, weekNumber: 1, year: 1 });
+
+// Index for querying all bets for a week (for leaderboard)
+guestBetSchema.index({ weekNumber: 1, year: 1 });
+
+guestBetSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
 });
 
-module.exports = mongoose.model('Bet', betSchema);
+module.exports = mongoose.model('GuestBet', guestBetSchema);

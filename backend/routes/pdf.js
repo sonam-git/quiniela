@@ -4,6 +4,7 @@ const PDFDocument = require('pdfkit');
 const auth = require('../middleware/auth');
 const Schedule = require('../models/Schedule');
 const Bet = require('../models/Bet');
+const GuestBet = require('../models/GuestBet');
 const User = require('../models/User');
 
 // Helper: Get prediction symbol
@@ -31,12 +32,43 @@ router.get('/prediction/:weekNumber/:year', auth, async (req, res) => {
       return res.status(404).json({ message: 'Schedule not found' });
     }
     
-    // Get all bets for this week
-    const allBets = await Bet.find({
+    // Get all user bets for this week
+    const userBets = await Bet.find({
       weekNumber: parseInt(weekNumber),
       year: parseInt(year),
-      isPlaceholder: { $ne: true }
+      isPlaceholder: { $ne: true },
+      isGuestBet: { $ne: true }
     }).populate('userId', 'name').sort({ 'userId.name': 1 });
+    
+    // Get all guest bets for this week
+    const guestBets = await GuestBet.find({
+      weekNumber: parseInt(weekNumber),
+      year: parseInt(year)
+    }).populate('sponsorUserId', 'name');
+    
+    // Transform guest bets to match user bet format
+    const transformedGuestBets = guestBets.map(gb => ({
+      _id: gb._id,
+      odaUserId: { _id: gb.sponsorUserId._id, name: gb.participantName },
+      participantName: gb.participantName,
+      isGuestBet: true,
+      sponsorName: gb.sponsorUserId?.name || 'Unknown',
+      weekNumber: gb.weekNumber,
+      year: gb.year,
+      totalGoals: gb.totalGoals,
+      predictions: gb.predictions,
+      totalPoints: gb.totalPoints,
+      goalDifference: gb.goalDifference,
+      paid: gb.paid,
+      isWinner: gb.isWinner
+    }));
+    
+    // Combine and sort all bets by name
+    const allBets = [...userBets, ...transformedGuestBets].sort((a, b) => {
+      const nameA = a.isGuestBet ? a.participantName : (a.userId?.name || 'Unknown');
+      const nameB = b.isGuestBet ? b.participantName : (b.userId?.name || 'Unknown');
+      return nameA.localeCompare(nameB);
+    });
     
     if (allBets.length === 0) {
       return res.status(404).json({ message: 'No predictions found for this week' });
@@ -134,11 +166,13 @@ router.get('/prediction/:weekNumber/:year', auth, async (req, res) => {
       
       x = startX;
       
-      // Player name
+      // Player name - handle both user bets and guest bets
+      const playerName = bet.isGuestBet ? bet.participantName : (bet.userId?.name || 'Unknown');
+      const displayName = bet.isGuestBet ? `${playerName} (G)` : playerName; // Mark guests with (G)
       doc.fillColor('#333333')
          .fontSize(9)
          .font('Helvetica-Bold')
-         .text(bet.userId?.name || 'Unknown', x + 5, y + 6, { width: colWidths[0] - 10, lineBreak: false });
+         .text(displayName, x + 5, y + 6, { width: colWidths[0] - 10, lineBreak: false });
       x += colWidths[0];
       
       // Predictions for each match
@@ -171,12 +205,12 @@ router.get('/prediction/:weekNumber/:year', auth, async (req, res) => {
       y += dataRowHeight;
     });
     
-    // Legend
+    // Legend - add (G) explanation for guest bets
     y += 20;
     doc.fillColor('#666666')
        .fontSize(9)
        .font('Helvetica')
-       .text('L = Local (Home Win) | E = Empate (Draw) | V = Visitante (Away Win)', startX, y, { lineBreak: false });
+       .text('L = Local (Home Win) | E = Empate (Draw) | V = Visitante (Away Win) | (G) = Guest', startX, y, { lineBreak: false });
     
     // Footer
     doc.fillColor('#999999')
@@ -211,12 +245,45 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
       return res.status(400).json({ message: 'Week is not yet settled' });
     }
     
-    // Get all bets for leaderboard
-    const allBets = await Bet.find({
+    // Get all user bets for leaderboard
+    const userBets = await Bet.find({
       weekNumber: parseInt(weekNumber),
       year: parseInt(year),
-      isPlaceholder: { $ne: true }
-    }).populate('userId', 'name').sort({ totalPoints: -1, goalDifference: 1 });
+      isPlaceholder: { $ne: true },
+      isGuestBet: { $ne: true }
+    }).populate('userId', 'name');
+    
+    // Get all guest bets for this week
+    const guestBets = await GuestBet.find({
+      weekNumber: parseInt(weekNumber),
+      year: parseInt(year)
+    }).populate('sponsorUserId', 'name');
+    
+    // Transform guest bets to match user bet format
+    const transformedGuestBets = guestBets.map(gb => ({
+      _id: gb._id,
+      odaUserId: { _id: gb.sponsorUserId._id, name: gb.participantName },
+      participantName: gb.participantName,
+      isGuestBet: true,
+      sponsorName: gb.sponsorUserId?.name || 'Unknown',
+      weekNumber: gb.weekNumber,
+      year: gb.year,
+      totalGoals: gb.totalGoals,
+      predictions: gb.predictions,
+      totalPoints: gb.totalPoints,
+      goalDifference: gb.goalDifference,
+      paid: gb.paid,
+      isWinner: gb.isWinner
+    }));
+    
+    // Combine and sort all bets by points (desc), then goal difference (asc)
+    const allBets = [...userBets, ...transformedGuestBets].sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+      if (a.goalDifference === null && b.goalDifference === null) return 0;
+      if (a.goalDifference === null) return 1;
+      if (b.goalDifference === null) return -1;
+      return a.goalDifference - b.goalDifference;
+    });
     
     if (allBets.length === 0) {
       return res.status(404).json({ message: 'No predictions found for this week' });
@@ -357,10 +424,13 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
         displayRank = rowIndex + 1 - winnersCount + 1;
       }
       
+      // Handle both user bets and guest bets
+      const playerName = bet.isGuestBet ? bet.participantName : (bet.userId?.name || 'Unknown');
+      const displayName = bet.isGuestBet ? `${playerName} (G)` : playerName; // Mark guests with (G)
       doc.fillColor('#333333')
          .fontSize(8)
          .font('Helvetica-Bold')
-         .text(`${displayRank}. ${bet.userId?.name || 'Unknown'}`, x + 3, y + 6, { width: colWidths[0] - 6, lineBreak: false });
+         .text(`${displayRank}. ${displayName}`, x + 3, y + 6, { width: colWidths[0] - 6, lineBreak: false });
       x += colWidths[0];
       
       // Predictions with correct/wrong indicator (green for correct, red for wrong)
@@ -403,12 +473,12 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
       y += dataRowHeight;
     });
     
-    // Legend
+    // Legend - add (G) explanation for guest bets
     y += 10;
     doc.fillColor('#666666')
        .fontSize(8)
        .font('Helvetica')
-       .text('L = Local (Home) | E = Empate (Draw) | V = Visitante (Away) | Green = Correct | Red = Wrong | Yellow Row = Winner | (n) = Goal Difference', startX, y);
+       .text('L = Local (Home) | E = Empate (Draw) | V = Visitante (Away) | Green = Correct | Red = Wrong | Yellow Row = Winner | (n) = Goal Difference | (G) = Guest', startX, y);
     
     // Approved and Verified by Admin
     y += 20;
@@ -432,11 +502,15 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
        .font('Helvetica')
        .text(` | ${settledAtFormatted}`, { lineBreak: false });
     
-    // Footer
+    // Footer - handle both user and guest winner names
+    const winnerNames = allBets.filter(b => b.isWinner).map(b => {
+      return b.isGuestBet ? b.participantName : (b.userId?.name || 'Unknown');
+    }).join(', ') || 'TBD';
+    
     doc.fillColor('#999999')
        .fontSize(8)
        .font('Helvetica')
-       .text(`Total Participants: ${allBets.length} | Winner(s): ${allBets.filter(b => b.isWinner).map(b => b.userId?.name).join(', ') || 'TBD'}`, startX, 550, { align: 'center', width: 787 });
+       .text(`Total Participants: ${allBets.length} | Winner(s): ${winnerNames}`, startX, 550, { align: 'center', width: 787 });
     
     // Finalize
     doc.end();

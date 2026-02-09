@@ -71,5 +71,29 @@
     "title": "Betting Closed",
     "message": "The first match has started. You can no longer place or update predictions for this week.",
     "viewDashboard": "View Dashboard"
+  },
+  "guest": {
+    "title": "Guest Bets",
+    "subtitle": "Submit predictions for friends or family who don't have an account",
+    "addGuest": "Add Guest",
+    "guestName": "Guest Name",
+    "guestNamePlaceholder": "Enter guest's name",
+    "yourGuests": "Your Guest Participants",
+    "noGuests": "No guest bets yet",
+    "noGuestsHint": "You can add bets on behalf of friends or family",
+    "editGuest": "Edit Guest Bet",
+    "deleteGuest": "Delete Guest Bet",
+    "deleteConfirm": "Are you sure you want to delete this guest bet?",
+    "managedBy": "Managed by you",
+    "success": {
+      "created": "Guest bet created for {{name}}",
+      "updated": "Guest bet updated for {{name}}",
+      "deleted": "Guest bet deleted"
+    },
+    "errors": {
+      "nameRequired": "Please enter the guest's name",
+      "nameTooShort": "Name must be at least 2 characters",
+      "alreadyExists": "This guest already has a bet for this week"
+    }
   }
 }

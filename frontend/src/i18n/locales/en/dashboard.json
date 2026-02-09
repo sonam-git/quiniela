@@ -12,8 +12,42 @@
     "standingsShort": "Stand",
     "schedule": "Schedule",
     "scheduleShort": "Games",
-    "lastWeek": "Last Week",
-    "lastWeekShort": "Prev"
+    "results": "Results",
+    "resultsShort": "Results"
+  },
+  "results": {
+    "title": "Jornada {{week}} Results",
+    "finalResults": "Final Results",
+    "totalGoals": "Total Goals",
+    "matchesPlayed": "Matches",
+    "winner": "Winner",
+    "winners": "Winners",
+    "prize": "Prize",
+    "prizeAmount": "${{amount}}",
+    "noResultsTitle": "No Results Available",
+    "noResultsDescription": "Results will appear here after the admin settles the current week. Check back after all matches are completed.",
+    "checkBackLater": "Waiting for week to be settled",
+    "settledOn": "Settled on {{date}}",
+    "downloadPDF": "Download PDF",
+    "deleteResults": "Delete Results",
+    "deleteConfirm": "Are you sure you want to delete these results? This action cannot be undone.",
+    "deleteSuccess": "Results deleted successfully",
+    "coChampions": "Co-Champions",
+    "pointsLabel": "pts",
+    "goalDiff": "Goal Diff",
+    "predictedGoals": "Predicted",
+    "actualGoals": "Actual",
+    "payment": "Payment",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "correct": "Correct",
+    "wrong": "Wrong",
+    "detailedReport": "Detailed Report",
+    "participantBreakdown": "Participant Breakdown",
+    "matchResults": "Match Results",
+    "home": "Home",
+    "away": "Away",
+    "draw": "Draw"
   },
   "lastWeek": {
     "title": "Jornada {{week}} Results",
@@ -118,6 +152,7 @@
     "draw": "Draw (E)",
     "noPrediction": "No prediction",
     "predictionsHiddenUntilStart": "Predictions hidden until first match starts",
-    "pointsHiddenUntilStart": "Points hidden until first match starts"
+    "pointsHiddenUntilStart": "Points hidden until first match starts",
+    "guest": "Guest"
   }
 }

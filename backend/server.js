@@ -87,8 +87,8 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    // Initialize automatic schedule creator
-    initScheduler();
+    // Initialize automatic schedule creator with socket.io instance for real-time updates
+    initScheduler(io);
   })
   .catch(err => console.error('MongoDB connection error:', err));
 

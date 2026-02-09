@@ -1,5 +1,6 @@
 const express = require('express');
 const Bet = require('../models/Bet');
+const GuestBet = require('../models/GuestBet');
 const Schedule = require('../models/Schedule');
 const auth = require('../middleware/auth');
 
@@ -73,11 +74,12 @@ router.post('/update-match', auth, async (req, res) => {
   }
 });
 
-// Helper function to recalculate points for all bets
+// Helper function to recalculate points for all bets (including guest bets)
 const recalculatePoints = async (weekNumber, year, schedule) => {
-  const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
+  // Recalculate user bets
+  const userBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
 
-  for (const bet of bets) {
+  for (const bet of userBets) {
     let totalPoints = 0;
 
     for (const prediction of bet.predictions) {
@@ -90,6 +92,23 @@ const recalculatePoints = async (weekNumber, year, schedule) => {
 
     bet.totalPoints = totalPoints;
     await bet.save();
+  }
+
+  // Recalculate guest bets
+  const guestBets = await GuestBet.find({ weekNumber, year });
+
+  for (const guestBet of guestBets) {
+    let totalPoints = 0;
+
+    for (const prediction of guestBet.predictions) {
+      const match = schedule.matches.id(prediction.matchId);
+      if (match && match.isCompleted && match.result === prediction.prediction) {
+        totalPoints += 1;
+      }
+    }
+
+    guestBet.totalPoints = totalPoints;
+    await guestBet.save();
   }
 };
 
@@ -127,14 +146,13 @@ router.post('/settle', auth, async (req, res) => {
 
     schedule.actualTotalGoals = actualTotalGoals;
 
-    // Get all bets for this week
-    const bets = await Bet.find({ weekNumber, year });
+    // Get all user bets for this week
+    const userBets = await Bet.find({ weekNumber, year });
 
-    // Calculate points for each bet
-    for (const bet of bets) {
+    // Calculate points for each user bet
+    for (const bet of userBets) {
       let totalPoints = 0;
 
-      // Calculate points for correct predictions
       for (const prediction of bet.predictions) {
         const match = schedule.matches.id(prediction.matchId);
         if (match && match.result === prediction.prediction) {
@@ -142,32 +160,68 @@ router.post('/settle', auth, async (req, res) => {
         }
       }
 
-      // Calculate goal difference
       const goalDifference = Math.abs(bet.totalGoals - actualTotalGoals);
 
       bet.totalPoints = totalPoints;
       bet.goalDifference = goalDifference;
-      bet.isWinner = false; // Reset, will be set after sorting
+      bet.isWinner = false;
 
       await bet.save();
     }
 
-    // Determine winner with tie-breaker logic
-    const sortedBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
-      .sort({ totalPoints: -1, goalDifference: 1 });
+    // Get all guest bets for this week
+    const guestBets = await GuestBet.find({ weekNumber, year });
 
-    if (sortedBets.length > 0) {
-      // Mark the winner
-      const winner = sortedBets[0];
-      winner.isWinner = true;
-      await winner.save();
+    // Calculate points for each guest bet
+    for (const guestBet of guestBets) {
+      let totalPoints = 0;
 
-      // Handle ties - mark all with same points and goal difference as winners
-      for (let i = 1; i < sortedBets.length; i++) {
-        if (sortedBets[i].totalPoints === winner.totalPoints && 
-            sortedBets[i].goalDifference === winner.goalDifference) {
-          sortedBets[i].isWinner = true;
-          await sortedBets[i].save();
+      for (const prediction of guestBet.predictions) {
+        const match = schedule.matches.id(prediction.matchId);
+        if (match && match.result === prediction.prediction) {
+          totalPoints += 1;
+        }
+      }
+
+      const goalDifference = Math.abs(guestBet.totalGoals - actualTotalGoals);
+
+      guestBet.totalPoints = totalPoints;
+      guestBet.goalDifference = goalDifference;
+      guestBet.isWinner = false;
+
+      await guestBet.save();
+    }
+
+    // Combine all bets (excluding placeholders) for winner determination
+    const allUserBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
+    const allGuestBets = await GuestBet.find({ weekNumber, year });
+    
+    // Create combined list with type identifier
+    const allBets = [
+      ...allUserBets.map(b => ({ bet: b, type: 'user' })),
+      ...allGuestBets.map(b => ({ bet: b, type: 'guest' }))
+    ];
+
+    // Sort combined bets
+    allBets.sort((a, b) => {
+      if (b.bet.totalPoints !== a.bet.totalPoints) {
+        return b.bet.totalPoints - a.bet.totalPoints;
+      }
+      return a.bet.goalDifference - b.bet.goalDifference;
+    });
+
+    // Determine winners
+    if (allBets.length > 0) {
+      const winner = allBets[0];
+      winner.bet.isWinner = true;
+      await winner.bet.save();
+
+      // Handle ties
+      for (let i = 1; i < allBets.length; i++) {
+        if (allBets[i].bet.totalPoints === winner.bet.totalPoints && 
+            allBets[i].bet.goalDifference === winner.bet.goalDifference) {
+          allBets[i].bet.isWinner = true;
+          await allBets[i].bet.save();
         } else {
           break;
         }
@@ -176,12 +230,42 @@ router.post('/settle', auth, async (req, res) => {
 
     // Mark schedule as settled
     schedule.isSettled = true;
+    schedule.settledAt = new Date();
     await schedule.save();
 
-    // Return the final results
-    const finalBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
-      .populate('userId', 'name email')
-      .sort({ totalPoints: -1, goalDifference: 1 });
+    // Return the final results - combine user and guest bets
+    const finalUserBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
+      .populate('userId', 'name email');
+    
+    const finalGuestBets = await GuestBet.find({ weekNumber, year })
+      .populate('sponsorUserId', 'name email');
+
+    // Transform guest bets for response
+    const transformedGuestBets = finalGuestBets.map(gb => ({
+      _id: gb._id,
+      sponsorUserId: gb.sponsorUserId._id,
+      userId: { 
+        _id: gb.sponsorUserId._id, 
+        name: gb.participantName,
+        email: null 
+      },
+      participantName: gb.participantName,
+      isGuestBet: true,
+      sponsorName: gb.sponsorUserId.name,
+      weekNumber: gb.weekNumber,
+      year: gb.year,
+      totalGoals: gb.totalGoals,
+      predictions: gb.predictions,
+      totalPoints: gb.totalPoints,
+      goalDifference: gb.goalDifference,
+      paid: gb.paid,
+      isWinner: gb.isWinner
+    }));
+
+    const finalBets = [...finalUserBets, ...transformedGuestBets].sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+      return a.goalDifference - b.goalDifference;
+    });
 
     const winnersCount = finalBets.filter(b => b.isWinner).length;
 

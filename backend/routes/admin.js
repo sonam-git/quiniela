@@ -3,6 +3,7 @@ const auth = require('../middleware/auth');
 const { adminAuth, developerAuth } = require('../middleware/auth');
 const User = require('../models/User');
 const Bet = require('../models/Bet');
+const GuestBet = require('../models/GuestBet');
 const Schedule = require('../models/Schedule');
 const Announcement = require('../models/Announcement');
 const Settings = require('../models/Settings');
@@ -168,22 +169,50 @@ router.post('/upgrade-to-developer', auth, async (req, res) => {
 // @access  Admin
 router.get('/bets', auth, adminAuth, async (req, res) => {
   try {
-    // Get current week's schedule
+    // Calculate current week number (same logic as bets.js routes)
+    const getWeekNumber = (date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return weekNumber;
+    };
+
     const now = new Date();
-    const schedule = await Schedule.findOne({
-      weekStart: { $lte: now },
-      weekEnd: { $gte: now }
-    });
+    let weekNumber = getWeekNumber(now);
+    let year = now.getFullYear();
+
+    // Check if current week's schedule is settled - if so, use next week
+    let schedule = await Schedule.findOne({ weekNumber, year });
+    
+    if (schedule && schedule.isSettled) {
+      const nextWeek = weekNumber + 1;
+      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
+      
+      const nextWeekSchedule = await Schedule.findOne({ 
+        weekNumber: actualNextWeek, 
+        year: nextYear 
+      });
+      
+      // If next week's schedule exists and isn't settled, use it
+      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
+        weekNumber = actualNextWeek;
+        year = nextYear;
+        schedule = nextWeekSchedule;
+      }
+    }
 
     if (!schedule) {
       return res.json({ 
         bets: [], 
-        weekInfo: { weekNumber: 0, year: 0 } 
+        weekInfo: { weekNumber, year } 
       });
     }
 
-    // Get all bets for this schedule
-    const bets = await Bet.find({ scheduleId: schedule._id })
+    // Get all bets for this week (using weekNumber/year for consistency)
+    const bets = await Bet.find({ weekNumber, year, isGuestBet: { $ne: true }, isPlaceholder: { $ne: true } })
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, createdAt: 1 });
 
@@ -201,30 +230,46 @@ router.get('/bets', auth, adminAuth, async (req, res) => {
 });
 
 // @route   PATCH /api/admin/bets/:betId/payment
-// @desc    Update payment status for a bet
+// @desc    Update payment status for a bet (supports both user bets and guest bets)
 // @access  Admin
 router.patch('/bets/:betId/payment', auth, adminAuth, async (req, res) => {
   try {
     const { betId } = req.params;
-    const { paid } = req.body;
+    const { paid, isGuestBet } = req.body;
 
-    const bet = await Bet.findById(betId);
-    if (!bet) {
-      return res.status(404).json({ message: 'Bet not found' });
+    let bet;
+    
+    if (isGuestBet) {
+      // Update guest bet from GuestBet model
+      bet = await GuestBet.findById(betId);
+      if (!bet) {
+        return res.status(404).json({ message: 'Guest bet not found' });
+      }
+      bet.paid = paid;
+      await bet.save();
+    } else {
+      // Update user bet from Bet model
+      bet = await Bet.findById(betId);
+      if (!bet) {
+        return res.status(404).json({ message: 'Bet not found' });
+      }
+      bet.paid = paid;
+      await bet.save();
     }
 
-    bet.paid = paid;
-    await bet.save();
-
-    // Emit real-time update for payment status change with user ID for targeted updates
+    // Emit real-time update for payment status change
     const io = req.app.get('io');
     if (io) {
-      io.emit('payments:update', { 
+      const updateData = { 
         action: 'update', 
-        betId: bet._id, 
-        userId: bet.userId,
-        paid 
-      });
+        betId: bet._id.toString(), 
+        paid,
+        isGuestBet: !!isGuestBet
+      };
+      if (!isGuestBet && bet.userId) {
+        updateData.userId = bet.userId.toString();
+      }
+      io.emit('payments:update', updateData);
     }
 
     res.json({ 
@@ -233,6 +278,66 @@ router.patch('/bets/:betId/payment', auth, adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Update payment error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/bets/:betId
+// @desc    Delete any bet (including guest bets) - Admin only
+// @access  Admin
+router.delete('/bets/:betId', auth, adminAuth, async (req, res) => {
+  try {
+    const { betId } = req.params;
+    const { isGuestBet } = req.query; // Pass isGuestBet=true for guest bets
+
+    let bet;
+    let weekNumber, year, participantName, oderId;
+
+    if (isGuestBet === 'true') {
+      // Delete from GuestBet model
+      bet = await GuestBet.findById(betId);
+      if (!bet) {
+        return res.status(404).json({ message: 'Guest bet not found' });
+      }
+      weekNumber = bet.weekNumber;
+      year = bet.year;
+      participantName = bet.participantName;
+      oderId = bet.sponsorUserId;
+      await GuestBet.findByIdAndDelete(betId);
+    } else {
+      // Delete from Bet model
+      bet = await Bet.findById(betId);
+      if (!bet) {
+        return res.status(404).json({ message: 'Bet not found' });
+      }
+      weekNumber = bet.weekNumber;
+      year = bet.year;
+      participantName = bet.participantName;
+      oderId = bet.userId;
+      await Bet.findByIdAndDelete(betId);
+    }
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('bets:update', { 
+        action: 'delete', 
+        weekNumber, 
+        year,
+        betId: bet._id.toString(),
+        userId: oderId?.toString(),
+        isGuestBet: isGuestBet === 'true',
+        participantName
+      });
+    }
+
+    res.json({ 
+      message: isGuestBet === 'true'
+        ? `Guest bet for "${participantName}" deleted successfully`
+        : 'Bet deleted successfully'
+    });
+  } catch (error) {
+    console.error('Admin delete bet error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -251,31 +356,49 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get current week's schedule
-    const now = new Date();
-    const schedule = await Schedule.findOne({
-      weekStart: { $lte: now },
-      weekEnd: { $gte: now }
-    });
-
-    // Calculate current week number if no schedule
+    // Calculate current week number (same logic as bets.js routes)
     const getWeekNumber = (date) => {
-      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      const dayNum = d.getUTCDay() || 7;
-      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return weekNumber;
     };
 
-    const weekNumber = schedule?.weekNumber || getWeekNumber(now);
-    const year = schedule?.year || now.getFullYear();
+    const now = new Date();
+    let weekNumber = getWeekNumber(now);
+    let year = now.getFullYear();
+
+    // Check if current week's schedule is settled - if so, use next week
+    let schedule = await Schedule.findOne({ weekNumber, year });
+    
+    if (schedule && schedule.isSettled) {
+      const nextWeek = weekNumber + 1;
+      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
+      
+      const nextWeekSchedule = await Schedule.findOne({ 
+        weekNumber: actualNextWeek, 
+        year: nextYear 
+      });
+      
+      // If next week's schedule exists and isn't settled, use it
+      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
+        weekNumber = actualNextWeek;
+        year = nextYear;
+        schedule = nextWeekSchedule;
+      }
+    }
+
     const scheduleId = schedule?._id || null;
 
-    // Find existing bet for this user and week
+    // Find existing bet for this user and week (exclude any legacy guest bets)
     let bet = await Bet.findOne({
       userId,
       weekNumber,
-      year
+      year,
+      isGuestBet: { $ne: true }
     });
 
     if (status === 'na') {
@@ -285,7 +408,7 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
         // Emit real-time update
         const io = req.app.get('io');
         if (io) {
-          io.emit('payments:update', { action: 'delete', userId, status: 'na' });
+          io.emit('payments:update', { action: 'delete', userId: userId.toString(), status: 'na' });
         }
         return res.json({ 
           message: 'Payment status set to N/A',
@@ -298,7 +421,7 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
         // Emit real-time update
         const io = req.app.get('io');
         if (io) {
-          io.emit('payments:update', { action: 'update', userId, status: 'pending' });
+          io.emit('payments:update', { action: 'update', userId: userId.toString(), status: 'pending', betId: bet._id.toString(), paid: false });
         }
         return res.json({ 
           message: 'Payment status set to Pending (user has active bet)',
@@ -342,9 +465,9 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
     if (io) {
       io.emit('payments:update', { 
         action: 'update', 
-        userId, 
+        userId: userId.toString(), 
         status, 
-        betId: bet._id,
+        betId: bet._id.toString(),
         paid: status === 'paid'
       });
     }
@@ -361,38 +484,57 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
 });
 
 // @route   GET /api/admin/payments
-// @desc    Get all users with their bet/payment status for current week
+// @desc    Get all users with their bet/payment status for current week (including guest bets)
 // @access  Admin
 router.get('/payments', auth, adminAuth, async (req, res) => {
   try {
-    // Get current week's schedule
-    const now = new Date();
-    const schedule = await Schedule.findOne({
-      weekStart: { $lte: now },
-      weekEnd: { $gte: now }
-    });
-
-    // Calculate current week number if no schedule
+    // Calculate current week number (same logic as bets.js routes)
     const getWeekNumber = (date) => {
-      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      const dayNum = d.getUTCDay() || 7;
-      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return weekNumber;
     };
 
-    const weekNumber = schedule?.weekNumber || getWeekNumber(now);
-    const year = schedule?.year || now.getFullYear();
+    const now = new Date();
+    let weekNumber = getWeekNumber(now);
+    let year = now.getFullYear();
+
+    // Check if current week's schedule is settled - if so, use next week
+    let schedule = await Schedule.findOne({ weekNumber, year });
+    
+    if (schedule && schedule.isSettled) {
+      const nextWeek = weekNumber + 1;
+      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
+      
+      const nextWeekSchedule = await Schedule.findOne({ 
+        weekNumber: actualNextWeek, 
+        year: nextYear 
+      });
+      
+      // If next week's schedule exists and isn't settled, use it
+      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
+        weekNumber = actualNextWeek;
+        year = nextYear;
+        schedule = nextWeekSchedule;
+      }
+    }
 
     // Get all users (excluding password)
     const users = await User.find().select('-password').sort({ name: 1 });
 
-    // Get all bets for this week
-    const bets = await Bet.find({ weekNumber, year });
+    // Get all user bets for this week (excluding guest bets from old Bet model)
+    const userBets = await Bet.find({ weekNumber, year, isGuestBet: { $ne: true } });
+    
+    // Get all guest bets from the GuestBet model
+    const guestBets = await GuestBet.find({ weekNumber, year });
     
     // Create a map of userId to bet for quick lookup
     const betMap = new Map();
-    bets.forEach(bet => {
+    userBets.forEach(bet => {
       betMap.set(bet.userId.toString(), bet);
     });
 
@@ -421,8 +563,33 @@ router.get('/payments', auth, adminAuth, async (req, res) => {
         paymentStatus,
         totalPoints: hasRealBet ? (bet?.totalPoints || 0) : 0,
         totalGoals: hasRealBet ? (bet?.totalGoals ?? null) : null,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        isGuestBet: false
       };
+    });
+
+    // Add guest bets to the payments data
+    guestBets.forEach(guestBet => {
+      const hostUser = users.find(u => u._id.toString() === guestBet.sponsorUserId.toString());
+      paymentsData.push({
+        oderId: `guest_${guestBet._id}`, // Unique ID for guest payments
+        sponsorUserId: guestBet.sponsorUserId, // Sponsor user ID for reference
+        name: guestBet.participantName,
+        email: null, // Guest bets don't have emails
+        isAdmin: false,
+        isDeveloper: false,
+        hasBet: true,
+        isPlaceholder: false,
+        betId: guestBet._id,
+        paid: guestBet.paid || false,
+        paymentStatus: guestBet.paid ? 'paid' : 'pending',
+        totalPoints: guestBet.totalPoints || 0,
+        totalGoals: guestBet.totalGoals ?? null,
+        createdAt: guestBet.createdAt,
+        isGuestBet: true,
+        managedBy: hostUser?.name || 'Unknown',
+        managedByUserId: guestBet.sponsorUserId
+      });
     });
 
     // Sort: users with real bets first, then placeholders, then no records, then by name
@@ -915,6 +1082,46 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Settle week error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/schedule/settled-results
+// @desc    Delete the most recently settled week's results (after prize distribution)
+// @access  Admin
+router.delete('/schedule/settled-results', auth, adminAuth, async (req, res) => {
+  try {
+    // Find the most recently settled schedule
+    const schedule = await Schedule.findOne({ 
+      isSettled: true 
+    }).sort({ settledAt: -1 });
+
+    if (!schedule) {
+      return res.status(404).json({ message: 'No settled results found to delete' });
+    }
+
+    const weekNumber = schedule.weekNumber;
+    const year = schedule.year;
+
+    // Delete the schedule
+    await Schedule.deleteOne({ _id: schedule._id });
+
+    // Delete associated bets
+    await Bet.deleteMany({ weekNumber, year });
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('results:deleted', { weekNumber, year });
+    }
+
+    res.json({ 
+      message: 'Settled results deleted successfully',
+      deletedWeek: weekNumber,
+      deletedYear: year
+    });
+  } catch (error) {
+    console.error('Delete settled results error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

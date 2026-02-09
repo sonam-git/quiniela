@@ -16,7 +16,7 @@ const getWeekNumber = (date) => {
 };
 
 // @route   GET /api/schedule/current
-// @desc    Get current week's schedule
+// @desc    Get current week's schedule (or next week's if current is settled)
 // @access  Public
 router.get('/current', async (req, res) => {
   try {
@@ -25,6 +25,24 @@ router.get('/current', async (req, res) => {
     const year = now.getFullYear();
 
     let schedule = await Schedule.findOne({ weekNumber, year });
+
+    // If current week's schedule is settled, look for next week's schedule
+    // This allows betting to open for the next week immediately after settling
+    if (schedule && schedule.isSettled) {
+      const nextWeek = weekNumber + 1;
+      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
+      
+      const nextWeekSchedule = await Schedule.findOne({ 
+        weekNumber: actualNextWeek, 
+        year: nextYear 
+      });
+      
+      // If next week's schedule exists and isn't settled, use it
+      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
+        schedule = nextWeekSchedule;
+      }
+    }
 
     if (!schedule) {
       return res.status(404).json({ 
@@ -56,8 +74,8 @@ router.get('/current', async (req, res) => {
 
     res.json({
       schedule,
-      weekNumber,
-      year,
+      weekNumber: schedule.weekNumber,
+      year: schedule.year,
       isBettingLocked,
       hasStarted,
       lockoutTime,
@@ -65,6 +83,38 @@ router.get('/current', async (req, res) => {
     });
   } catch (error) {
     console.error('Get schedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/schedule/settled-results
+// @desc    Get the most recently settled week's results (for Results tab)
+// @access  Public
+router.get('/settled-results', async (req, res) => {
+  try {
+    // Find the most recently settled schedule
+    const schedule = await Schedule.findOne({ 
+      isSettled: true 
+    }).sort({ settledAt: -1 });
+
+    if (!schedule) {
+      return res.status(404).json({ 
+        message: 'No settled results found',
+        hasResults: false
+      });
+    }
+
+    res.json({
+      schedule,
+      weekNumber: schedule.weekNumber,
+      year: schedule.year,
+      jornada: schedule.jornada,
+      settledAt: schedule.settledAt,
+      actualTotalGoals: schedule.actualTotalGoals,
+      hasResults: true
+    });
+  } catch (error) {
+    console.error('Get settled results error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

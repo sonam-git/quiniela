@@ -71,5 +71,29 @@
     "title": "Apuestas Cerradas",
     "message": "El primer partido ha comenzado. Ya no puedes hacer o actualizar predicciones para esta semana.",
     "viewDashboard": "Ver Tablero"
+  },
+  "guest": {
+    "title": "Apuestas de Invitados",
+    "subtitle": "Envía predicciones para amigos o familia que no tienen cuenta",
+    "addGuest": "Agregar Invitado",
+    "guestName": "Nombre del Invitado",
+    "guestNamePlaceholder": "Ingresa el nombre del invitado",
+    "yourGuests": "Tus Participantes Invitados",
+    "noGuests": "Sin apuestas de invitados aún",
+    "noGuestsHint": "Puedes agregar apuestas en nombre de amigos o familia",
+    "editGuest": "Editar Apuesta de Invitado",
+    "deleteGuest": "Eliminar Apuesta de Invitado",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar esta apuesta de invitado?",
+    "managedBy": "Administrado por ti",
+    "success": {
+      "created": "Apuesta de invitado creada para {{name}}",
+      "updated": "Apuesta de invitado actualizada para {{name}}",
+      "deleted": "Apuesta de invitado eliminada"
+    },
+    "errors": {
+      "nameRequired": "Por favor ingresa el nombre del invitado",
+      "nameTooShort": "El nombre debe tener al menos 2 caracteres",
+      "alreadyExists": "Este invitado ya tiene una apuesta para esta semana"
+    }
   }
 }

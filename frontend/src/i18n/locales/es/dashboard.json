@@ -12,8 +12,42 @@
     "standingsShort": "Posic",
     "schedule": "Calendario",
     "scheduleShort": "Juegos",
-    "lastWeek": "Semana Pasada",
-    "lastWeekShort": "Ant"
+    "results": "Resultados",
+    "resultsShort": "Result"
+  },
+  "results": {
+    "title": "Resultados Jornada {{week}}",
+    "finalResults": "Resultados Finales",
+    "totalGoals": "Goles Totales",
+    "matchesPlayed": "Partidos",
+    "winner": "Ganador",
+    "winners": "Ganadores",
+    "prize": "Premio",
+    "prizeAmount": "${{amount}}",
+    "noResultsTitle": "Sin Resultados Disponibles",
+    "noResultsDescription": "Los resultados aparecerán aquí después de que el administrador liquide la semana actual. Vuelve después de que todos los partidos hayan terminado.",
+    "checkBackLater": "Esperando liquidación de la semana",
+    "settledOn": "Liquidado el {{date}}",
+    "downloadPDF": "Descargar PDF",
+    "deleteResults": "Eliminar Resultados",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar estos resultados? Esta acción no se puede deshacer.",
+    "deleteSuccess": "Resultados eliminados exitosamente",
+    "coChampions": "Co-Campeones",
+    "pointsLabel": "pts",
+    "goalDiff": "Dif Goles",
+    "predictedGoals": "Predicho",
+    "actualGoals": "Real",
+    "payment": "Pago",
+    "paid": "Pagado",
+    "unpaid": "No Pagado",
+    "correct": "Correcto",
+    "wrong": "Incorrecto",
+    "detailedReport": "Reporte Detallado",
+    "participantBreakdown": "Desglose por Participante",
+    "matchResults": "Resultados de Partidos",
+    "home": "Local",
+    "away": "Visitante",
+    "draw": "Empate"
   },
   "lastWeek": {
     "title": "Resultados Jornada {{week}}",
@@ -118,6 +152,7 @@
     "draw": "Empate (E)",
     "noPrediction": "Sin predicción",
     "predictionsHiddenUntilStart": "Predicciones ocultas hasta que comience el primer partido",
-    "pointsHiddenUntilStart": "Puntos ocultos hasta que comience el primer partido"
+    "pointsHiddenUntilStart": "Puntos ocultos hasta que comience el primer partido",
+    "guest": "Invitado"
   }
 }

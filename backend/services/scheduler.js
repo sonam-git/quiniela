@@ -11,6 +11,7 @@
 const cron = require('node-cron');
 const Schedule = require('../models/Schedule');
 const Bet = require('../models/Bet');
+const GuestBet = require('../models/GuestBet');
 const { getFixturesByRound, getCurrentRound, LEAGUES } = require('./apiFootball');
 
 // Liga MX Clausura 2026 Complete Schedule (Jornadas 5-17)
@@ -429,8 +430,14 @@ const createNextWeekSchedule = async () => {
 };
 
 // Initialize scheduler on server start
-const initScheduler = () => {
+const initScheduler = (io) => {
+  // Store io instance for emitting events
+  schedulerIo = io;
+  
   scheduleWeeklyTask();
+  
+  // Start auto-settlement checker (runs every 5 minutes)
+  startAutoSettlementChecker(io);
   
   // Also check if current week needs a schedule
   (async () => {
@@ -451,6 +458,200 @@ const initScheduler = () => {
   })();
 };
 
+// Store io instance for auto-settlement
+let schedulerIo = null;
+
+// Auto-settlement: Check every 5 minutes if any schedule needs to be auto-settled
+// Settlement triggers 30 minutes after the last match finishes
+const AUTO_SETTLE_DELAY_MINUTES = 30;
+
+const checkAutoSettlement = async (io) => {
+  try {
+    const now = new Date();
+    
+    // Find schedules that:
+    // 1. Are not settled
+    // 2. Have all matches completed
+    // 3. Last match ended more than 30 minutes ago
+    const schedules = await Schedule.find({ isSettled: false });
+    
+    for (const schedule of schedules) {
+      // Check if all matches are completed
+      const allCompleted = schedule.matches.every(m => m.isCompleted);
+      if (!allCompleted) continue;
+      
+      // Find the last match end time (approximate: startTime + 2 hours for a football match)
+      const lastMatchEndTime = schedule.matches.reduce((latest, match) => {
+        const matchEndTime = new Date(match.startTime.getTime() + 2 * 60 * 60 * 1000); // startTime + 2 hours
+        return matchEndTime > latest ? matchEndTime : latest;
+      }, new Date(0));
+      
+      // Check if 30 minutes have passed since last match ended
+      const timeSinceEnd = (now - lastMatchEndTime) / (1000 * 60); // in minutes
+      
+      if (timeSinceEnd >= AUTO_SETTLE_DELAY_MINUTES) {
+        console.log(`[Auto-Settle] ⏰ Auto-settling Week ${schedule.weekNumber}/${schedule.year} (${timeSinceEnd.toFixed(0)} minutes since last match)`);
+        await autoSettleSchedule(schedule, io);
+      }
+    }
+  } catch (error) {
+    console.error('[Auto-Settle] Error checking for auto-settlement:', error.message);
+  }
+};
+
+// Perform the actual settlement (same logic as admin settle)
+const autoSettleSchedule = async (schedule, io) => {
+  try {
+    // Calculate total goals
+    const actualTotalGoals = schedule.matches.reduce((sum, match) => {
+      return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+    }, 0);
+
+    schedule.actualTotalGoals = actualTotalGoals;
+
+    // Get all user bets for this week (exclude placeholders)
+    const userBets = await Bet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year, 
+      isPlaceholder: { $ne: true } 
+    });
+
+    // Calculate points and goal difference for each user bet
+    for (const bet of userBets) {
+      let totalPoints = 0;
+
+      for (const prediction of bet.predictions) {
+        const match = schedule.matches.id(prediction.matchId);
+        if (match && match.isCompleted && match.result === prediction.prediction) {
+          totalPoints += 1;
+        }
+      }
+
+      const goalDifference = Math.abs(bet.totalGoals - actualTotalGoals);
+
+      bet.totalPoints = totalPoints;
+      bet.goalDifference = goalDifference;
+      bet.isWinner = false;
+
+      await bet.save();
+    }
+
+    // Get all guest bets for this week
+    const guestBets = await GuestBet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year 
+    });
+
+    // Calculate points and goal difference for each guest bet
+    for (const guestBet of guestBets) {
+      let totalPoints = 0;
+
+      for (const prediction of guestBet.predictions) {
+        const match = schedule.matches.id(prediction.matchId);
+        if (match && match.isCompleted && match.result === prediction.prediction) {
+          totalPoints += 1;
+        }
+      }
+
+      const goalDifference = Math.abs(guestBet.totalGoals - actualTotalGoals);
+
+      guestBet.totalPoints = totalPoints;
+      guestBet.goalDifference = goalDifference;
+      guestBet.isWinner = false;
+
+      await guestBet.save();
+    }
+
+    // Combine all bets for winner determination
+    const allUserBets = await Bet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year, 
+      isPlaceholder: { $ne: true } 
+    });
+    const allGuestBets = await GuestBet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year 
+    });
+
+    const allBets = [
+      ...allUserBets.map(b => ({ bet: b, type: 'user' })),
+      ...allGuestBets.map(b => ({ bet: b, type: 'guest' }))
+    ];
+
+    // Sort combined bets
+    allBets.sort((a, b) => {
+      if (b.bet.totalPoints !== a.bet.totalPoints) {
+        return b.bet.totalPoints - a.bet.totalPoints;
+      }
+      return a.bet.goalDifference - b.bet.goalDifference;
+    });
+
+    // Determine winners
+    let winnersCount = 0;
+    if (allBets.length > 0) {
+      const topBet = allBets[0];
+      
+      for (const { bet } of allBets) {
+        if (bet.totalPoints === topBet.bet.totalPoints && 
+            bet.goalDifference === topBet.bet.goalDifference) {
+          bet.isWinner = true;
+          winnersCount++;
+          await bet.save();
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Mark schedule as settled (auto)
+    schedule.isSettled = true;
+    schedule.settledAt = new Date();
+    schedule.settledBy = null; // null indicates auto-settlement
+    schedule.autoSettled = true; // Flag for auto-settlement
+    await schedule.save();
+
+    // Emit real-time update
+    if (io) {
+      io.emit('week:settled', { 
+        weekNumber: schedule.weekNumber, 
+        year: schedule.year, 
+        actualTotalGoals,
+        winnersCount,
+        autoSettled: true
+      });
+    }
+
+    console.log(`[Auto-Settle] ✅ Successfully auto-settled Week ${schedule.weekNumber}/${schedule.year}`);
+    console.log(`[Auto-Settle] 🏆 Winners: ${winnersCount}, Total Goals: ${actualTotalGoals}`);
+  } catch (error) {
+    console.error(`[Auto-Settle] ❌ Error auto-settling Week ${schedule.weekNumber}/${schedule.year}:`, error.message);
+  }
+};
+
+// Start the auto-settlement checker interval
+let autoSettleInterval = null;
+
+const startAutoSettlementChecker = (io) => {
+  // Check every 5 minutes
+  const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+  
+  autoSettleInterval = setInterval(() => {
+    checkAutoSettlement(io);
+  }, CHECK_INTERVAL_MS);
+  
+  console.log('[Scheduler] ⏰ Auto-settlement checker started (checks every 5 minutes, settles 30 min after last match)');
+  
+  // Also run immediately on startup
+  checkAutoSettlement(io);
+};
+
+const stopAutoSettlementChecker = () => {
+  if (autoSettleInterval) {
+    clearInterval(autoSettleInterval);
+    autoSettleInterval = null;
+  }
+};
+
 module.exports = {
   initScheduler,
   createNextWeekSchedule,
@@ -459,5 +660,7 @@ module.exports = {
   cleanupOldData,
   getWeekNumber,
   getUpcomingJornada,
+  checkAutoSettlement,
+  stopAutoSettlementChecker,
   LIGA_MX_CLAUSURA_2026
 };

@@ -1,7 +1,27 @@
 import axios from 'axios'
 
-// Use environment variable for API URL, fallback to /api for local development
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+// Backend URLs for different environments
+const PRODUCTION_API_URL = 'https://quiniela-api-o15f.onrender.com/api'
+const DEV_API_URL = '/api'
+
+// Use environment variable for API URL, with proper fallbacks
+const getApiUrl = () => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // In development, use the Vite proxy
+  if (import.meta.env.DEV) {
+    return DEV_API_URL
+  }
+  
+  // In production (including Android/iOS builds), use the production backend
+  return PRODUCTION_API_URL
+}
+
+const API_URL = getApiUrl()
+console.log('🌐 API URL:', API_URL)
 
 const api = axios.create({
   baseURL: API_URL,

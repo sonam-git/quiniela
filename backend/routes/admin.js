@@ -10,6 +10,85 @@ const Settings = require('../models/Settings');
 
 const router = express.Router();
 
+// Helper function to calculate bets with live points for real-time updates
+const calculateBetsWithLivePoints = async (schedule) => {
+  if (!schedule) return [];
+  
+  // Fetch all bets for this week
+  const userBets = await Bet.find({ 
+    weekNumber: schedule.weekNumber, 
+    year: schedule.year,
+    isGuestBet: { $ne: true }
+  }).populate('userId', 'name email');
+  
+  const guestBets = await GuestBet.find({ 
+    weekNumber: schedule.weekNumber, 
+    year: schedule.year 
+  }).populate('createdBy', 'name');
+  
+  // Transform guest bets to match user bet format
+  const transformedGuestBets = guestBets.map(gb => ({
+    _id: gb._id,
+    isGuestBet: true,
+    participantName: gb.participantName,
+    userId: { _id: gb.createdBy?._id, name: gb.createdBy?.name },
+    weekNumber: gb.weekNumber,
+    year: gb.year,
+    predictions: gb.predictions,
+    totalGoals: gb.totalGoals,
+    totalPoints: gb.totalPoints,
+    goalDifference: gb.goalDifference,
+    paid: gb.paid,
+    createdAt: gb.createdAt,
+    updatedAt: gb.updatedAt
+  }));
+  
+  // Combine all bets
+  let bets = [...userBets.map(b => b.toObject()), ...transformedGuestBets];
+  
+  // Calculate actual total goals from completed matches
+  const actualTotalGoals = schedule.matches.reduce((sum, match) => {
+    if (match.isCompleted) {
+      return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
+    }
+    return sum;
+  }, 0);
+  
+  // Calculate live points for each bet
+  for (const bet of bets) {
+    let livePoints = 0;
+    
+    for (const prediction of bet.predictions) {
+      const match = schedule.matches.id(prediction.matchId);
+      if (match && match.isCompleted && match.result === prediction.prediction) {
+        livePoints += 1;
+      }
+    }
+    
+    // Calculate goal difference (only meaningful when all matches complete)
+    const allCompleted = schedule.matches.every(m => m.isCompleted);
+    const goalDifference = allCompleted 
+      ? Math.abs(bet.totalGoals - actualTotalGoals)
+      : null;
+    
+    bet.totalPoints = livePoints;
+    bet.goalDifference = goalDifference;
+  }
+  
+  // Sort by points (desc), then by goal difference (asc - closest wins)
+  bets.sort((a, b) => {
+    if (b.totalPoints !== a.totalPoints) {
+      return b.totalPoints - a.totalPoints;
+    }
+    if (a.goalDifference === null && b.goalDifference === null) return 0;
+    if (a.goalDifference === null) return 1;
+    if (b.goalDifference === null) return -1;
+    return a.goalDifference - b.goalDifference;
+  });
+  
+  return bets;
+};
+
 // Load codes from environment variables with fallbacks
 let SIGNUP_CODE = process.env.SIGNUP_CODE || 'QL2026';
 let ADMIN_CODE = process.env.ADMIN_CODE || 'QLADMIN2026';
@@ -885,7 +964,18 @@ router.patch('/schedule/match/:matchId', auth, adminAuth, async (req, res) => {
 
     await schedule.save();
 
-    // Emit real-time update for match score change with full match data
+    // Calculate bets with updated live points for real-time updates
+    const updatedBets = await calculateBetsWithLivePoints(schedule);
+    
+    // Calculate actual total goals
+    const actualTotalGoals = schedule.matches.reduce((sum, m) => {
+      if (m.isCompleted) {
+        return sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0);
+      }
+      return sum;
+    }, 0);
+
+    // Emit real-time update for match score change with full match data AND updated bets
     const io = req.app.get('io');
     if (io) {
       io.emit('results:update', { 
@@ -898,7 +988,10 @@ router.patch('/schedule/match/:matchId', auth, adminAuth, async (req, res) => {
         scoreTeamB: match.scoreTeamB,
         isCompleted: match.isCompleted,
         result: match.result,
-        match: match.toObject()
+        match: match.toObject(),
+        // Include updated bets with recalculated points
+        bets: updatedBets,
+        actualTotalGoals
       });
     }
 
@@ -938,7 +1031,18 @@ router.patch('/schedule/match/:matchId/reset', auth, adminAuth, async (req, res)
 
     await schedule.save();
 
-    // Emit real-time update for match reset with full match data
+    // Calculate bets with updated live points for real-time updates
+    const updatedBets = await calculateBetsWithLivePoints(schedule);
+    
+    // Calculate actual total goals
+    const actualTotalGoals = schedule.matches.reduce((sum, m) => {
+      if (m.isCompleted) {
+        return sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0);
+      }
+      return sum;
+    }, 0);
+
+    // Emit real-time update for match reset with full match data AND updated bets
     const io = req.app.get('io');
     if (io) {
       io.emit('results:update', { 
@@ -951,7 +1055,10 @@ router.patch('/schedule/match/:matchId/reset', auth, adminAuth, async (req, res)
         scoreTeamB: null,
         isCompleted: false,
         result: null,
-        match: match.toObject()
+        match: match.toObject(),
+        // Include updated bets with recalculated points
+        bets: updatedBets,
+        actualTotalGoals
       });
     }
 

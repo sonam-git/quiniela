@@ -549,8 +549,12 @@ export default function Profile() {
 
   // Targeted real-time update handlers - only update specific state without full reload
   const handleResultsUpdate = useCallback((data) => {
-    console.log('📊 Results update received:', data)
-    // Update only the schedule/matches state with new scores
+    console.log('📊 Profile: Results update received:', data)
+    
+    // Check if this update is for the current week
+    const isCurrentWeek = data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year
+    
+    // Update the schedule/matches state with new scores
     if (data?.schedule) {
       setSchedule(prev => {
         if (!prev) return data.schedule
@@ -564,22 +568,64 @@ export default function Profile() {
         }
       })
       toast.success('Match scores updated', { id: 'results-update', duration: 2000 })
-    } else if (data?.matchId) {
-      // Single match update
+    } else if (data?.matchId && isCurrentWeek) {
+      // Single match update - update schedule
       setSchedule(prev => {
         if (!prev) return prev
         return {
           ...prev,
           matches: prev.matches.map(match => 
             match._id === data.matchId
-              ? { ...match, scoreTeamA: data.scoreTeamA, scoreTeamB: data.scoreTeamB, isCompleted: data.isCompleted ?? match.isCompleted }
+              ? { 
+                  ...match, 
+                  scoreTeamA: data.scoreTeamA, 
+                  scoreTeamB: data.scoreTeamB, 
+                  isCompleted: data.isCompleted ?? match.isCompleted,
+                  result: data.result ?? match.result
+                }
               : match
           )
         }
       })
-      toast.success('Match score updated', { id: 'match-update', duration: 2000 })
+      
+      // Update user's own bet with recalculated points if provided
+      if (data?.bets && Array.isArray(data.bets)) {
+        console.log('📊 Profile: Updating bets with recalculated points')
+        
+        // Find and update user's own bet
+        const updatedUserBet = data.bets.find(b => 
+          !b.isGuestBet && (b.userId?._id === user?._id || b.userId === user?._id)
+        )
+        if (updatedUserBet && myBet) {
+          setMyBet(prev => ({
+            ...prev,
+            totalPoints: updatedUserBet.totalPoints,
+            goalDifference: updatedUserBet.goalDifference
+          }))
+        }
+        
+        // Update guest bets with recalculated points
+        const updatedGuestBets = data.bets.filter(b => b.isGuestBet)
+        if (updatedGuestBets.length > 0) {
+          setGuestBets(prev => prev.map(gb => {
+            const updated = updatedGuestBets.find(u => u._id === gb._id)
+            if (updated) {
+              return {
+                ...gb,
+                totalPoints: updated.totalPoints,
+                goalDifference: updated.goalDifference
+              }
+            }
+            return gb
+          }))
+        }
+      }
+      
+      // Show toast for score update
+      const actionText = data.action === 'reset' ? 'Match score reset' : 'Match score updated'
+      toast.success(actionText, { id: 'match-update', duration: 2000 })
     }
-  }, [])
+  }, [weekInfo.weekNumber, weekInfo.year, user?._id, myBet])
 
   const handlePaymentsUpdate = useCallback((data) => {
     console.log('💳 Payment update received:', data)

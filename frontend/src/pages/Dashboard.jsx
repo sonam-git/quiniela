@@ -226,7 +226,11 @@ export default function Dashboard() {
   // Targeted real-time update handlers to minimize re-renders
   const handleResultsUpdate = useCallback((data) => {
     console.log('📊 Dashboard: Results update received:', data)
-    // Update only schedule matches with new scores
+    
+    // Check if this update is for the current week
+    const isCurrentWeek = data?.weekNumber === weekInfo.weekNumber && data?.year === weekInfo.year
+    
+    // Update schedule matches with new scores
     if (data?.schedule) {
       setSchedule(prev => {
         if (!prev) return data.schedule
@@ -239,21 +243,37 @@ export default function Dashboard() {
         }
       })
       toast.success('Match scores updated', { id: 'results-update', duration: 2000 })
-    } else if (data?.matchId) {
-      // Single match update
+    } else if (data?.matchId && isCurrentWeek) {
+      // Single match update - update schedule
       setSchedule(prev => {
         if (!prev) return prev
         return {
           ...prev,
           matches: prev.matches.map(match => 
             match._id === data.matchId
-              ? { ...match, scoreTeamA: data.scoreTeamA, scoreTeamB: data.scoreTeamB, isCompleted: data.isCompleted ?? match.isCompleted }
+              ? { 
+                  ...match, 
+                  scoreTeamA: data.scoreTeamA, 
+                  scoreTeamB: data.scoreTeamB, 
+                  isCompleted: data.isCompleted ?? match.isCompleted,
+                  result: data.result ?? match.result
+                }
               : match
           )
         }
       })
+      
+      // Update bets with recalculated points if provided
+      if (data?.bets && Array.isArray(data.bets)) {
+        console.log('📊 Dashboard: Updating bets with recalculated points')
+        setBets(data.bets)
+      }
+      
+      // Show toast for score update
+      const actionText = data.action === 'reset' ? 'Match score reset' : 'Match score updated'
+      toast.success(actionText, { id: 'match-update', duration: 2000 })
     }
-  }, [])
+  }, [weekInfo.weekNumber, weekInfo.year])
 
   const handlePaymentsUpdate = useCallback((data) => {
     console.log('💳 Dashboard: Payment update received:', data)
@@ -550,10 +570,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData()
-    // Fallback polling every 60 seconds (in case socket disconnects)
-    const interval = setInterval(fetchData, 60000)
+    // Fallback polling every 2 minutes only when socket is disconnected
+    // With real-time updates working, we reduce polling frequency
+    const interval = setInterval(() => {
+      if (!isConnected) {
+        console.log('📊 Dashboard: Socket disconnected, fetching data via polling')
+        fetchData()
+      }
+    }, 120000) // 2 minutes fallback
     return () => clearInterval(interval)
-  }, [fetchData])
+  }, [fetchData, isConnected])
 
   // Auto-switch to results tab if there's no current schedule but there are settled results
   useEffect(() => {

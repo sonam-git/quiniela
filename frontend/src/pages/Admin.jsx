@@ -321,7 +321,7 @@ export default function Admin() {
     }
   }, [isAdmin])
 
-  // Handle results updates - only update specific match scores
+  // Handle results updates - only update specific match scores and bets
   const handleResultsUpdate = useCallback((data) => {
     if (!isAdmin) return
     
@@ -367,6 +367,12 @@ export default function Admin() {
         }
         return sched
       }))
+      
+      // Update bets with recalculated points if provided
+      if (data?.bets && Array.isArray(data.bets)) {
+        console.log('📊 Admin: Updating bets with recalculated points')
+        setBets(data.bets)
+      }
     }
   }, [isAdmin])
 

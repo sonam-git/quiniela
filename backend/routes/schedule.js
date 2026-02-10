@@ -98,9 +98,11 @@ router.get('/settled-results', async (req, res) => {
     }).sort({ settledAt: -1 });
 
     if (!schedule) {
-      return res.status(404).json({ 
+      // Return 200 with hasResults: false instead of 404
+      return res.json({ 
         message: 'No settled results found',
-        hasResults: false
+        hasResults: false,
+        schedule: null
       });
     }
 

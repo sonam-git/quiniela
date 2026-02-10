@@ -1008,6 +1008,49 @@ export default function Admin() {
     })
   }
 
+  // Reset all match scores at once
+  const handleResetAllScores = async () => {
+    const completedMatches = schedule?.matches?.filter(m => m.isCompleted) || []
+    
+    if (completedMatches.length === 0) {
+      toast.error('No scores to reset')
+      return
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset All Scores',
+      message: `Are you sure you want to reset all ${completedMatches.length} match scores? All matches will be marked as not completed.`,
+      confirmText: 'Reset All',
+      confirmStyle: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isLoading: true }))
+        try {
+          let lastResponse = null
+          
+          // Reset all completed matches one by one
+          for (const match of completedMatches) {
+            lastResponse = await api.patch(`/admin/schedule/match/${match._id}/reset`)
+          }
+          
+          // Use the schedule from the last reset response
+          if (lastResponse?.data?.schedule) {
+            setSchedule(lastResponse.data.schedule)
+            setAllSchedules(prev => prev.map(s => 
+              s._id === lastResponse.data.schedule._id ? lastResponse.data.schedule : s
+            ))
+          }
+          
+          toast.success(`Reset ${completedMatches.length} match scores successfully`)
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Failed to reset all scores')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
+        }
+      }
+    })
+  }
+
   const handleSettleWeek = async () => {
     const completedCount = schedule?.matches?.filter(m => m.isCompleted).length || 0
     const totalMatches = schedule?.matches?.length || 9
@@ -1899,6 +1942,24 @@ export default function Admin() {
                             </svg>
                           )}
                           <span className="hidden sm:inline">Results</span>
+                        </button>
+                      )}
+                      
+                      {/* Reset All Scores Button - only show if there are completed matches and week is not settled */}
+                      {schedule?.matches?.some(m => m.isCompleted) && !schedule?.isSettled && (
+                        <button
+                          onClick={handleResetAllScores}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            isDark
+                              ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-800/50'
+                              : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                          }`}
+                          title="Reset All Match Scores"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span className="hidden sm:inline">Reset All</span>
                         </button>
                       )}
                       

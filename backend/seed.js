@@ -94,8 +94,8 @@ const LIGA_MX_CLAUSURA_2026 = {
       { home: 'FC Juárez', away: 'Necaxa', date: '2026-02-14', time: '17:00' },
       { home: 'Monterrey', away: 'Club León', date: '2026-02-14', time: '17:00' },
       { home: 'Guadalajara Chivas', away: 'Club América', date: '2026-02-14', time: '19:07' },
-      { home: 'Santos Laguna', away: 'Mazatlán FC', date: '2026-02-15', time: '15:00' },
-      { home: 'Cruz Azul', away: 'Tigres UANL', date: '2026-02-15', time: '17:00' }
+      { home: 'Cruz Azul', away: 'Tigres UANL', date: '2026-02-15', time: '14:30' },
+      { home: 'Santos Laguna', away: 'Mazatlán FC', date: '2026-02-15', time: '15:00' }
     ]
   },
   // Jornada 7 - February 20-22, 2026

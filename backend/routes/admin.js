@@ -14,79 +14,86 @@ const router = express.Router();
 const calculateBetsWithLivePoints = async (schedule) => {
   if (!schedule) return [];
   
-  // Fetch all bets for this week
-  const userBets = await Bet.find({ 
-    weekNumber: schedule.weekNumber, 
-    year: schedule.year,
-    isGuestBet: { $ne: true }
-  }).populate('userId', 'name email');
-  
-  const guestBets = await GuestBet.find({ 
-    weekNumber: schedule.weekNumber, 
-    year: schedule.year 
-  }).populate('createdBy', 'name');
-  
-  // Transform guest bets to match user bet format
-  const transformedGuestBets = guestBets.map(gb => ({
-    _id: gb._id,
-    isGuestBet: true,
-    participantName: gb.participantName,
-    userId: { _id: gb.createdBy?._id, name: gb.createdBy?.name },
-    weekNumber: gb.weekNumber,
-    year: gb.year,
-    predictions: gb.predictions,
-    totalGoals: gb.totalGoals,
-    totalPoints: gb.totalPoints,
-    goalDifference: gb.goalDifference,
-    paid: gb.paid,
-    createdAt: gb.createdAt,
-    updatedAt: gb.updatedAt
-  }));
-  
-  // Combine all bets
-  let bets = [...userBets.map(b => b.toObject()), ...transformedGuestBets];
-  
-  // Calculate actual total goals from completed matches
-  const actualTotalGoals = schedule.matches.reduce((sum, match) => {
-    if (match.isCompleted) {
-      return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
-    }
-    return sum;
-  }, 0);
-  
-  // Calculate live points for each bet
-  for (const bet of bets) {
-    let livePoints = 0;
+  try {
+    // Fetch all bets for this week
+    const userBets = await Bet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year,
+      isGuestBet: { $ne: true }
+    }).populate('userId', 'name email');
     
-    for (const prediction of bet.predictions) {
-      const match = schedule.matches.id(prediction.matchId);
-      if (match && match.isCompleted && match.result === prediction.prediction) {
-        livePoints += 1;
+    const guestBets = await GuestBet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year 
+    }).populate('sponsorUserId', 'name');
+    
+    // Transform guest bets to match user bet format
+    const transformedGuestBets = guestBets.map(gb => ({
+      _id: gb._id,
+      isGuestBet: true,
+      participantName: gb.participantName,
+      userId: { _id: gb.sponsorUserId?._id, name: gb.sponsorUserId?.name },
+      weekNumber: gb.weekNumber,
+      year: gb.year,
+      predictions: gb.predictions,
+      totalGoals: gb.totalGoals,
+      totalPoints: gb.totalPoints,
+      goalDifference: gb.goalDifference,
+      paid: gb.paid,
+      createdAt: gb.createdAt,
+      updatedAt: gb.updatedAt
+    }));
+    
+    // Combine all bets
+    let bets = [...userBets.map(b => b.toObject()), ...transformedGuestBets];
+    
+    // Calculate actual total goals from completed matches
+    const actualTotalGoals = schedule.matches.reduce((sum, match) => {
+      if (match.isCompleted) {
+        return sum + (match.scoreTeamA || 0) + (match.scoreTeamB || 0);
       }
+      return sum;
+    }, 0);
+    
+    // Calculate live points for each bet
+    for (const bet of bets) {
+      let livePoints = 0;
+      
+      for (const prediction of bet.predictions) {
+        // Use find instead of .id() for better compatibility
+        const matchIdStr = prediction.matchId?.toString();
+        const match = schedule.matches.find(m => m._id?.toString() === matchIdStr);
+        if (match && match.isCompleted && match.result === prediction.prediction) {
+          livePoints += 1;
+        }
+      }
+      
+      // Calculate goal difference (only meaningful when all matches complete)
+      const allCompleted = schedule.matches.every(m => m.isCompleted);
+      const goalDifference = allCompleted 
+        ? Math.abs(bet.totalGoals - actualTotalGoals)
+        : null;
+      
+      bet.totalPoints = livePoints;
+      bet.goalDifference = goalDifference;
     }
     
-    // Calculate goal difference (only meaningful when all matches complete)
-    const allCompleted = schedule.matches.every(m => m.isCompleted);
-    const goalDifference = allCompleted 
-      ? Math.abs(bet.totalGoals - actualTotalGoals)
-      : null;
+    // Sort by points (desc), then by goal difference (asc - closest wins)
+    bets.sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      if (a.goalDifference === null && b.goalDifference === null) return 0;
+      if (a.goalDifference === null) return 1;
+      if (b.goalDifference === null) return -1;
+      return a.goalDifference - b.goalDifference;
+    });
     
-    bet.totalPoints = livePoints;
-    bet.goalDifference = goalDifference;
+    return bets;
+  } catch (error) {
+    console.error('Error calculating bets with live points:', error);
+    return [];
   }
-  
-  // Sort by points (desc), then by goal difference (asc - closest wins)
-  bets.sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) {
-      return b.totalPoints - a.totalPoints;
-    }
-    if (a.goalDifference === null && b.goalDifference === null) return 0;
-    if (a.goalDifference === null) return 1;
-    if (b.goalDifference === null) return -1;
-    return a.goalDifference - b.goalDifference;
-  });
-  
-  return bets;
 };
 
 // Load codes from environment variables with fallbacks

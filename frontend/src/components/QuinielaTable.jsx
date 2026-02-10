@@ -1055,14 +1055,14 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                   {canSeePredictions(bet) ? (
                     <>
                       {/* Stats Row */}
-                      <div className="grid grid-cols-4 gap-2 pt-4">
-                        <div className={`p-3 rounded-lg text-center ${
+                      <div className="grid grid-cols-4 gap-1.5 pt-4">
+                        <div className={`p-2 rounded-lg text-center overflow-hidden ${
                           hasCompletedMatches && bet.liveGoalDifference === 0
                             ? isDark ? 'bg-emerald-500/15' : 'bg-emerald-50'
                             : isDark ? 'bg-dark-700/50' : 'bg-gray-50'
                         }`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{bet.totalGoals}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('table.goals')}</p>
+                          <p className={`text-[9px] font-medium uppercase tracking-tight truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('table.goals')}</p>
                           {hasCompletedMatches && (
                             <p className={`text-xs mt-0.5 ${
                               bet.goalDirection === 'exact' 
@@ -1079,17 +1079,17 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
                             </p>
                           )}
                         </div>
-                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                        <div className={`p-2 rounded-lg text-center overflow-hidden ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{correctCount}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>{t('table.correct')}</p>
+                          <p className={`text-[9px] font-medium uppercase tracking-tight truncate ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>{t('table.correct')}</p>
                         </div>
-                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
+                        <div className={`p-2 rounded-lg text-center overflow-hidden ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{wrongCount}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-red-400/60' : 'text-red-600/60'}`}>{t('table.wrong')}</p>
+                          <p className={`text-[9px] font-medium uppercase tracking-tight truncate ${isDark ? 'text-red-400/60' : 'text-red-600/60'}`}>{t('table.wrong')}</p>
                         </div>
-                        <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
+                        <div className={`p-2 rounded-lg text-center overflow-hidden ${isDark ? 'bg-dark-700/50' : 'bg-gray-50'}`}>
                           <p className={`text-lg font-bold ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>{pendingCount}</p>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('status.pending')}</p>
+                          <p className={`text-[9px] font-medium uppercase tracking-tight truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('status.pending')}</p>
                         </div>
                       </div>
 

@@ -483,7 +483,7 @@ export default function Dashboard() {
       })
       .catch(console.error)
     
-    // Fetch the new current schedule (next jornada) for the Standings tab
+    // Fetch the new current schedule (next jornada) for the Games/Standings tab
     Promise.all([
       api.get('/schedule/current'),
       api.get('/bets/current')
@@ -502,16 +502,43 @@ export default function Dashboard() {
         lockoutTime: scheduleRes.data.lockoutTime
       })
       setError(null)
+      
+      // Show toast with next week info
+      if (data.nextWeekSchedule) {
+        toast.success(
+          <div>
+            <p className="font-semibold">🏆 Week {data.weekNumber} Settled!</p>
+            <p className="text-sm">Total Goals: {data.actualTotalGoals} • Winners: {data.winnersCount}</p>
+            <p className="text-xs mt-1 opacity-75">Next week's games now available</p>
+          </div>,
+          { id: 'settled', duration: 5000 }
+        )
+      } else {
+        toast.success(
+          <div>
+            <p className="font-semibold">🏆 Week {data.weekNumber} Settled!</p>
+            <p className="text-sm">Total Goals: {data.actualTotalGoals} • Winners: {data.winnersCount}</p>
+            <p className="text-xs mt-1">Check Results tab for final standings</p>
+          </div>,
+          { id: 'settled', duration: 5000 }
+        )
+      }
     }).catch(error => {
-      // If no new schedule exists yet, that's OK - admin will create it
+      // If no new schedule exists yet, that's OK
       if (error.response?.status === 404) {
         setSchedule(null)
         setBets([])
         setIsSettled(false)
+        toast.success(
+          <div>
+            <p className="font-semibold">🏆 Week {data.weekNumber} Settled!</p>
+            <p className="text-sm">Total Goals: {data.actualTotalGoals} • Winners: {data.winnersCount}</p>
+            <p className="text-xs mt-1">Check Results tab for final standings</p>
+          </div>,
+          { id: 'settled', duration: 5000 }
+        )
       }
     })
-    
-    toast.success('Week has been settled! Check Results tab for final standings.', { id: 'settled', duration: 4000 })
   }, [])
 
   // Handle results deleted event

@@ -7,6 +7,7 @@ const GuestBet = require('../models/GuestBet');
 const Schedule = require('../models/Schedule');
 const Announcement = require('../models/Announcement');
 const Settings = require('../models/Settings');
+const { createNextWeekSchedule } = require('../services/scheduler');
 
 const router = express.Router();
 
@@ -1089,17 +1090,28 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
     const weekNumber = getWeekNumber(now);
     const year = now.getFullYear();
 
-    const schedule = await Schedule.findOne({ weekNumber, year });
+    // Find the current unsettled schedule (could be current week or a previous week that wasn't settled)
+    let schedule = await Schedule.findOne({ weekNumber, year });
+    
+    // If no schedule for current week, find any unsettled schedule
+    if (!schedule) {
+      schedule = await Schedule.findOne({ isSettled: false }).sort({ year: -1, weekNumber: -1 });
+    }
     
     if (!schedule) {
-      return res.status(404).json({ message: 'No schedule found for this week' });
+      return res.status(404).json({ message: 'No schedule found to settle' });
+    }
+
+    // Check if already settled
+    if (schedule.isSettled) {
+      return res.status(400).json({ message: 'This week is already settled' });
     }
 
     // Check if all matches are completed
     const allCompleted = schedule.matches.every(m => m.isCompleted);
     if (!allCompleted) {
       return res.status(400).json({ 
-        message: 'Cannot settle week - not all matches are completed',
+        message: 'Cannot settle week - not all matches are completed. Please enter all match scores first.',
         completedCount: schedule.matches.filter(m => m.isCompleted).length,
         totalMatches: schedule.matches.length
       });
@@ -1112,14 +1124,26 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
 
     schedule.actualTotalGoals = actualTotalGoals;
 
-    // Get all bets for this week (exclude placeholders)
-    const bets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } });
+    const settledWeekNumber = schedule.weekNumber;
+    const settledYear = schedule.year;
 
-    // Calculate points and goal difference for each bet
-    for (const bet of bets) {
+    // Get all user bets for this week (exclude placeholders)
+    const userBets = await Bet.find({ 
+      weekNumber: settledWeekNumber, 
+      year: settledYear, 
+      isPlaceholder: { $ne: true } 
+    });
+
+    // Get all guest bets for this week
+    const guestBets = await GuestBet.find({ 
+      weekNumber: settledWeekNumber, 
+      year: settledYear 
+    });
+
+    // Calculate points and goal difference for each user bet
+    for (const bet of userBets) {
       let totalPoints = 0;
 
-      // Calculate points for correct predictions
       for (const prediction of bet.predictions) {
         const match = schedule.matches.id(prediction.matchId);
         if (match && match.isCompleted && match.result === prediction.prediction) {
@@ -1127,32 +1151,71 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
         }
       }
 
-      // Calculate goal difference (how close their prediction was)
       const goalDifference = Math.abs(bet.totalGoals - actualTotalGoals);
 
       bet.totalPoints = totalPoints;
       bet.goalDifference = goalDifference;
-      bet.isWinner = false; // Reset, will be set after sorting
+      bet.isWinner = false;
 
       await bet.save();
     }
 
-    // Sort bets: by points (desc), then by goal difference (asc - closest wins)
-    const sortedBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
-      .sort({ totalPoints: -1, goalDifference: 1 });
+    // Calculate points and goal difference for each guest bet
+    for (const guestBet of guestBets) {
+      let totalPoints = 0;
+
+      for (const prediction of guestBet.predictions) {
+        const match = schedule.matches.id(prediction.matchId);
+        if (match && match.isCompleted && match.result === prediction.prediction) {
+          totalPoints += 1;
+        }
+      }
+
+      const goalDifference = Math.abs(guestBet.totalGoals - actualTotalGoals);
+
+      guestBet.totalPoints = totalPoints;
+      guestBet.goalDifference = goalDifference;
+      guestBet.isWinner = false;
+
+      await guestBet.save();
+    }
+
+    // Combine all bets for winner determination
+    const allUserBets = await Bet.find({ 
+      weekNumber: settledWeekNumber, 
+      year: settledYear, 
+      isPlaceholder: { $ne: true } 
+    });
+    const allGuestBets = await GuestBet.find({ 
+      weekNumber: settledWeekNumber, 
+      year: settledYear 
+    });
+
+    const allBets = [
+      ...allUserBets.map(b => ({ bet: b, type: 'user' })),
+      ...allGuestBets.map(b => ({ bet: b, type: 'guest' }))
+    ];
+
+    // Sort combined bets: by points (desc), then by goal difference (asc - closest wins)
+    allBets.sort((a, b) => {
+      if (b.bet.totalPoints !== a.bet.totalPoints) {
+        return b.bet.totalPoints - a.bet.totalPoints;
+      }
+      return a.bet.goalDifference - b.bet.goalDifference;
+    });
 
     // Determine winners with tie-breaker logic
-    if (sortedBets.length > 0) {
-      const topBet = sortedBets[0];
+    let winnersCount = 0;
+    if (allBets.length > 0) {
+      const topBet = allBets[0];
       
-      // Mark all bets with the same points AND goal difference as winners
-      for (const bet of sortedBets) {
-        if (bet.totalPoints === topBet.totalPoints && 
-            bet.goalDifference === topBet.goalDifference) {
+      for (const { bet } of allBets) {
+        if (bet.totalPoints === topBet.bet.totalPoints && 
+            bet.goalDifference === topBet.bet.goalDifference) {
           bet.isWinner = true;
+          winnersCount++;
           await bet.save();
         } else {
-          // Once we find someone with different stats, stop
           break;
         }
       }
@@ -1162,37 +1225,104 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
     schedule.isSettled = true;
     schedule.settledBy = req.user._id;
     schedule.settledAt = new Date();
+    schedule.autoSettled = false; // Manually settled by admin
     await schedule.save();
 
-    // Emit real-time update for week settled
+    // Get io instance for real-time updates
     const io = req.app.get('io');
+
+    // Try to create next week's schedule automatically
+    let nextWeekSchedule = null;
+    let nextWeekMessage = null;
+    try {
+      const result = await createNextWeekSchedule(io);
+      if (result.success) {
+        nextWeekSchedule = result.schedule;
+        nextWeekMessage = result.message;
+        console.log(`[Admin Settle] ✅ ${nextWeekMessage}`);
+      } else {
+        nextWeekMessage = result.message;
+        console.log(`[Admin Settle] ℹ️ ${nextWeekMessage}`);
+      }
+    } catch (scheduleError) {
+      console.error('[Admin Settle] Error creating next week schedule:', scheduleError.message);
+      nextWeekMessage = 'Could not create next week schedule automatically';
+    }
+
+    // Emit real-time update for week settled
     if (io) {
       io.emit('week:settled', { 
-        weekNumber, 
-        year, 
+        weekNumber: settledWeekNumber, 
+        year: settledYear, 
         actualTotalGoals,
-        winnersCount: sortedBets.filter(b => b.isWinner).length
+        winnersCount,
+        nextWeekSchedule: nextWeekSchedule ? {
+          weekNumber: nextWeekSchedule.weekNumber,
+          year: nextWeekSchedule.year,
+          jornada: nextWeekSchedule.jornada
+        } : null
       });
     }
 
     // Get final results with user info
-    const finalBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true } })
+    const finalUserBets = await Bet.find({ 
+      weekNumber: settledWeekNumber, 
+      year: settledYear, 
+      isPlaceholder: { $ne: true } 
+    })
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });
+
+    const finalGuestBets = await GuestBet.find({ 
+      weekNumber: settledWeekNumber, 
+      year: settledYear 
+    })
+      .populate('sponsorUserId', 'name email')
+      .sort({ totalPoints: -1, goalDifference: 1 });
+
+    // Transform guest bets for response
+    const transformedGuestBets = finalGuestBets.map(gb => ({
+      _id: gb._id,
+      isGuestBet: true,
+      participantName: gb.participantName,
+      userId: { _id: gb.sponsorUserId?._id, name: gb.participantName },
+      sponsorUserId: gb.sponsorUserId,
+      weekNumber: gb.weekNumber,
+      year: gb.year,
+      totalGoals: gb.totalGoals,
+      predictions: gb.predictions,
+      totalPoints: gb.totalPoints,
+      goalDifference: gb.goalDifference,
+      paid: gb.paid,
+      isWinner: gb.isWinner
+    }));
+
+    // Combine and sort all bets
+    const finalBets = [...finalUserBets, ...transformedGuestBets].sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+      return a.goalDifference - b.goalDifference;
+    });
 
     const winners = finalBets.filter(b => b.isWinner);
 
     res.json({ 
-      message: 'Week settled successfully',
+      message: 'Week verified and settled successfully',
       schedule,
       actualTotalGoals,
       winners: winners.map(w => ({
-        name: w.userId?.name,
+        name: w.isGuestBet ? w.participantName : w.userId?.name,
         points: w.totalPoints,
         goalDifference: w.goalDifference,
-        predictedGoals: w.totalGoals
+        predictedGoals: w.totalGoals,
+        isGuestBet: w.isGuestBet || false
       })),
-      bets: finalBets
+      bets: finalBets,
+      nextWeekSchedule: nextWeekSchedule ? {
+        weekNumber: nextWeekSchedule.weekNumber,
+        year: nextWeekSchedule.year,
+        jornada: nextWeekSchedule.jornada,
+        message: nextWeekMessage
+      } : null
     });
   } catch (error) {
     console.error('Settle week error:', error);

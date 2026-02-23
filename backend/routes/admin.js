@@ -1429,6 +1429,75 @@ router.delete('/schedules/:scheduleId', auth, adminAuth, async (req, res) => {
   }
 });
 
+// @route   PATCH /api/admin/schedules/:scheduleId/fix-week
+// @desc    Fix schedule week number (for correcting timezone-related issues)
+// @access  Admin
+router.patch('/schedules/:scheduleId/fix-week', auth, adminAuth, async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const { newWeekNumber } = req.body;
+
+    if (!newWeekNumber || typeof newWeekNumber !== 'number') {
+      return res.status(400).json({ message: 'newWeekNumber is required and must be a number' });
+    }
+
+    const schedule = await Schedule.findById(scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    const oldWeekNumber = schedule.weekNumber;
+
+    // Check if a schedule already exists for the target week
+    const existingSchedule = await Schedule.findOne({ 
+      weekNumber: newWeekNumber, 
+      year: schedule.year,
+      _id: { $ne: scheduleId }
+    });
+
+    if (existingSchedule) {
+      return res.status(400).json({ 
+        message: `A schedule already exists for week ${newWeekNumber}, year ${schedule.year}` 
+      });
+    }
+
+    // Update schedule week number
+    schedule.weekNumber = newWeekNumber;
+    schedule.dataSource = 'admin';
+    await schedule.save();
+
+    // Also update any bets that reference the old week number
+    const betUpdateResult = await Bet.updateMany(
+      { weekNumber: oldWeekNumber, year: schedule.year },
+      { $set: { weekNumber: newWeekNumber } }
+    );
+
+    const guestBetUpdateResult = await GuestBet.updateMany(
+      { weekNumber: oldWeekNumber, year: schedule.year },
+      { $set: { weekNumber: newWeekNumber } }
+    );
+
+    console.log(`📅 Fixed schedule week: ${oldWeekNumber} -> ${newWeekNumber}`);
+    console.log(`📊 Updated ${betUpdateResult.modifiedCount} user bets, ${guestBetUpdateResult.modifiedCount} guest bets`);
+
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('schedule:updated', { schedule });
+    }
+
+    res.json({ 
+      message: `Schedule week number updated from ${oldWeekNumber} to ${newWeekNumber}`,
+      schedule,
+      betsUpdated: betUpdateResult.modifiedCount,
+      guestBetsUpdated: guestBetUpdateResult.modifiedCount
+    });
+  } catch (error) {
+    console.error('Fix schedule week error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/admin/schedules/refresh
 // @desc    Refresh schedule from API-Football
 // @access  Admin

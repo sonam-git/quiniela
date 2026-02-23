@@ -55,13 +55,32 @@ router.get('/my/current', auth, async (req, res) => {
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
 
-    // Check if current week's schedule is settled
-    const schedule = await Schedule.findOne({ weekNumber, year });
+    // Debug logging for production diagnostics
+    console.log('📊 GET /api/bets/my/current - User:', req.user._id);
+    console.log('📅 Server time:', now.toISOString(), '| Calculated week:', weekNumber, '| Year:', year);
+
+    // First, try to find the oldest unsettled schedule (this is the active betting week)
+    // This fixes timezone issues where server calculates wrong week number
+    let schedule = await Schedule.findOne({ 
+      isSettled: false,
+      year: { $gte: year - 1 }
+    }).sort({ year: 1, weekNumber: 1 });
+
+    // If unsettled schedule found, use its week number
+    if (schedule) {
+      weekNumber = schedule.weekNumber;
+      year = schedule.year;
+      console.log('📋 Using unsettled schedule:', `Week ${schedule.weekNumber}, Year ${schedule.year}`);
+    } else {
+      // Fall back to calculated week
+      schedule = await Schedule.findOne({ weekNumber, year });
+      console.log('📋 Schedule lookup:', schedule ? `Week ${schedule.weekNumber}, Settled: ${schedule.isSettled}` : 'No schedule');
+    }
     
     // If current week is settled, check for next week
     if (schedule && schedule.isSettled) {
-      const nextWeek = weekNumber + 1;
-      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const nextWeek = schedule.weekNumber + 1;
+      const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
       const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
       
       const nextWeekSchedule = await Schedule.findOne({ 
@@ -71,6 +90,7 @@ router.get('/my/current', auth, async (req, res) => {
       
       // If next week's schedule exists and isn't settled, use it
       if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
+        console.log('📋 Switching to next week:', actualNextWeek, nextYear);
         weekNumber = actualNextWeek;
         year = nextYear;
       }
@@ -82,6 +102,8 @@ router.get('/my/current', auth, async (req, res) => {
       year,
       isGuestBet: { $ne: true } // Exclude guest bets - only get user's own bet
     });
+    
+    console.log('🎯 Bet query result:', bet ? `Found bet ID: ${bet._id}` : 'No bet found for this user/week');
 
     const lockStatus = await checkBettingLock(weekNumber, year);
 
@@ -106,13 +128,29 @@ router.get('/current', async (req, res) => {
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
 
-    let schedule = await Schedule.findOne({ weekNumber, year });
+    // First, try to find the oldest unsettled schedule (this is the active betting week)
+    // This fixes timezone issues where server calculates wrong week number
+    let schedule = await Schedule.findOne({ 
+      isSettled: false,
+      year: { $gte: year - 1 }
+    }).sort({ year: 1, weekNumber: 1 });
+
+    // If no unsettled schedule, fall back to calculated week number
+    if (!schedule) {
+      schedule = await Schedule.findOne({ weekNumber, year });
+    } else {
+      // Use the schedule's week number for bets lookup
+      weekNumber = schedule.weekNumber;
+      year = schedule.year;
+    }
+    
+    console.log(`📊 /api/bets/current - Server week: ${getWeekNumber(now)}, Using week: ${weekNumber}`);
     
     // If current week's schedule is settled, look for next week's schedule
     // This allows the standings to show the next week's bets after settling
     if (schedule && schedule.isSettled) {
-      const nextWeek = weekNumber + 1;
-      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const nextWeek = schedule.weekNumber + 1;
+      const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
       const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
       
       const nextWeekSchedule = await Schedule.findOne({ 

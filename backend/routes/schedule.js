@@ -24,13 +24,26 @@ router.get('/current', async (req, res) => {
     const weekNumber = getWeekNumber(now);
     const year = now.getFullYear();
 
-    let schedule = await Schedule.findOne({ weekNumber, year });
+    // First, try to find the oldest unsettled schedule (this is the active betting week)
+    // This fixes timezone issues where server calculates wrong week number
+    let schedule = await Schedule.findOne({ 
+      isSettled: false,
+      year: { $gte: year - 1 } // Only look at recent schedules
+    }).sort({ year: 1, weekNumber: 1 });
+
+    // If no unsettled schedule, fall back to calculated week number
+    if (!schedule) {
+      schedule = await Schedule.findOne({ weekNumber, year });
+    }
+    
+    // Log for debugging
+    console.log(`📅 /api/schedule/current - Server week: ${weekNumber}, Returning schedule week: ${schedule?.weekNumber || 'none'}`);
 
     // If current week's schedule is settled, look for next week's schedule
     // This allows betting to open for the next week immediately after settling
     if (schedule && schedule.isSettled) {
-      const nextWeek = weekNumber + 1;
-      const nextYear = nextWeek > 52 ? year + 1 : year;
+      const nextWeek = schedule.weekNumber + 1;
+      const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
       const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
       
       const nextWeekSchedule = await Schedule.findOne({ 

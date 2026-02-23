@@ -5,6 +5,16 @@ const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
+// Startup diagnostics
+console.log('🚀 Starting Quiniela API Server...');
+console.log('📅 Server Time (UTC):', new Date().toISOString());
+console.log('📅 Server Time (Local):', new Date().toString());
+console.log('🌍 Timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+console.log('🔧 NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('🔐 JWT_SECRET:', process.env.JWT_SECRET ? '✅ Set' : '❌ NOT SET');
+console.log('📦 MONGODB_URI:', process.env.MONGODB_URI ? '✅ Set' : '❌ NOT SET');
+console.log('🌐 FRONTEND_URL:', process.env.FRONTEND_URL || 'not set');
+
 const authRoutes = require('./routes/auth');
 const betRoutes = require('./routes/bets');
 const scheduleRoutes = require('./routes/schedule');
@@ -101,9 +111,81 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/announcements', announcementsRoutes);
 app.use('/api/pdf', pdfRoutes);
 
-// Health check
+// Helper to get week number (same logic as in routes)
+const getWeekNumber = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return weekNumber;
+};
+
+// Health check with diagnostic info
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Quiniela API is running' });
+  const now = new Date();
+  res.json({ 
+    status: 'OK', 
+    message: 'Quiniela API is running',
+    diagnostics: {
+      serverTimeUTC: now.toISOString(),
+      serverTimeLocal: now.toString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      currentWeekNumber: getWeekNumber(now),
+      currentYear: now.getFullYear(),
+      nodeEnv: process.env.NODE_ENV || 'not set',
+      jwtSecretSet: !!process.env.JWT_SECRET,
+      mongoDbSet: !!process.env.MONGODB_URI,
+      frontendUrl: process.env.FRONTEND_URL || 'not set'
+    }
+  });
+});
+
+// Debug endpoint to diagnose betting/schedule issues
+app.get('/api/debug/week-info', async (req, res) => {
+  try {
+    const Schedule = require('./models/Schedule');
+    const Bet = require('./models/Bet');
+    
+    const now = new Date();
+    const weekNumber = getWeekNumber(now);
+    const year = now.getFullYear();
+    
+    // Find schedule for current week
+    const currentSchedule = await Schedule.findOne({ weekNumber, year });
+    
+    // Count bets for current week
+    const betCount = await Bet.countDocuments({ weekNumber, year, isPlaceholder: { $ne: true } });
+    
+    // Get all schedules
+    const allSchedules = await Schedule.find({}).select('weekNumber year jornada isSettled').sort({ year: -1, weekNumber: -1 });
+    
+    res.json({
+      serverTime: {
+        utc: now.toISOString(),
+        local: now.toString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      },
+      calculated: {
+        weekNumber,
+        year
+      },
+      currentSchedule: currentSchedule ? {
+        id: currentSchedule._id,
+        weekNumber: currentSchedule.weekNumber,
+        year: currentSchedule.year,
+        jornada: currentSchedule.jornada,
+        isSettled: currentSchedule.isSettled,
+        matchCount: currentSchedule.matches?.length || 0,
+        firstMatchTime: currentSchedule.firstMatchTime
+      } : null,
+      betCountForCurrentWeek: betCount,
+      recentSchedules: allSchedules.slice(0, 5)
+    });
+  } catch (error) {
+    console.error('Debug endpoint error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 const PORT = process.env.PORT || 5001;

@@ -117,6 +117,9 @@ router.post('/login', async (req, res) => {
     const { email, phone, identifier, password, adminCode } = req.body;
     const { ADMIN_CODE } = getCodes();
 
+    // Debug logging
+    console.log('🔐 Login attempt:', identifier || email || phone || 'no identifier');
+
     // Support both old (email) and new (identifier) login methods
     const loginIdentifier = identifier || email || phone;
 
@@ -142,14 +145,18 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) {
+      console.log('🔐 Login failed: User not found for:', loginIdentifier);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log('🔐 Login failed: Password mismatch for user:', user._id);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+
+    console.log('🔐 Login success for user:', user._id, user.name);
 
     // Check if admin code is provided and valid
     let isAdminSession = false;

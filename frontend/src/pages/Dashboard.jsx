@@ -22,7 +22,7 @@ export default function Dashboard() {
     lockoutTime: null
   })
   const [isSettled, setIsSettled] = useState(false)
-  const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0 })
+  const [weekInfo, setWeekInfo] = useState({ weekNumber: 0, year: 0, jornada: 0 })
   const [activeTab, setActiveTab] = useState('standings')
   const [announcements, setAnnouncements] = useState([])
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState(() => {
@@ -194,7 +194,8 @@ export default function Dashboard() {
       })
       setWeekInfo({
         weekNumber: scheduleRes.data.weekNumber,
-        year: scheduleRes.data.year
+        year: scheduleRes.data.year,
+        jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
       })
       setAnnouncements(announcementsRes.data.announcements || [])
       setBetAmount(betAmountValue || 20)
@@ -406,7 +407,8 @@ export default function Dashboard() {
       // Update week info to match the new schedule
       setWeekInfo({
         weekNumber: data.schedule.weekNumber,
-        year: data.schedule.year
+        year: data.schedule.year,
+        jornada: data.schedule.jornada || data.schedule.weekNumber
       })
       // Clear any error state
       setError(null)
@@ -428,7 +430,8 @@ export default function Dashboard() {
       if (data.schedule.weekNumber && data.schedule.year) {
         setWeekInfo({
           weekNumber: data.schedule.weekNumber,
-          year: data.schedule.year
+          year: data.schedule.year,
+          jornada: data.schedule.jornada || data.schedule.weekNumber
         })
       }
       // Update lock status if provided
@@ -494,7 +497,8 @@ export default function Dashboard() {
       setIsSettled(betsRes.data.isSettled)
       setWeekInfo({
         weekNumber: scheduleRes.data.weekNumber,
-        year: scheduleRes.data.year
+        year: scheduleRes.data.year,
+        jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
       })
       setLockStatus({
         isBettingLocked: scheduleRes.data.isBettingLocked,
@@ -693,8 +697,6 @@ export default function Dashboard() {
     return topBet
   }
 
-  const currentLeader = getCurrentLeader()
-  const completedMatchesCount = schedule?.matches?.filter(m => m.isCompleted).length || 0
 
   if (loading) {
     return (
@@ -892,7 +894,7 @@ export default function Dashboard() {
                 {t('title')}
               </h1>
               <p className={`text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                {t('subtitle', { week: weekInfo.weekNumber, year: weekInfo.year })}
+                {t('subtitle', { week: weekInfo.jornada || weekInfo.weekNumber, year: weekInfo.year })}
               </p>
             </div>
 
@@ -1011,7 +1013,7 @@ export default function Dashboard() {
                   {t('title')}
                 </h1>
                 <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                  {t('subtitle', { week: weekInfo.weekNumber, year: weekInfo.year })}
+                  {t('subtitle', { week: weekInfo.jornada || weekInfo.weekNumber, year: weekInfo.year })}
                 </p>
               </div>
 
@@ -1205,7 +1207,7 @@ export default function Dashboard() {
               isDark ? 'border-dark-700' : 'border-gray-200'
             }`}>
               <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                <span>📊</span> {t('weekStats', { week: weekInfo.weekNumber })}
+                <span>📊</span> {t('weekStats', { week: weekInfo.jornada || weekInfo.weekNumber })}
               </h2>
             </div>
             <div className="p-4">
@@ -1484,7 +1486,7 @@ export default function Dashboard() {
               isDark ? 'border-dark-700' : 'border-gray-200'
             }`}>
               <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                <span><CalendarIcon/></span> Week {weekInfo.weekNumber} 
+                <span><CalendarIcon/></span> Jornada {weekInfo.jornada || weekInfo.weekNumber} 
               </h2>
               <div className="flex items-center gap-3">
                 {/* PDF Download Button - Always visible when there are bets, disabled for non-admin until first game starts */}

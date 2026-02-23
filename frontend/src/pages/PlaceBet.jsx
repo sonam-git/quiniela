@@ -81,7 +81,7 @@ function ValidationModal({ isOpen, onClose, title, message, items, isDark, butto
 
 export default function PlaceBet() {
   const [schedule, setSchedule] = useState(null)
-  const [weekInfo, setWeekInfo] = useState({ weekNumber: null, year: null })
+  const [weekInfo, setWeekInfo] = useState({ weekNumber: null, year: null, jornada: null })
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
   const [totalGoals, setTotalGoals] = useState('0')
@@ -112,7 +112,8 @@ export default function PlaceBet() {
       setSchedule(scheduleRes.data.schedule)
       setWeekInfo({
         weekNumber: scheduleRes.data.weekNumber,
-        year: scheduleRes.data.year
+        year: scheduleRes.data.year,
+        jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
       })
       setLockStatus({
         isBettingLocked: scheduleRes.data.isBettingLocked,

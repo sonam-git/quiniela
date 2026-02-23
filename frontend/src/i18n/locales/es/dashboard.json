@@ -1,12 +1,12 @@
 {
   "title": "Tablero",
-  "subtitle": "Liga MX · Semana {{week}}, {{year}}",
+  "subtitle": "Liga MX · Jornada {{week}}, {{year}}",
   "loading": "Cargando...",
   "tryAgain": "Intentar de Nuevo",
   "howToPlay": "Cómo Jugar",
   "statsTab": "Estadísticas",
   "statsTabShort": "Stats",
-  "weekStats": "Estadísticas Semana {{week}}",
+  "weekStats": "Estadísticas Jornada {{week}}",
   "tabs": {
     "standings": "Clasificación",
     "standingsShort": "Posic",

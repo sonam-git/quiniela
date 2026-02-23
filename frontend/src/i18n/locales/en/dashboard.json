@@ -1,12 +1,12 @@
 {
   "title": "Dashboard",
-  "subtitle": "Liga MX · Week {{week}}, {{year}}",
+  "subtitle": "Liga MX · Jornada {{week}}, {{year}}",
   "loading": "Loading...",
   "tryAgain": "Try Again",
   "howToPlay": "How to Play",
   "statsTab": "Stats",
   "statsTabShort": "Stats",
-  "weekStats": "Week {{week}} Statistics",
+  "weekStats": "Jornada {{week}} Statistics",
   "tabs": {
     "standings": "Standings",
     "standingsShort": "Stand",

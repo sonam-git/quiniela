@@ -1056,73 +1056,40 @@ export default function Admin() {
     const totalMatches = schedule?.matches?.length || 9
     
     if (completedCount < totalMatches) {
-      toast.error(`Cannot verify - only ${completedCount}/${totalMatches} matches have scores entered`)
+      toast.error(`Cannot settle - only ${completedCount}/${totalMatches} matches completed`)
       return
     }
 
-    // Calculate total goals for display
-    const totalGoals = schedule?.matches?.reduce((sum, m) => sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0) || 0
-
     setConfirmModal({
       isOpen: true,
-      title: '🏆 Verify & Settle Week',
-      message: `You are about to finalize Week ${weekInfo.weekNumber} results with ${totalGoals} total goals. This will:\n\n• Calculate final standings\n• Determine winner(s)\n• Create next week's schedule\n\nThis action cannot be undone.`,
-      confirmText: 'Verify & Settle',
+      title: 'Settle Week',
+      message: 'Are you sure you want to settle this week? This will calculate the total goals and finalize the results.',
+      confirmText: 'Settle Week',
       confirmStyle: 'amber',
       onConfirm: async () => {
         setConfirmModal(prev => ({ ...prev, isLoading: true }))
         try {
           const response = await api.post('/admin/schedule/settle')
-          
-          // Show success with winner info
-          const winnersInfo = response.data.winners?.length > 0
-            ? `Winner${response.data.winners.length > 1 ? 's' : ''}: ${response.data.winners.map(w => w.name).join(', ')}`
-            : 'No winners this week'
-          
-          toast.success(
-            <div>
-              <p className="font-semibold">✅ Week {weekInfo.weekNumber} Verified!</p>
-              <p className="text-sm">Total Goals: {response.data.actualTotalGoals}</p>
-              <p className="text-sm">{winnersInfo}</p>
-              {response.data.nextWeekSchedule && (
-                <p className="text-xs mt-1 opacity-75">Next week schedule created (Jornada {response.data.nextWeekSchedule.jornada})</p>
-              )}
-            </div>,
-            { duration: 6000 }
-          )
-          
-          // Update schedule state locally - mark current as settled
+          toast.success(`Week settled! Total goals: ${response.data.actualTotalGoals}`)
+          // Update schedule state locally
           setSchedule(prev => prev ? { 
             ...prev, 
             isSettled: true, 
             actualTotalGoals: response.data.actualTotalGoals 
           } : prev)
-          
           setAllSchedules(prev => prev.map(s => 
             s.weekNumber === weekInfo.weekNumber && s.year === weekInfo.year
               ? { ...s, isSettled: true, actualTotalGoals: response.data.actualTotalGoals }
               : s
           ))
-          
-          // If next week schedule was created, add it to allSchedules
-          if (response.data.nextWeekSchedule) {
-            // Refetch schedules to get the new one
-            api.get('/admin/schedules').then(res => {
-              setAllSchedules(res.data.schedules || [])
-            }).catch(console.error)
-          }
-          
-          // Update bets to get winner info
+          // Only refetch bets to get updated winner info
           if (response.data.bets) {
             setBets(response.data.bets)
           } else {
             api.get('/admin/bets').then(res => setBets(res.data.bets)).catch(console.error)
           }
-          
-          // Switch back to schedule sub-tab
-          setMatchesSubTab('schedule')
         } catch (error) {
-          toast.error(error.response?.data?.message || 'Failed to verify week')
+          toast.error(error.response?.data?.message || 'Failed to settle week')
         } finally {
           setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
         }
@@ -2801,7 +2768,7 @@ export default function Admin() {
                           Verify Week {weekInfo.weekNumber}
                         </h2>
                         <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                          Review scores and finalize results
+                          Finalize results and determine winners
                         </p>
                       </div>
                     </div>
@@ -2809,95 +2776,80 @@ export default function Admin() {
                 </div>
 
                 <div className="p-4 sm:p-6">
-                  <div className={`max-w-lg mx-auto rounded-xl border overflow-hidden ${
-                    isDark ? 'bg-dark-800 border-dark-600' : 'bg-white border-gray-200 shadow-lg'
+                  <div className={`max-w-md mx-auto rounded-lg border overflow-hidden ${
+                    isDark ? 'bg-dark-800 border-dark-600' : 'bg-white border-gray-200 shadow-sm'
                   }`}>
                     {/* Card Header */}
-                    <div className={`px-6 py-5 border-b text-center ${
-                      isDark ? 'border-dark-600 bg-gradient-to-br from-amber-900/20 to-dark-800' : 'border-gray-200 bg-gradient-to-br from-amber-50 to-white'
+                    <div className={`px-4 py-3 border-b text-center ${
+                      isDark ? 'border-dark-600 bg-dark-700/50' : 'border-gray-200 bg-gray-50'
                     }`}>
-                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 ${
-                        isDark ? 'bg-amber-900/40 ring-2 ring-amber-600/30' : 'bg-amber-100 ring-2 ring-amber-200'
+                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 ${
+                        isDark ? 'bg-amber-900/30' : 'bg-amber-100'
                       }`}>
-                        <span className="text-3xl">🏆</span>
+                        <span className="text-2xl">🏆</span>
                       </div>
-                      <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Ready to Verify & Settle
+                      <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Ready to Verify
                       </h3>
-                      <p className={`text-sm mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                        All {schedule?.matches?.length || 9} matches have been completed
+                      <p className={`text-xs mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                        All {schedule?.matches?.length || 9} matches completed
                       </p>
                     </div>
                     
                     {/* Summary Stats */}
-                    <div className="p-5">
-                      <div className="grid grid-cols-2 gap-4 mb-5">
-                        <div className={`p-4 rounded-lg text-center ${
-                          isDark ? 'bg-dark-700/70' : 'bg-gray-50'
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className={`p-3 rounded-md text-center ${
+                          isDark ? 'bg-dark-700' : 'bg-gray-50'
                         }`}>
-                          <p className={`text-xs font-medium mb-1 uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                          <p className={`text-xs font-medium mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
                             Total Goals
                           </p>
-                          <p className={`text-3xl font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                          <p className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {schedule?.matches?.reduce((sum, m) => sum + (m.scoreTeamA || 0) + (m.scoreTeamB || 0), 0) || 0}
                           </p>
                         </div>
-                        <div className={`p-4 rounded-lg text-center ${
-                          isDark ? 'bg-dark-700/70' : 'bg-gray-50'
+                        <div className={`p-3 rounded-md text-center ${
+                          isDark ? 'bg-dark-700' : 'bg-gray-50'
                         }`}>
-                          <p className={`text-xs font-medium mb-1 uppercase tracking-wide ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                            Matches
+                          <p className={`text-xs font-medium mb-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                            Matches Played
                           </p>
-                          <p className={`text-3xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          <p className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                             {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
                           </p>
                         </div>
                       </div>
                       
-                      {/* What happens section */}
-                      <div className={`p-4 rounded-lg mb-5 ${
+                      {/* Info Box */}
+                      <div className={`p-3 rounded-md mb-4 ${
                         isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-100'
                       }`}>
-                        <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
-                          What happens when you verify:
-                        </p>
-                        <ul className={`text-xs space-y-1 ${isDark ? 'text-blue-300/80' : 'text-blue-600'}`}>
-                          <li>✓ Final standings are calculated</li>
-                          <li>✓ Winner(s) are determined based on points & tiebreaker</li>
-                          <li>✓ Results move to the Results tab</li>
-                          <li>✓ Next week's schedule is created automatically</li>
-                        </ul>
-                      </div>
-                      
-                      {/* Warning */}
-                      <div className={`p-3 rounded-lg mb-5 ${
-                        isDark ? 'bg-red-900/20 border border-red-800/30' : 'bg-red-50 border border-red-100'
-                      }`}>
-                        <p className={`text-xs ${isDark ? 'text-red-300' : 'text-red-700'}`}>
-                          <span className="font-semibold">⚠️ Important:</span> This action cannot be undone. Please verify all match scores are correct before proceeding.
+                        <p className={`text-xs ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                          <span className="font-medium">Note:</span> Verifying the week will calculate final standings and cannot be undone.
                         </p>
                       </div>
                       
                       {/* Action Button */}
                       <button
                         onClick={handleSettleWeek}
-                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-all shadow-lg hover:shadow-xl"
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Verify & Finalize Week {weekInfo.weekNumber}</span>
+                        <span>Verify & Finalize Results</span>
                       </button>
                       
-                      {/* PDF Download Section */}
-                      <div className="mt-5 pt-5 border-t border-dashed flex flex-col gap-2">
+                      {/* PDF Download Buttons */}
+                      <div className="mt-4 pt-4 border-t border-dashed flex flex-col gap-2">
                         <p className={`text-xs font-medium text-center mb-2 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                          Download Reports Before Settling
+                          Download Reports
                         </p>
                         <button
                           onClick={() => handleDownloadPredictionPDF(weekInfo.weekNumber, weekInfo.year)}
                           disabled={downloadingPDF === `pred-${weekInfo.weekNumber}-${weekInfo.year}`}
-                          className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                             isDark
                               ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 border border-blue-800/50'
                               : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
@@ -2910,7 +2862,7 @@ export default function Admin() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           )}
-                          <span>Download Predictions PDF</span>
+                          <span>Predictions PDF</span>
                         </button>
                       </div>
                     </div>

@@ -144,7 +144,58 @@ router.get('/current', async (req, res) => {
       year = schedule.year;
     }
     
-    console.log(`📊 /api/bets/current - Server week: ${getWeekNumber(now)}, Using week: ${weekNumber}`);
+    console.log(`📊 /api/bets/current - Server week: ${getWeekNumber(now)}, Found schedule week: ${weekNumber}`);
+    
+    // Check if this schedule's betting is locked (matches already started)
+    // If locked AND there's a next unsettled schedule with bets, show that instead
+    if (schedule && !schedule.isSettled) {
+      const firstMatchTime = schedule.firstMatchTime;
+      const lockoutTime = new Date(firstMatchTime.getTime() - 5 * 60 * 1000);
+      const isBettingLocked = now >= lockoutTime;
+      
+      if (isBettingLocked) {
+        // Check if there's a next unsettled schedule
+        const nextWeek = schedule.weekNumber + 1;
+        const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
+        const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
+        
+        const nextSchedule = await Schedule.findOne({ 
+          weekNumber: actualNextWeek, 
+          year: nextYear,
+          isSettled: false
+        });
+        
+        if (nextSchedule) {
+          // Check if there are bets for the next week
+          const nextWeekBetCount = await Bet.countDocuments({ 
+            weekNumber: actualNextWeek, 
+            year: nextYear, 
+            isPlaceholder: { $ne: true } 
+          });
+          const nextWeekGuestCount = await GuestBet.countDocuments({ 
+            weekNumber: actualNextWeek, 
+            year: nextYear 
+          });
+          
+          // If next week has bets OR current week has no bets, use next week
+          const currentWeekBetCount = await Bet.countDocuments({ 
+            weekNumber, 
+            year, 
+            isPlaceholder: { $ne: true } 
+          });
+          const currentWeekGuestCount = await GuestBet.countDocuments({ weekNumber, year });
+          
+          console.log(`📊 Current week ${weekNumber} bets: ${currentWeekBetCount + currentWeekGuestCount}, Next week ${actualNextWeek} bets: ${nextWeekBetCount + nextWeekGuestCount}`);
+          
+          if ((nextWeekBetCount + nextWeekGuestCount > 0) || (currentWeekBetCount + currentWeekGuestCount === 0)) {
+            schedule = nextSchedule;
+            weekNumber = actualNextWeek;
+            year = nextYear;
+            console.log(`📊 Switching to next week ${weekNumber} (current week locked with no/fewer bets)`);
+          }
+        }
+      }
+    }
     
     // If current week's schedule is settled, look for next week's schedule
     // This allows the standings to show the next week's bets after settling

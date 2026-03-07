@@ -91,6 +91,14 @@ const scheduleSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  forcedSettle: {
+    type: Boolean,
+    default: false
+  },
+  incompleteMatchesCount: {
+    type: Number,
+    default: 0
+  },
   actualTotalGoals: {
     type: Number,
     default: null

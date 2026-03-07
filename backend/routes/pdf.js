@@ -156,8 +156,59 @@ router.get('/prediction/:weekNumber/:year', auth, async (req, res) => {
     
     y += headerRowHeight;
     
+    // Page dimensions
+    const pageHeight = 595; // A4 landscape height
+    const pageBottomMargin = 50;
+    const maxY = pageHeight - pageBottomMargin;
+    
+    // Function to add a new page with header
+    const addNewPageWithHeader = () => {
+      doc.addPage();
+      
+      // Mini header on continuation page
+      doc.fillColor('#10b981')
+         .fontSize(14)
+         .font('Helvetica-Bold')
+         .text(`QUINIELA - Jornada ${schedule.jornada || weekNumber} - Predictions (continued)`, 30, 30, { align: 'center', width: 787 });
+      
+      // Re-draw table header
+      let headerY = 55;
+      doc.fillColor('#10b981')
+         .rect(startX, headerY, 787, headerRowHeight)
+         .fill();
+      
+      let headerX = startX;
+      doc.fillColor('#ffffff')
+         .fontSize(8)
+         .font('Helvetica-Bold')
+         .text('Player', headerX + 5, headerY + 11, { width: colWidths[0] - 10, lineBreak: false });
+      headerX += colWidths[0];
+      
+      schedule.matches.forEach((match, i) => {
+        const teamA = match.teamA.replace('Club ', '').replace('CF ', '').replace('Deportivo ', '').substring(0, 6);
+        const teamB = match.teamB.replace('Club ', '').replace('CF ', '').replace('Deportivo ', '').substring(0, 6);
+        doc.fillColor('#ffffff')
+           .fontSize(7)
+           .text(teamA, headerX + 2, headerY + 6, { width: colWidths[i + 1] - 4, align: 'center', lineBreak: false });
+        doc.text(`vs ${teamB}`, headerX + 2, headerY + 18, { width: colWidths[i + 1] - 4, align: 'center', lineBreak: false });
+        headerX += colWidths[i + 1];
+      });
+      
+      doc.fontSize(8)
+         .text('Goals', headerX + 2, headerY + 11, { width: colWidths[10] - 4, align: 'center', lineBreak: false });
+      headerX += colWidths[10];
+      doc.text('Paid', headerX + 2, headerY + 11, { width: colWidths[11] - 4, align: 'center', lineBreak: false });
+      
+      return headerY + headerRowHeight;
+    };
+    
     // Data rows
     allBets.forEach((bet, rowIndex) => {
+      // Check if we need a new page
+      if (y + dataRowHeight > maxY) {
+        y = addNewPageWithHeader();
+      }
+      
       const bgColor = rowIndex % 2 === 0 ? '#f9fafb' : '#ffffff';
       
       doc.fillColor(bgColor)
@@ -206,16 +257,23 @@ router.get('/prediction/:weekNumber/:year', auth, async (req, res) => {
     });
     
     // Legend - add (G) explanation for guest bets
-    y += 20;
+    // Check if legend fits on current page, otherwise add new page
+    if (y + 60 > maxY) {
+      doc.addPage();
+      y = 50;
+    } else {
+      y += 20;
+    }
+    
     doc.fillColor('#666666')
        .fontSize(9)
        .font('Helvetica')
        .text('L = Local (Home Win) | E = Empate (Draw) | V = Visitante (Away Win) | (G) = Guest', startX, y, { lineBreak: false });
     
-    // Footer
+    // Footer at the bottom of the last page
     doc.fillColor('#999999')
        .fontSize(8)
-       .text(`Total Participants: ${allBets.length} | Quiniela Liga MX`, startX, 550, { align: 'center', width: 787 });
+       .text(`Total Participants: ${allBets.length} | Quiniela Liga MX`, startX, pageHeight - 45, { align: 'center', width: 787 });
     
     // Finalize
     doc.end();
@@ -400,12 +458,88 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
     
     y += headerRowHeight;
     
+    // Page dimensions for pagination
+    const pageHeight = 595; // A4 landscape height
+    const pageBottomMargin = 50;
+    const maxY = pageHeight - pageBottomMargin;
+    
+    // Function to add a new page with header for results
+    const addNewPageWithResultsHeader = () => {
+      doc.addPage();
+      
+      // Mini header on continuation page
+      doc.fillColor('#10b981')
+         .fontSize(14)
+         .font('Helvetica-Bold')
+         .text(`QUINIELA - Jornada ${schedule.jornada || weekNumber} - Results (continued)`, 30, 30, { align: 'center', width: 787 });
+      
+      // Re-draw match results header (blue bar)
+      let headerY = 55;
+      doc.fillColor('#1e40af')
+         .rect(startX, headerY, 787, resultsRowHeight)
+         .fill();
+      
+      doc.fillColor('#ffffff')
+         .fontSize(8)
+         .font('Helvetica-Bold');
+      
+      let headerX = startX;
+      doc.text('RESULTS', headerX + 5, headerY + 8, { width: colWidths[0] - 10, lineBreak: false });
+      headerX += colWidths[0];
+      
+      schedule.matches.forEach((match, i) => {
+        const result = getPrediction(match.result);
+        doc.text(`${match.scoreTeamA}-${match.scoreTeamB} (${result})`, headerX + 2, headerY + 8, { width: colWidths[i + 1] - 4, align: 'center', lineBreak: false });
+        headerX += colWidths[i + 1];
+      });
+      
+      doc.text(schedule.actualTotalGoals?.toString() || '-', headerX + 2, headerY + 8, { width: colWidths[10] - 4, align: 'center', lineBreak: false });
+      
+      headerY += resultsRowHeight + 5;
+      
+      // Re-draw table header (green bar)
+      doc.fillColor('#10b981')
+         .rect(startX, headerY, 787, headerRowHeight)
+         .fill();
+      
+      doc.fillColor('#ffffff')
+         .fontSize(8)
+         .font('Helvetica-Bold');
+      
+      headerX = startX;
+      doc.text('Player', headerX + 5, headerY + 11, { width: colWidths[0] - 10, lineBreak: false });
+      headerX += colWidths[0];
+      
+      schedule.matches.forEach((match, i) => {
+        const teamA = match.teamA.replace('Club ', '').replace('CF ', '').replace('Deportivo ', '').substring(0, 6);
+        const teamB = match.teamB.replace('Club ', '').replace('CF ', '').replace('Deportivo ', '').substring(0, 6);
+        doc.fontSize(7)
+           .text(teamA, headerX + 2, headerY + 6, { width: colWidths[i + 1] - 4, align: 'center', lineBreak: false });
+        doc.text(`vs ${teamB}`, headerX + 2, headerY + 18, { width: colWidths[i + 1] - 4, align: 'center', lineBreak: false });
+        headerX += colWidths[i + 1];
+      });
+      
+      doc.fontSize(8)
+         .text('Goals', headerX + 2, headerY + 11, { width: colWidths[10] - 4, align: 'center', lineBreak: false });
+      headerX += colWidths[10];
+      doc.text('Pts', headerX + 2, headerY + 11, { width: colWidths[11] - 4, align: 'center', lineBreak: false });
+      headerX += colWidths[11];
+      doc.text('Paid', headerX + 2, headerY + 11, { width: colWidths[12] - 4, align: 'center', lineBreak: false });
+      
+      return headerY + headerRowHeight;
+    };
+    
     // Track rank - winners all get rank 1
     let currentRank = 1;
     let displayRank = 1;
     
     // Data rows - sorted by points
     allBets.forEach((bet, rowIndex) => {
+      // Check if we need a new page
+      if (y + dataRowHeight > maxY) {
+        y = addNewPageWithResultsHeader();
+      }
+      
       const isWinner = bet.isWinner;
       const bgColor = isWinner ? '#fef3c7' : (rowIndex % 2 === 0 ? '#f9fafb' : '#ffffff');
       
@@ -473,8 +607,15 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
       y += dataRowHeight;
     });
     
+    // Check if legend/footer section fits on current page
+    if (y + 80 > maxY) {
+      doc.addPage();
+      y = 50;
+    } else {
+      y += 10;
+    }
+    
     // Legend - add (G) explanation for guest bets
-    y += 10;
     doc.fillColor('#666666')
        .fontSize(8)
        .font('Helvetica')
@@ -510,7 +651,7 @@ router.get('/results/:weekNumber/:year', auth, async (req, res) => {
     doc.fillColor('#999999')
        .fontSize(8)
        .font('Helvetica')
-       .text(`Total Participants: ${allBets.length} | Winner(s): ${winnerNames}`, startX, 550, { align: 'center', width: 787 });
+       .text(`Total Participants: ${allBets.length} | Winner(s): ${winnerNames}`, startX, pageHeight - 45, { align: 'center', width: 787 });
     
     // Finalize
     doc.end();

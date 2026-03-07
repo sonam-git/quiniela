@@ -16,7 +16,7 @@ const getWeekNumber = (date) => {
 };
 
 // @route   GET /api/schedule/current
-// @desc    Get current week's schedule (or next week's if current is settled)
+// @desc    Get current week's schedule (or next week's if current is settled/locked)
 // @access  Public
 router.get('/current', async (req, res) => {
   try {
@@ -37,7 +37,7 @@ router.get('/current', async (req, res) => {
     }
     
     // Log for debugging
-    console.log(`📅 /api/schedule/current - Server week: ${weekNumber}, Returning schedule week: ${schedule?.weekNumber || 'none'}`);
+    console.log(`📅 /api/schedule/current - Server week: ${weekNumber}, Found schedule week: ${schedule?.weekNumber || 'none'}`);
 
     // If current week's schedule is settled, look for next week's schedule
     // This allows betting to open for the next week immediately after settling
@@ -54,6 +54,38 @@ router.get('/current', async (req, res) => {
       // If next week's schedule exists and isn't settled, use it
       if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
         schedule = nextWeekSchedule;
+      }
+    }
+    
+    // Check if betting is locked on current schedule AND there's a next unsettled schedule
+    // This handles the case where admin forgot to settle a week but users are betting on next week
+    if (schedule && !schedule.isSettled) {
+      const firstMatchTime = schedule.firstMatchTime;
+      const lockoutTime = new Date(firstMatchTime.getTime() - 5 * 60 * 1000);
+      const isBettingLocked = now >= lockoutTime;
+      
+      if (isBettingLocked) {
+        const nextWeek = schedule.weekNumber + 1;
+        const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
+        const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
+        
+        const nextSchedule = await Schedule.findOne({ 
+          weekNumber: actualNextWeek, 
+          year: nextYear,
+          isSettled: false
+        });
+        
+        // If next schedule exists and its betting isn't locked yet, use it
+        if (nextSchedule) {
+          const nextFirstMatch = nextSchedule.firstMatchTime;
+          const nextLockout = new Date(nextFirstMatch.getTime() - 5 * 60 * 1000);
+          const nextBettingLocked = now >= nextLockout;
+          
+          if (!nextBettingLocked) {
+            console.log(`📅 Switching to next week ${actualNextWeek} (current week ${schedule.weekNumber} is locked)`);
+            schedule = nextSchedule;
+          }
+        }
       }
     }
 

@@ -676,7 +676,7 @@ export default function Admin() {
   // Handle payment status change for guest bets (uses betId instead of userId)
   const handleChangeGuestPaymentStatus = async (betId, newStatus) => {
     const currentPayment = payments.find(p => p.betId === betId || p.betId?.toString() === betId)
-    const previousStatus = currentPayment?.paymentStatus || 'pending'
+    const previousStatus = currentPayment?.paid
     
     try {
       // Record this as a pending change
@@ -709,13 +709,67 @@ export default function Admin() {
         if (p.betId === betId || p.betId?.toString() === betId) {
           return { 
             ...p, 
-            paid: previousStatus === 'paid',
-            paymentStatus: previousStatus
+            paid: previousStatus,
+            paymentStatus: previousStatus ? 'paid' : 'pending'
           }
         }
         return p
       }))
       toast.error(error.response?.data?.message || 'Failed to update guest payment status')
+    }
+  }
+
+  // Handle payment status change for user bets (uses betId)
+  const handleChangeBetPaymentStatus = async (betId, newStatus) => {
+    const currentPayment = payments.find(p => p.betId === betId || p.betId?.toString() === betId)
+    const previousStatus = currentPayment?.paid
+    
+    try {
+      // Record this as a pending change
+      pendingChangesRef.current.set(betId, {
+        status: newStatus,
+        timestamp: Date.now()
+      })
+      
+      // Optimistically update the UI
+      setPayments(prev => prev.map(p => {
+        if (p.betId === betId || p.betId?.toString() === betId) {
+          return { 
+            ...p, 
+            paid: newStatus === 'paid',
+            paymentStatus: newStatus
+          }
+        }
+        return p
+      }))
+      
+      // Also update the bets state
+      setBets(prev => prev.map(b => 
+        b._id === betId ? { ...b, paid: newStatus === 'paid' } : b
+      ))
+      
+      await api.patch(`/admin/bets/${betId}/payment`, { paid: newStatus === 'paid', isGuestBet: false })
+      const statusLabels = { paid: 'Paid', pending: 'Pending' }
+      toast.success(`Payment status updated to ${statusLabels[newStatus]}`)
+    } catch (error) {
+      // Remove pending change on error
+      pendingChangesRef.current.delete(betId)
+      
+      // Revert on error
+      setPayments(prev => prev.map(p => {
+        if (p.betId === betId || p.betId?.toString() === betId) {
+          return { 
+            ...p, 
+            paid: previousStatus,
+            paymentStatus: previousStatus ? 'paid' : 'pending'
+          }
+        }
+        return p
+      }))
+      setBets(prev => prev.map(b => 
+        b._id === betId ? { ...b, paid: previousStatus } : b
+      ))
+      toast.error(error.response?.data?.message || 'Failed to update payment status')
     }
   }
 
@@ -2896,7 +2950,7 @@ export default function Admin() {
                       Payment Records
                     </h2>
                     <p className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                      Week {weekInfo.weekNumber}, {weekInfo.year} · Manage participant payments
+                      {weekInfo.jornada ? `Jornada ${weekInfo.jornada}` : `Week ${weekInfo.weekNumber}`}, {weekInfo.year} · Participants with bets
                     </p>
                   </div>
                 </div>
@@ -2905,7 +2959,7 @@ export default function Admin() {
                     isDark ? 'bg-blue-900/30 text-blue-400 border border-blue-800/50' : 'bg-blue-50 text-blue-700 border border-blue-200'
                   }`}>
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    {payments.filter(p => p.hasBet).length} Bets
+                    {payments.length} Participants
                   </div>
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
                     isDark ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -2917,7 +2971,7 @@ export default function Admin() {
                     isDark ? 'bg-amber-900/30 text-amber-400 border border-amber-800/50' : 'bg-amber-50 text-amber-700 border border-amber-200'
                   }`}>
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    {payments.filter(p => p.hasBet && !p.paid).length} Pending
+                    {payments.filter(p => !p.paid).length} Pending
                   </div>
                 </div>
               </div>
@@ -2927,11 +2981,11 @@ export default function Admin() {
             <div className={`px-6 py-3 ${isDark ? 'bg-dark-700/30' : 'bg-gray-50/50'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-xs font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                  Payment Collection Progress (Users with Bets)
+                  Payment Collection Progress
                 </span>
                 <span className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  {payments.filter(p => p.hasBet).length > 0 
-                    ? Math.round((payments.filter(p => p.paid).length / payments.filter(p => p.hasBet).length) * 100) 
+                  {payments.length > 0 
+                    ? Math.round((payments.filter(p => p.paid).length / payments.length) * 100) 
                     : 0}%
                 </span>
               </div>
@@ -2939,8 +2993,8 @@ export default function Admin() {
                 <div 
                   className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
                   style={{ 
-                    width: `${payments.filter(p => p.hasBet).length > 0 
-                      ? (payments.filter(p => p.paid).length / payments.filter(p => p.hasBet).length) * 100 
+                    width: `${payments.length > 0 
+                      ? (payments.filter(p => p.paid).length / payments.length) * 100 
                       : 0}%` 
                   }}
                 />
@@ -3050,11 +3104,11 @@ export default function Admin() {
                     Current Prize Pool
                   </span>
                   <span className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    ${(payments.filter(p => p.hasBet).length * betAmount).toFixed(2)}
+                    ${(payments.length * betAmount).toFixed(2)}
                   </span>
                 </div>
                 <p className={`text-xs mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-                  {payments.filter(p => p.hasBet).length} participants × ${betAmount.toFixed(2)} = Prize Pool
+                  {payments.length} participants × ${betAmount.toFixed(2)} = Prize Pool
                 </p>
               </div>
             </div>
@@ -3098,13 +3152,13 @@ export default function Admin() {
                           <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
                             isDark ? 'bg-dark-700' : 'bg-gray-100'
                           }`}>
-                            <span className="text-3xl">📭</span>
+                            <span className="text-3xl">🎫</span>
                           </div>
                           <p className={`text-sm font-medium ${isDark ? 'text-dark-300' : 'text-gray-600'}`}>
-                            No users found
+                            No bets placed yet
                           </p>
                           <p className={`text-xs mt-1 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-                            Users will appear here once they register
+                            Participants will appear here once they place their predictions
                           </p>
                         </div>
                       </td>
@@ -3112,19 +3166,15 @@ export default function Admin() {
                   ) : (
                     payments.map((payment) => (
                       <tr 
-                        key={payment.isGuestBet ? `guest_${payment.betId}` : payment.userId} 
+                        key={payment.isGuestBet ? `guest_${payment.betId}` : (payment.odaUserId || payment.oderId)} 
                         className={`transition-all duration-200 ${
-                          payment.paymentStatus === 'paid'
+                          payment.paid
                             ? isDark 
                               ? 'bg-emerald-900/10 hover:bg-emerald-900/20' 
                               : 'bg-emerald-50/50 hover:bg-emerald-50'
-                            : payment.paymentStatus === 'pending'
-                              ? isDark 
-                                ? 'bg-amber-900/5 hover:bg-amber-900/15' 
-                                : 'bg-amber-50/30 hover:bg-amber-50/60'
-                              : isDark 
-                                ? 'bg-dark-800/50 hover:bg-dark-700/50' 
-                                : 'bg-gray-50/50 hover:bg-gray-100/50'
+                            : isDark 
+                              ? 'bg-amber-900/5 hover:bg-amber-900/15' 
+                              : 'bg-amber-50/30 hover:bg-amber-50/60'
                         }`}
                       >
                         <td className="px-6 py-4">
@@ -3133,15 +3183,13 @@ export default function Admin() {
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-md ${
                                 payment.isGuestBet
                                   ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
-                                  : payment.paymentStatus === 'paid'
+                                  : payment.paid
                                     ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                                    : payment.paymentStatus === 'pending'
-                                      ? 'bg-gradient-to-br from-amber-500 to-orange-600'
-                                      : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                                    : 'bg-gradient-to-br from-amber-500 to-orange-600'
                               }`}>
                                 {payment.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
-                              {payment.paymentStatus === 'paid' && (
+                              {payment.paid && (
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800">
                                   <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -3184,24 +3232,15 @@ export default function Admin() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
-                            payment.paymentStatus === 'na' || (!payment.hasBet && !payment.isPlaceholder && !payment.paid)
+                            payment.paid
                               ? isDark 
-                                ? 'bg-gray-800/50 text-gray-400 border border-gray-700/50' 
-                                : 'bg-gray-100 text-gray-500 border border-gray-200'
-                              : payment.paid
-                                ? isDark 
-                                  ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50' 
-                                  : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                : isDark 
-                                  ? 'bg-amber-900/40 text-amber-300 border border-amber-700/50' 
-                                  : 'bg-amber-100 text-amber-700 border border-amber-200'
+                                ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50' 
+                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              : isDark 
+                                ? 'bg-amber-900/40 text-amber-300 border border-amber-700/50' 
+                                : 'bg-amber-100 text-amber-700 border border-amber-200'
                           }`}>
-                            {payment.paymentStatus === 'na' || (!payment.hasBet && !payment.isPlaceholder && !payment.paid) ? (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                N/A
-                              </>
-                            ) : payment.paid ? (
+                            {payment.paid ? (
                               <>
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -3220,7 +3259,7 @@ export default function Admin() {
                           {payment.isGuestBet ? (
                             <div className="flex items-center justify-center gap-2">
                               <select
-                                value={payment.paymentStatus || 'pending'}
+                                value={payment.paid ? 'paid' : 'pending'}
                                 onChange={(e) => handleChangeGuestPaymentStatus(payment.betId, e.target.value)}
                                 className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
                                   isDark 
@@ -3246,31 +3285,18 @@ export default function Admin() {
                               </button>
                             </div>
                           ) : (
-                            <>
-                              <select
-                                value={payment.paymentStatus || 'na'}
-                                onChange={(e) => handleChangePaymentStatus(payment.userId, e.target.value)}
-                                className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
-                                  isDark 
-                                    ? 'bg-dark-700 border border-dark-600 text-dark-100' 
-                                    : 'bg-white border border-gray-300 text-gray-900'
-                                }`}
-                              >
-                                <option value="na">N/A</option>
-                                <option value="pending">Pending</option>
-                                <option value="paid">Paid</option>
-                              </select>
-                              {payment.hasBet && (
-                                <span className={`block text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                  ✓ Has bet
-                                </span>
-                              )}
-                              {payment.isPlaceholder && !payment.hasBet && (
-                                <span className={`block text-xs mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                                  Payment only
-                                </span>
-                              )}
-                            </>
+                            <select
+                              value={payment.paid ? 'paid' : 'pending'}
+                              onChange={(e) => handleChangeBetPaymentStatus(payment.betId, e.target.value)}
+                              className={`px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
+                                isDark 
+                                  ? 'bg-dark-700 border border-dark-600 text-dark-100' 
+                                  : 'bg-white border border-gray-300 text-gray-900'
+                              }`}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="paid">Paid</option>
+                            </select>
                           )}
                         </td>
                       </tr>
@@ -3301,11 +3327,7 @@ export default function Admin() {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                      Pending: {payments.filter(p => p.hasBet && !p.paid).length}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-gray-500"></span>
-                      No Bet: {payments.filter(p => !p.hasBet && !p.isGuestBet).length}
+                      Pending: {payments.filter(p => !p.paid).length}
                     </span>
                   </div>
                 </div>

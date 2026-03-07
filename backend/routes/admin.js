@@ -269,25 +269,22 @@ router.get('/bets', auth, adminAuth, async (req, res) => {
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
 
-    // Check if current week's schedule is settled - if so, use next week
-    let schedule = await Schedule.findOne({ weekNumber, year });
-    
-    if (schedule && schedule.isSettled) {
-      const nextWeek = weekNumber + 1;
-      const nextYear = nextWeek > 52 ? year + 1 : year;
-      const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
-      
-      const nextWeekSchedule = await Schedule.findOne({ 
-        weekNumber: actualNextWeek, 
-        year: nextYear 
-      });
-      
-      // If next week's schedule exists and isn't settled, use it
-      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
-        weekNumber = actualNextWeek;
-        year = nextYear;
-        schedule = nextWeekSchedule;
-      }
+    // Find the oldest unsettled schedule (this is the active betting week)
+    // This ensures consistency with the payments endpoint
+    let schedule = await Schedule.findOne({ 
+      isSettled: false,
+      year: { $gte: year - 1 }
+    }).sort({ year: 1, weekNumber: 1 });
+
+    // If found an unsettled schedule, use its week
+    if (schedule) {
+      weekNumber = schedule.weekNumber;
+      year = schedule.year;
+      console.log(`📊 Admin Bets: Using unsettled schedule - Week ${weekNumber}, Year ${year}`);
+    } else {
+      // Fall back to calculated week if no unsettled schedule
+      schedule = await Schedule.findOne({ weekNumber, year });
+      console.log(`📊 Admin Bets: No unsettled schedule found, using calculated Week ${weekNumber}, Year ${year}`);
     }
 
     if (!schedule) {
@@ -570,7 +567,7 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
 });
 
 // @route   GET /api/admin/payments
-// @desc    Get all users with their bet/payment status for current week (including guest bets)
+// @desc    Get only users and guests with bets for current week (payment tracking)
 // @access  Admin
 router.get('/payments', auth, adminAuth, async (req, res) => {
   try {
@@ -588,80 +585,70 @@ router.get('/payments', auth, adminAuth, async (req, res) => {
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
 
-    // Check if current week's schedule is settled - if so, use next week
-    let schedule = await Schedule.findOne({ weekNumber, year });
-    
-    if (schedule && schedule.isSettled) {
-      const nextWeek = weekNumber + 1;
-      const nextYear = nextWeek > 52 ? year + 1 : year;
-      const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
-      
-      const nextWeekSchedule = await Schedule.findOne({ 
-        weekNumber: actualNextWeek, 
-        year: nextYear 
-      });
-      
-      // If next week's schedule exists and isn't settled, use it
-      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
-        weekNumber = actualNextWeek;
-        year = nextYear;
-        schedule = nextWeekSchedule;
-      }
+    // Find the oldest unsettled schedule (this is the active betting week)
+    let schedule = await Schedule.findOne({ 
+      isSettled: false,
+      year: { $gte: year - 1 }
+    }).sort({ year: 1, weekNumber: 1 });
+
+    // If found an unsettled schedule, use its week
+    if (schedule) {
+      weekNumber = schedule.weekNumber;
+      year = schedule.year;
+      console.log(`💳 Admin Payments: Using unsettled schedule - Week ${weekNumber}, Year ${year}`);
+    } else {
+      // Fall back to calculated week if no unsettled schedule
+      schedule = await Schedule.findOne({ weekNumber, year });
+      console.log(`💳 Admin Payments: No unsettled schedule found, using calculated Week ${weekNumber}, Year ${year}`);
     }
 
-    // Get all users (excluding password)
-    const users = await User.find().select('-password').sort({ name: 1 });
-
-    // Get all user bets for this week (excluding guest bets from old Bet model)
-    const userBets = await Bet.find({ weekNumber, year, isGuestBet: { $ne: true } });
+    // Get all user bets for this week (excluding placeholders and guest bets)
+    const userBets = await Bet.find({ 
+      weekNumber, 
+      year, 
+      isGuestBet: { $ne: true },
+      isPlaceholder: { $ne: true }
+    }).populate('userId', 'name email isAdmin isDeveloper');
     
     // Get all guest bets from the GuestBet model
-    const guestBets = await GuestBet.find({ weekNumber, year });
+    const guestBets = await GuestBet.find({ weekNumber, year })
+      .populate('sponsorUserId', 'name');
     
-    // Create a map of userId to bet for quick lookup
-    const betMap = new Map();
-    userBets.forEach(bet => {
-      betMap.set(bet.userId.toString(), bet);
-    });
+    console.log(`💳 Admin Payments: Found ${userBets.length} user bets and ${guestBets.length} guest bets for Week ${weekNumber}`);
 
-    // Combine users with their bet info
-    const paymentsData = users.map(user => {
-      const bet = betMap.get(user._id.toString());
-      const isPlaceholder = bet?.isPlaceholder || false;
-      const hasRealBet = bet && !isPlaceholder;
-      
-      // Determine payment status: 'paid', 'pending', or 'na'
-      let paymentStatus = 'na';
-      if (bet) {
-        paymentStatus = bet.paid ? 'paid' : 'pending';
+    // Build payments data from actual bets only
+    const paymentsData = [];
+
+    // Add user bets to payments data
+    userBets.forEach(bet => {
+      if (bet.userId) {
+        paymentsData.push({
+          oderId: `user_${bet._id}`,
+          odaUserId: bet.userId._id,
+          name: bet.userId.name || 'Unknown User',
+          email: bet.userId.email,
+          isAdmin: bet.userId.isAdmin || false,
+          isDeveloper: bet.userId.isDeveloper || false,
+          hasBet: true,
+          isPlaceholder: false,
+          betId: bet._id,
+          paid: bet.paid || false,
+          paymentStatus: bet.paid ? 'paid' : 'pending',
+          totalPoints: bet.totalPoints || 0,
+          totalGoals: bet.totalGoals ?? null,
+          createdAt: bet.createdAt,
+          isGuestBet: false
+        });
       }
-      
-      return {
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        isDeveloper: user.isDeveloper,
-        hasBet: hasRealBet,
-        isPlaceholder,
-        betId: bet?._id || null,
-        paid: bet?.paid || false,
-        paymentStatus,
-        totalPoints: hasRealBet ? (bet?.totalPoints || 0) : 0,
-        totalGoals: hasRealBet ? (bet?.totalGoals ?? null) : null,
-        createdAt: user.createdAt,
-        isGuestBet: false
-      };
     });
 
     // Add guest bets to the payments data
     guestBets.forEach(guestBet => {
-      const hostUser = users.find(u => u._id.toString() === guestBet.sponsorUserId.toString());
       paymentsData.push({
-        oderId: `guest_${guestBet._id}`, // Unique ID for guest payments
-        sponsorUserId: guestBet.sponsorUserId, // Sponsor user ID for reference
+        oderId: `guest_${guestBet._id}`,
+        sponsorUserId: guestBet.sponsorUserId?._id || guestBet.sponsorUserId,
         name: guestBet.participantName,
-        email: null, // Guest bets don't have emails
+        email: null,
         isAdmin: false,
         isDeveloper: false,
         hasBet: true,
@@ -673,25 +660,20 @@ router.get('/payments', auth, adminAuth, async (req, res) => {
         totalGoals: guestBet.totalGoals ?? null,
         createdAt: guestBet.createdAt,
         isGuestBet: true,
-        managedBy: hostUser?.name || 'Unknown',
-        managedByUserId: guestBet.sponsorUserId
+        managedBy: guestBet.sponsorUserId?.name || 'Unknown',
+        managedByUserId: guestBet.sponsorUserId?._id || guestBet.sponsorUserId
       });
     });
 
-    // Sort: users with real bets first, then placeholders, then no records, then by name
-    paymentsData.sort((a, b) => {
-      if (a.hasBet && !b.hasBet) return -1;
-      if (!a.hasBet && b.hasBet) return 1;
-      if (a.isPlaceholder && !b.isPlaceholder) return -1;
-      if (!a.isPlaceholder && b.isPlaceholder) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    // Sort by name alphabetically
+    paymentsData.sort((a, b) => a.name.localeCompare(b.name));
 
     res.json({ 
       payments: paymentsData,
       weekInfo: {
         weekNumber,
-        year
+        year,
+        jornada: schedule?.jornada || null
       }
     });
   } catch (error) {

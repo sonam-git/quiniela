@@ -126,6 +126,7 @@
   "table": {
     "noPredictions": "Sin Predicciones Aún",
     "beFirst": "¡Sé el primero en hacer tu predicción esta semana y compite por el premio!",
+    "predictNow": "Predecir Ahora",
     "leaderAfterFirst": "El líder aparece después del primer partido",
     "points": "puntos",
     "status": "Estado",

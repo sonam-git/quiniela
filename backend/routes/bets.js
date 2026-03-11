@@ -135,95 +135,116 @@ router.get('/current', async (req, res) => {
       year: { $gte: year - 1 }
     }).sort({ year: 1, weekNumber: 1 });
 
-    // If no unsettled schedule, fall back to calculated week number
+    // If no unsettled schedule exists at all, return empty bets
+    // Settled results should only appear in the Results tab
     if (!schedule) {
-      schedule = await Schedule.findOne({ weekNumber, year });
-    } else {
-      // Use the schedule's week number for bets lookup
-      weekNumber = schedule.weekNumber;
-      year = schedule.year;
+      console.log(`📊 No unsettled schedule found. Returning empty bets for Standings.`);
+      return res.json({
+        bets: [],
+        weekNumber: null,
+        year: null,
+        isSettled: true,
+        noActiveSchedule: true,
+        message: 'No active schedule. Check Results tab for final standings.'
+      });
     }
     
-    console.log(`📊 /api/bets/current - Server week: ${getWeekNumber(now)}, Found schedule week: ${weekNumber}`);
+    // Use the schedule's week number for bets lookup
+    weekNumber = schedule.weekNumber;
+    year = schedule.year;
+    
+    console.log(`📊 /api/bets/current - Server week: ${getWeekNumber(now)}, Found unsettled schedule week: ${weekNumber}`);
     
     // Check if this schedule's betting is locked (matches already started)
     // If locked AND there's a next unsettled schedule with bets, show that instead
-    if (schedule && !schedule.isSettled) {
-      const firstMatchTime = schedule.firstMatchTime;
-      const lockoutTime = new Date(firstMatchTime.getTime() - 5 * 60 * 1000);
-      const isBettingLocked = now >= lockoutTime;
-      
-      if (isBettingLocked) {
-        // Check if there's a next unsettled schedule
-        const nextWeek = schedule.weekNumber + 1;
-        const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
-        const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
-        
-        const nextSchedule = await Schedule.findOne({ 
-          weekNumber: actualNextWeek, 
-          year: nextYear,
-          isSettled: false
-        });
-        
-        if (nextSchedule) {
-          // Check if there are bets for the next week
-          const nextWeekBetCount = await Bet.countDocuments({ 
-            weekNumber: actualNextWeek, 
-            year: nextYear, 
-            isPlaceholder: { $ne: true } 
-          });
-          const nextWeekGuestCount = await GuestBet.countDocuments({ 
-            weekNumber: actualNextWeek, 
-            year: nextYear 
-          });
-          
-          // If next week has bets OR current week has no bets, use next week
-          const currentWeekBetCount = await Bet.countDocuments({ 
-            weekNumber, 
-            year, 
-            isPlaceholder: { $ne: true } 
-          });
-          const currentWeekGuestCount = await GuestBet.countDocuments({ weekNumber, year });
-          
-          console.log(`📊 Current week ${weekNumber} bets: ${currentWeekBetCount + currentWeekGuestCount}, Next week ${actualNextWeek} bets: ${nextWeekBetCount + nextWeekGuestCount}`);
-          
-          if ((nextWeekBetCount + nextWeekGuestCount > 0) || (currentWeekBetCount + currentWeekGuestCount === 0)) {
-            schedule = nextSchedule;
-            weekNumber = actualNextWeek;
-            year = nextYear;
-            console.log(`📊 Switching to next week ${weekNumber} (current week locked with no/fewer bets)`);
-          }
-        }
-      }
-    }
+    const firstMatchTime = schedule.firstMatchTime;
+    const lockoutTime = new Date(firstMatchTime.getTime() - 5 * 60 * 1000);
+    const isBettingLocked = now >= lockoutTime;
     
-    // If current week's schedule is settled, look for next week's schedule
-    // This allows the standings to show the next week's bets after settling
-    if (schedule && schedule.isSettled) {
+    if (isBettingLocked) {
+      // Check if there's a next unsettled schedule
       const nextWeek = schedule.weekNumber + 1;
       const nextYear = nextWeek > 52 ? schedule.year + 1 : schedule.year;
       const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
       
-      const nextWeekSchedule = await Schedule.findOne({ 
+      const nextSchedule = await Schedule.findOne({ 
         weekNumber: actualNextWeek, 
-        year: nextYear 
+        year: nextYear,
+        isSettled: false
       });
       
-      // If next week's schedule exists and isn't settled, use it
-      if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
-        schedule = nextWeekSchedule;
-        weekNumber = actualNextWeek;
-        year = nextYear;
+      if (nextSchedule) {
+        // Check if there are bets for the next week
+        const nextWeekBetCount = await Bet.countDocuments({ 
+          weekNumber: actualNextWeek, 
+          year: nextYear, 
+          isPlaceholder: { $ne: true } 
+        });
+        const nextWeekGuestCount = await GuestBet.countDocuments({ 
+          weekNumber: actualNextWeek, 
+          year: nextYear 
+        });
+        
+        // If next week has bets OR current week has no bets, use next week
+        const currentWeekBetCount = await Bet.countDocuments({ 
+          weekNumber, 
+          year, 
+          isPlaceholder: { $ne: true } 
+        });
+        const currentWeekGuestCount = await GuestBet.countDocuments({ weekNumber, year });
+        
+        console.log(`📊 Current week ${weekNumber} bets: ${currentWeekBetCount + currentWeekGuestCount}, Next week ${actualNextWeek} bets: ${nextWeekBetCount + nextWeekGuestCount}`);
+        
+        if ((nextWeekBetCount + nextWeekGuestCount > 0) || (currentWeekBetCount + currentWeekGuestCount === 0)) {
+          schedule = nextSchedule;
+          weekNumber = actualNextWeek;
+          year = nextYear;
+          console.log(`📊 Switching to next week ${weekNumber} (current week locked with no/fewer bets)`);
+        }
       }
     }
     
-    // Fetch user bets
-    let userBets = await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true }, isGuestBet: { $ne: true } })
-      .populate('userId', 'name email');
+    // Fetch user bets - use scheduleId if available for more accurate matching
+    let userBets = await Bet.find({ 
+      weekNumber, 
+      year, 
+      isPlaceholder: { $ne: true }, 
+      isGuestBet: { $ne: true } 
+    }).populate('userId', 'name email');
 
-    // Fetch guest bets from the separate GuestBet model
-    let guestBets = await GuestBet.find({ weekNumber, year })
-      .populate('sponsorUserId', 'name email');
+    // Fetch guest bets - prefer scheduleId to avoid duplicate weekNumber issues
+    // When multiple jornadas share the same weekNumber, we need to match by scheduleId
+    let guestBets = [];
+    const scheduleMatchIds = schedule.matches.map(m => m._id.toString());
+    
+    if (schedule._id) {
+      // First try to find guest bets by scheduleId (most accurate)
+      guestBets = await GuestBet.find({ scheduleId: schedule._id })
+        .populate('sponsorUserId', 'name email');
+      
+      // If no guest bets found by scheduleId, fall back to weekNumber/year
+      // but filter by checking if predictions match current schedule's matches
+      if (guestBets.length === 0) {
+        const potentialGuestBets = await GuestBet.find({ 
+          weekNumber, 
+          year
+        }).populate('sponsorUserId', 'name email');
+        
+        // Filter to only include bets whose predictions match this schedule's matches
+        guestBets = potentialGuestBets.filter(gb => {
+          if (!gb.predictions || gb.predictions.length === 0) return false;
+          // Check if the first prediction's matchId exists in current schedule
+          const firstPredMatchId = gb.predictions[0]?.matchId?.toString();
+          return scheduleMatchIds.includes(firstPredMatchId);
+        });
+      }
+    } else {
+      // Fallback for when schedule has no _id (shouldn't happen)
+      guestBets = await GuestBet.find({ weekNumber, year })
+        .populate('sponsorUserId', 'name email');
+    }
+    
+    console.log(`📊 Found ${userBets.length} user bets and ${guestBets.length} guest bets for schedule ${schedule._id} (week ${weekNumber}, year ${year}, jornada ${schedule.jornada})`);
 
     // Transform guest bets to match the user bet format for the leaderboard
     const transformedGuestBets = guestBets.map(gb => ({
@@ -336,12 +357,28 @@ router.get('/settled-results', async (req, res) => {
     })
       .populate('userId', 'name email');
 
-    // Fetch guest bets
-    const guestBets = await GuestBet.find({ 
-      weekNumber: schedule.weekNumber, 
-      year: schedule.year
-    })
+    // Fetch guest bets - prefer scheduleId to avoid duplicate weekNumber issues
+    const scheduleMatchIds = schedule.matches.map(m => m._id.toString());
+    let guestBets = await GuestBet.find({ scheduleId: schedule._id })
       .populate('sponsorUserId', 'name email');
+    
+    // If no guest bets found by scheduleId, fall back to weekNumber/year 
+    // but filter by checking if predictions match this schedule's matches
+    if (guestBets.length === 0) {
+      const potentialGuestBets = await GuestBet.find({ 
+        weekNumber: schedule.weekNumber, 
+        year: schedule.year
+      }).populate('sponsorUserId', 'name email');
+      
+      // Filter to only include bets whose predictions match this schedule's matches
+      guestBets = potentialGuestBets.filter(gb => {
+        if (!gb.predictions || gb.predictions.length === 0) return false;
+        const firstPredMatchId = gb.predictions[0]?.matchId?.toString();
+        return scheduleMatchIds.includes(firstPredMatchId);
+      });
+    }
+    
+    console.log(`📊 Settled results: Found ${userBets.length} user bets and ${guestBets.length} guest bets for schedule ${schedule._id} (jornada ${schedule.jornada})`);
 
     // Transform guest bets to match user bet format
     const transformedGuestBets = guestBets.map(gb => ({

@@ -124,17 +124,25 @@ export default function QuinielaTable({ bets, schedule, isSettled, hasStarted, c
       <div className={`text-center py-16 rounded-xl border ${
         isDark ? 'bg-dark-800/50 border-dark-700' : 'bg-white border-gray-200'
       }`}>
-        <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-          isDark ? 'bg-dark-700' : 'bg-gray-100'
-        }`}>
-          <span className="text-3xl">🎯</span>
-        </div>
         <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           {t('table.noPredictions')}
         </h3>
-        <p className={`text-sm max-w-xs mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+        <p className={`text-sm max-w-xs mx-auto mb-6 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
           {t('table.beFirst')}
         </p>
+        <button
+          onClick={() => navigate('/place-bet')}
+          className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all transform hover:scale-105 ${
+            isDark 
+              ? 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-lg shadow-primary-500/25' 
+              : 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg shadow-primary-500/30'
+          }`}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          {t('table.predictNow', 'Predict Now')}
+        </button>
       </div>
     )
   }

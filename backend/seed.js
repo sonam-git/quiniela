@@ -163,13 +163,13 @@ const LIGA_MX_CLAUSURA_2026 = {
     startDate: '2026-03-13',
     matches: [
       { home: 'Puebla', away: 'Necaxa', date: '2026-03-13', time: '18:00' },
-      { home: 'Tigres UANL', away: 'Querétaro', date: '2026-03-13', time: '18:00' },
-      { home: 'FC Juárez', away: 'Monterrey', date: '2026-03-13', time: '20:00' },
+      { home: 'FC Juárez', away: 'Monterrey', date: '2026-03-13', time: '20:00' }, 
       { home: 'Atl. San Luis', away: 'Pachuca', date: '2026-03-14', time: '16:00' },
       { home: 'Guadalajara Chivas', away: 'Santos Laguna', date: '2026-03-14', time: '16:07' },
       { home: 'Club León', away: 'Club Tijuana', date: '2026-03-14', time: '18:00' },
       { home: 'Toluca', away: 'Atlas', date: '2026-03-14', time: '18:00' },
-      { home: 'UNAM Pumas', away: 'Cruz Azul', date: '2026-03-14', time: '20:00' },
+      { home: 'UNAM Pumas', away: 'Cruz Azul', date: '2026-03-14', time: '20:10' },
+      { home: 'Tigres UANL', away: 'Querétaro', date: '2026-03-15', time: '16:00' },
       { home: 'Club América', away: 'Mazatlán FC', date: '2026-03-15', time: '18:00' }
     ]
   },
@@ -465,28 +465,8 @@ const seedDatabase = async () => {
       console.log(`   Status: Settled ✓`);
     }
 
-    // Also create NEXT week's schedule (for when current week is settled)
-    const nextWeekJornada = currentJornada + 1;
-    let nextWeekSchedule = null;
-    
-    if (LIGA_MX_CLAUSURA_2026[nextWeekJornada]) {
-      const nextWeekMatches = getStaticSchedule(nextWeekJornada);
-      const nextWeekCalendarWeek = calendarWeek + 1;
-      
-      nextWeekSchedule = await Schedule.create({
-        weekNumber: nextWeekCalendarWeek,
-        year,
-        jornada: nextWeekJornada,
-        matches: nextWeekMatches.slice(0, 9),
-        dataSource: 'hardcoded',
-        isSettled: false,
-        actualTotalGoals: null
-      });
-      
-      console.log(`\n✅ Next week's schedule created (Jornada ${nextWeekJornada})`);
-      console.log(`   Week: ${nextWeekCalendarWeek}, Year: ${year}`);
-      console.log(`   Status: Ready for betting after current week settles`);
-    }
+    // NOTE: Next week's schedule will be created automatically when current week is settled
+    // This prevents showing future weeks before they should be visible
 
     // Summary
     console.log('\n' + '═'.repeat(55));
@@ -499,9 +479,7 @@ const seedDatabase = async () => {
     if (lastWeekSchedule) {
       console.log(`   • Last Week: Jornada ${lastWeekJornada} (Week ${calendarWeek - 1}/${year}) - SETTLED`);
     }
-    if (nextWeekSchedule) {
-      console.log(`   • Next Week: Jornada ${nextWeekJornada} (Week ${calendarWeek + 1}/${year}) - READY`);
-    }
+    console.log(`   • Next Week: Will be auto-created when current week is settled`);
     console.log(`   • Data source: ${source}`);
     console.log(`   • Matches per week: 9`);
     console.log(`   • Bets: 0 (cleared - users can place new bets)`);
@@ -547,4 +525,10 @@ const seedDatabase = async () => {
   }
 };
 
-seedDatabase();
+// Only run seedDatabase if this file is executed directly (not imported)
+if (require.main === module) {
+  seedDatabase();
+}
+
+// Export schedule data for use in other modules
+module.exports = { LIGA_MX_CLAUSURA_2026 };

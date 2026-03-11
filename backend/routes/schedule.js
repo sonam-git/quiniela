@@ -54,6 +54,17 @@ router.get('/current', async (req, res) => {
       // If next week's schedule exists and isn't settled, use it
       if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
         schedule = nextWeekSchedule;
+      } else {
+        // No unsettled schedule available - return 404
+        // Settled results should only appear in the Results tab
+        console.log(`📅 Schedule ${schedule.weekNumber} is settled and no next schedule exists.`);
+        return res.status(404).json({ 
+          message: 'No active schedule available. The current week has been settled.',
+          weekNumber: null,
+          year: null,
+          isSettled: true,
+          noActiveSchedule: true
+        });
       }
     }
     

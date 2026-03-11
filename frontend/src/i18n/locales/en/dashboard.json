@@ -126,6 +126,7 @@
   "table": {
     "noPredictions": "No Predictions Yet",
     "beFirst": "Be the first to place your prediction this week and compete for the prize!",
+    "predictNow": "Predict Now",
     "leaderAfterFirst": "Leader appears after first match",
     "points": "points",
     "status": "Status",

@@ -8,7 +8,69 @@ const Schedule = require('../models/Schedule');
 const Announcement = require('../models/Announcement');
 const Settings = require('../models/Settings');
 
+// Import schedule data from seed.js
+const { LIGA_MX_CLAUSURA_2026 } = require('../seed');
+
 const router = express.Router();
+
+// Helper function to get week number from a date
+const getWeekNumber = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+};
+
+// Helper function to create the next jornada schedule
+const createNextJornadaSchedule = async (currentJornada) => {
+  const nextJornada = currentJornada + 1;
+  const jornadaData = LIGA_MX_CLAUSURA_2026[nextJornada];
+  
+  if (!jornadaData) {
+    console.log(`⚠️ No data found for Jornada ${nextJornada} in seed`);
+    return null;
+  }
+  
+  // Check if schedule already exists
+  const startDate = new Date(jornadaData.startDate);
+  const weekNumber = getWeekNumber(startDate);
+  const year = startDate.getFullYear();
+  
+  const existing = await Schedule.findOne({ jornada: nextJornada, year });
+  if (existing) {
+    console.log(`📅 Jornada ${nextJornada} already exists`);
+    return existing;
+  }
+  
+  // Create matches from seed data
+  const matches = jornadaData.matches.map(m => {
+    const [y, mo, d] = m.date.split('-').map(Number);
+    const [h, mi] = m.time.split(':').map(Number);
+    return {
+      teamA: m.home,
+      teamB: m.away,
+      teamAIsHome: true,
+      startTime: new Date(y, mo - 1, d, h, mi),
+      isCompleted: false,
+      scoreTeamA: null,
+      scoreTeamB: null,
+      result: null
+    };
+  });
+  
+  const newSchedule = await Schedule.create({
+    weekNumber,
+    year,
+    jornada: nextJornada,
+    matches,
+    dataSource: 'hardcoded',
+    isSettled: false
+  });
+  
+  console.log(`✅ Created Jornada ${nextJornada} schedule (Week ${weekNumber}, Year ${year})`);
+  return newSchedule;
+};
 
 // Helper function to calculate bets with live points for real-time updates
 const calculateBetsWithLivePoints = async (schedule) => {
@@ -255,16 +317,6 @@ router.post('/upgrade-to-developer', auth, async (req, res) => {
 // @access  Admin
 router.get('/bets', auth, adminAuth, async (req, res) => {
   try {
-    // Calculate current week number (same logic as bets.js routes)
-    const getWeekNumber = (date) => {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-      const yearStart = new Date(d.getFullYear(), 0, 1);
-      const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-      return weekNumber;
-    };
-
     const now = new Date();
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
@@ -439,16 +491,6 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Calculate current week number (same logic as bets.js routes)
-    const getWeekNumber = (date) => {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-      const yearStart = new Date(d.getFullYear(), 0, 1);
-      const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-      return weekNumber;
-    };
-
     const now = new Date();
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
@@ -571,16 +613,6 @@ router.patch('/users/:userId/payment', auth, adminAuth, async (req, res) => {
 // @access  Admin
 router.get('/payments', auth, adminAuth, async (req, res) => {
   try {
-    // Calculate current week number (same logic as bets.js routes)
-    const getWeekNumber = (date) => {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-      const yearStart = new Date(d.getFullYear(), 0, 1);
-      const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-      return weekNumber;
-    };
-
     const now = new Date();
     let weekNumber = getWeekNumber(now);
     let year = now.getFullYear();
@@ -864,16 +896,6 @@ router.delete('/announcements/:id', auth, adminAuth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-// Helper to get week number
-const getWeekNumber = (date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-  const yearStart = new Date(d.getFullYear(), 0, 1);
-  const weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return weekNumber;
-};
 
 // @route   GET /api/admin/schedule
 // @desc    Get current week's schedule for admin (oldest unsettled schedule)
@@ -1200,6 +1222,20 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
     schedule.settledAt = new Date();
     await schedule.save();
 
+    // Create the next jornada schedule automatically
+    let nextSchedule = null;
+    if (schedule.jornada) {
+      try {
+        nextSchedule = await createNextJornadaSchedule(schedule.jornada);
+        if (nextSchedule) {
+          console.log(`✅ Auto-created next schedule: Jornada ${nextSchedule.jornada}`);
+        }
+      } catch (err) {
+        console.error('Failed to auto-create next schedule:', err.message);
+        // Don't fail the settle operation if next schedule creation fails
+      }
+    }
+
     // Emit real-time update for week settled
     const io = req.app.get('io');
     if (io) {
@@ -1209,6 +1245,11 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
         actualTotalGoals,
         winnersCount: allBetsForRanking.filter(b => b.isWinner).length
       });
+      
+      // Also emit schedule created event if next schedule was created
+      if (nextSchedule) {
+        io.emit('schedule:created', { schedule: nextSchedule });
+      }
     }
 
     // Get final results with user info (regular bets)
@@ -1373,6 +1414,49 @@ router.put('/schedules/:scheduleId/match/:matchId', auth, adminAuth, async (req,
     res.json({ message: 'Match updated successfully', schedule });
   } catch (error) {
     console.error('Update match error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/schedules/create-next
+// @desc    Create the next jornada schedule from seed data
+// @access  Admin
+router.post('/schedules/create-next', auth, adminAuth, async (req, res) => {
+  try {
+    // Find the last jornada in the database
+    const lastSchedule = await Schedule.findOne({ jornada: { $exists: true, $ne: null } })
+      .sort({ jornada: -1 });
+    
+    const lastJornada = lastSchedule?.jornada || 0;
+    const nextJornada = lastJornada + 1;
+    
+    // Check if next jornada exists in seed data
+    if (!LIGA_MX_CLAUSURA_2026[nextJornada]) {
+      return res.status(400).json({ 
+        message: `No data found for Jornada ${nextJornada} in seed data`,
+        availableJornadas: Object.keys(LIGA_MX_CLAUSURA_2026).map(Number)
+      });
+    }
+    
+    // Create the next schedule
+    const newSchedule = await createNextJornadaSchedule(lastJornada);
+    
+    if (!newSchedule) {
+      return res.status(400).json({ message: 'Failed to create next schedule' });
+    }
+    
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('schedule:created', { schedule: newSchedule });
+    }
+    
+    res.status(201).json({ 
+      message: `Jornada ${nextJornada} schedule created successfully`,
+      schedule: newSchedule
+    });
+  } catch (error) {
+    console.error('Create next schedule error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

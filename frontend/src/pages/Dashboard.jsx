@@ -178,25 +178,41 @@ export default function Dashboard() {
       
       // Now fetch current schedule and bets
       const [scheduleRes, betsRes, announcementsRes, betAmountValue] = await Promise.all([
-        api.get('/schedule/current'),
+        api.get('/schedule/current').catch(err => {
+          // Handle 404 - no active schedule (settled or not created)
+          if (err.response?.status === 404) {
+            return { data: { schedule: null, weekNumber: null, year: null, noActiveSchedule: true } }
+          }
+          throw err
+        }),
         api.get('/bets/current'),
         api.get('/announcements'),
         getBetAmount().catch(() => 20) // Default to 20 if settings not available
       ])
 
-      setSchedule(scheduleRes.data.schedule)
-      setBets(betsRes.data.bets)
-      setIsSettled(betsRes.data.isSettled)
-      setLockStatus({
-        isBettingLocked: scheduleRes.data.isBettingLocked,
-        hasStarted: scheduleRes.data.hasStarted,
-        lockoutTime: scheduleRes.data.lockoutTime
-      })
-      setWeekInfo({
-        weekNumber: scheduleRes.data.weekNumber,
-        year: scheduleRes.data.year,
-        jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
-      })
+      // Handle case where schedule is settled or doesn't exist
+      if (scheduleRes.data.noActiveSchedule || !scheduleRes.data.schedule) {
+        setSchedule(null)
+        setBets([])
+        setIsSettled(false)
+        setWeekInfo({ weekNumber: null, year: null, jornada: null })
+        // Don't set error - the UI will show "No Schedule Available" inline
+        // and auto-switch to Results tab if results exist
+      } else {
+        setSchedule(scheduleRes.data.schedule)
+        setBets(betsRes.data.bets)
+        setIsSettled(betsRes.data.isSettled)
+        setLockStatus({
+          isBettingLocked: scheduleRes.data.isBettingLocked,
+          hasStarted: scheduleRes.data.hasStarted,
+          lockoutTime: scheduleRes.data.lockoutTime
+        })
+        setWeekInfo({
+          weekNumber: scheduleRes.data.weekNumber,
+          year: scheduleRes.data.year,
+          jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
+        })
+      }
       setAnnouncements(announcementsRes.data.announcements || [])
       setBetAmount(betAmountValue || 20)
     } catch (error) {
@@ -492,26 +508,35 @@ export default function Dashboard() {
       api.get('/bets/current')
     ]).then(([scheduleRes, betsRes]) => {
       // Update schedule to the new week
-      setSchedule(scheduleRes.data.schedule)
-      setBets(betsRes.data.bets)
-      setIsSettled(betsRes.data.isSettled)
-      setWeekInfo({
-        weekNumber: scheduleRes.data.weekNumber,
-        year: scheduleRes.data.year,
-        jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
-      })
-      setLockStatus({
-        isBettingLocked: scheduleRes.data.isBettingLocked,
-        hasStarted: scheduleRes.data.hasStarted,
-        lockoutTime: scheduleRes.data.lockoutTime
-      })
-      setError(null)
+      if (scheduleRes.data.schedule && !scheduleRes.data.noActiveSchedule) {
+        setSchedule(scheduleRes.data.schedule)
+        setBets(betsRes.data.bets)
+        setIsSettled(betsRes.data.isSettled)
+        setWeekInfo({
+          weekNumber: scheduleRes.data.weekNumber,
+          year: scheduleRes.data.year,
+          jornada: scheduleRes.data.schedule?.jornada || scheduleRes.data.weekNumber
+        })
+        setLockStatus({
+          isBettingLocked: scheduleRes.data.isBettingLocked,
+          hasStarted: scheduleRes.data.hasStarted,
+          lockoutTime: scheduleRes.data.lockoutTime
+        })
+        setError(null)
+      } else {
+        // No next schedule, clear standings and switch to results
+        setSchedule(null)
+        setBets([])
+        setIsSettled(false)
+        setActiveTab('results')
+      }
     }).catch(error => {
-      // If no new schedule exists yet, that's OK - admin will create it
+      // If no new schedule exists yet, that's OK - clear standings and switch to results
       if (error.response?.status === 404) {
         setSchedule(null)
         setBets([])
         setIsSettled(false)
+        setActiveTab('results')
       }
     })
     
@@ -587,10 +612,10 @@ export default function Dashboard() {
 
   // Auto-switch to results tab if there's no current schedule but there are settled results
   useEffect(() => {
-    if (!loading && !schedule && hasResults && error?.type === 'not_found') {
+    if (!loading && !schedule && hasResults) {
       setActiveTab('results')
     }
-  }, [loading, schedule, hasResults, error])
+  }, [loading, schedule, hasResults])
 
   const dismissAnnouncement = (id) => {
     const updated = [...dismissedAnnouncements, id]

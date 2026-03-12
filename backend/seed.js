@@ -67,97 +67,6 @@ const convertApiFixtures = (fixtures) => {
 // Format: { home: 'HomeTeam 🏠', away: 'AwayTeam ✈️', date: 'YYYY-MM-DD', time: 'HH:MM' }
 // For completed matches: result: 'teamA' | 'teamB' | 'draw', scoreA, scoreB
 const LIGA_MX_CLAUSURA_2026 = {
-  // Jornada 5 - February 6-7, 2026 (COMPLETED - matches already played)
-  5: {
-    startDate: '2026-02-06',
-    completed: true,
-    matches: [
-      { home: 'Necaxa', away: 'Atl. San Luis', date: '2026-02-06', time: '17:00', scoreA: 4, scoreB: 1, result: 'teamA' },
-      { home: 'Tigres UANL', away: 'Santos Laguna', date: '2026-02-06', time: '17:00', scoreA: 5, scoreB: 1, result: 'teamA' },
-      { home: 'Club Tijuana', away: 'Puebla', date: '2026-02-06', time: '19:00', scoreA: 0, scoreB: 0, result: 'teamA' },
-      { home: 'Mazatlán FC', away: 'Guadalajara Chivas', date: '2026-02-06', time: '19:06', scoreA: 1, scoreB: 1, result: 'draw' },
-      { home: 'Querétaro', away: 'Club León', date: '2026-02-07', time: '15:00', scoreA: 0, scoreB: 2, result: 'teamB' },
-      { home: 'Toluca', away: 'Cruz Azul', date: '2026-02-07', time: '15:00', scoreA: 2, scoreB: 2, result: 'draw' },
-      { home: 'Atlas', away: 'UNAM Pumas', date: '2026-02-07', time: '17:00', scoreA: 1, scoreB: 3, result: 'teamB' },
-      { home: 'Pachuca', away: 'FC Juárez', date: '2026-02-07', time: '17:00', scoreA: 2, scoreB: 0, result: 'teamA' },
-      { home: 'Club América', away: 'Monterrey', date: '2026-02-07', time: '19:00', scoreA: 3, scoreB: 1, result: 'teamA' }
-    ]
-  },
-  // Jornada 6 - February 13-15, 2026
-  6: {
-    startDate: '2026-02-13',
-    matches: [
-      { home: 'Puebla', away: 'UNAM Pumas', date: '2026-02-13', time: '17:00' },
-      { home: 'Toluca', away: 'Club Tijuana', date: '2026-02-13', time: '19:00' },
-      { home: 'Atl. San Luis', away: 'Querétaro', date: '2026-02-14', time: '15:00' },
-      { home: 'Pachuca', away: 'Atlas', date: '2026-02-14', time: '15:00' },
-      { home: 'FC Juárez', away: 'Necaxa', date: '2026-02-14', time: '17:00' },
-      { home: 'Monterrey', away: 'Club León', date: '2026-02-14', time: '17:00' },
-      { home: 'Guadalajara Chivas', away: 'Club América', date: '2026-02-14', time: '19:07' },
-      { home: 'Cruz Azul', away: 'Tigres UANL', date: '2026-02-15', time: '14:30' },
-      { home: 'Santos Laguna', away: 'Mazatlán FC', date: '2026-02-15', time: '15:00' }
-    ]
-  },
-  // Jornada 7 - February 20-22, 2026
-  7: {
-    startDate: '2026-02-20',
-    matches: [
-      { home: 'Tigres UANL', away: 'Pachuca', date: '2026-02-20', time: '17:00' },
-      { home: 'Puebla', away: 'Club América', date: '2026-02-20', time: '19:06' },
-      { home: 'Atlas', away: 'Atl. San Luis', date: '2026-02-21', time: '15:00' },
-      { home: 'Club León', away: 'Santos Laguna', date: '2026-02-21', time: '17:00' },
-      { home: 'Necaxa', away: 'Toluca', date: '2026-02-21', time: '17:00' },
-      { home: 'Cruz Azul', away: 'Guadalajara Chivas', date: '2026-02-21', time: '19:00' },
-      { home: 'UNAM Pumas', away: 'Monterrey', date: '2026-02-22', time: '15:00' },
-      { home: 'Querétaro', away: 'FC Juárez', date: '2026-02-22', time: '17:00' },
-      { home: 'Club Tijuana', away: 'Mazatlán FC', date: '2026-02-22', time: '19:06' }
-    ]
-  },
-  // Jornada 8 - February 27-28, 2026
-  8: {
-    startDate: '2026-02-27',
-    matches: [
-      { home: 'Mazatlán FC', away: 'Pachuca', date: '2026-02-27', time: '17:00' },
-      { home: 'Querétaro', away: 'Santos Laguna', date: '2026-02-27', time: '17:00' },
-      { home: 'FC Juárez', away: 'Atlas', date: '2026-02-27', time: '19:00' },
-      { home: 'Club Tijuana', away: 'UNAM Pumas', date: '2026-02-27', time: '19:06' },
-      { home: 'Atl. San Luis', away: 'Puebla', date: '2026-02-28', time: '15:00' },
-      { home: 'Toluca', away: 'Guadalajara Chivas', date: '2026-02-28', time: '15:00' },
-      { home: 'Club León', away: 'Necaxa', date: '2026-02-28', time: '17:00' },
-      { home: 'Monterrey', away: 'Cruz Azul', date: '2026-02-28', time: '17:00' },
-      { home: 'Club América', away: 'Tigres UANL', date: '2026-02-28', time: '19:00' }
-    ]
-  },
-  // Jornada 9 - March 3-4, 2026
-  9: {
-    startDate: '2026-03-03',
-    matches: [
-      { home: 'Pachuca', away: 'Necaxa', date: '2026-03-03', time: '17:00' },
-      { home: 'Santos Laguna', away: 'Cruz Azul', date: '2026-03-03', time: '17:00' },
-      { home: 'Atl. San Luis', away: 'Mazatlán FC', date: '2026-03-03', time: '19:00' },
-      { home: 'UNAM Pumas', away: 'Toluca', date: '2026-03-03', time: '19:00' },
-      { home: 'Monterrey', away: 'Querétaro', date: '2026-03-04', time: '17:00' },
-      { home: 'Puebla', away: 'Tigres UANL', date: '2026-03-04', time: '17:00' },
-      { home: 'Atlas', away: 'Club Tijuana', date: '2026-03-04', time: '19:00' },
-      { home: 'Club América', away: 'FC Juárez', date: '2026-03-04', time: '19:00' },
-      { home: 'Guadalajara Chivas', away: 'Club León', date: '2026-03-18', time: '19:07' } // Rescheduled
-    ]
-  },
-  // Jornada 10 - March 6-8, 2026
-  10: {
-    startDate: '2026-03-06',
-    matches: [
-      { home: 'Mazatlán FC', away: 'Club León', date: '2026-03-06', time: '17:00' },
-      { home: 'Necaxa', away: 'UNAM Pumas', date: '2026-03-06', time: '19:00' },
-      { home: 'Cruz Azul', away: 'Atl. San Luis', date: '2026-03-07', time: '15:00' },
-      { home: 'Pachuca', away: 'Puebla', date: '2026-03-07', time: '15:00' },
-      { home: 'Atlas', away: 'Guadalajara Chivas', date: '2026-03-07', time: '17:00' },
-      { home: 'Tigres UANL', away: 'Monterrey', date: '2026-03-07', time: '19:00' },
-      { home: 'Querétaro', away: 'Club América', date: '2026-03-08', time: '16:00' },
-      { home: 'Toluca', away: 'FC Juárez', date: '2026-03-08', time: '18:00' },
-      { home: 'Club Tijuana', away: 'Santos Laguna', date: '2026-03-08', time: '20:00' }
-    ]
-  },
   // Jornada 11 - March 13-15, 2026
   11: {
     startDate: '2026-03-13',
@@ -309,15 +218,17 @@ const getCurrentJornada = () => {
   for (const [jornada, data] of Object.entries(LIGA_MX_CLAUSURA_2026)) {
     const jornadaStart = new Date(data.startDate);
     const jornadaEnd = new Date(jornadaStart);
-    jornadaEnd.setDate(jornadaEnd.getDate() + 4); // Jornada typically spans 4 days
+    jornadaEnd.setDate(jornadaEnd.getDate() + 6); // Jornada spans about a week
     
+    // If we're before the jornada ends, this is our current/upcoming jornada
     if (now <= jornadaEnd) {
       return parseInt(jornada);
     }
   }
   
-  // Default to jornada 5 if we can't determine
-  return 5;
+  // If all jornadas have passed, return the last one
+  const jornadas = Object.keys(LIGA_MX_CLAUSURA_2026).map(Number);
+  return Math.max(...jornadas);
 };
 
 // Helper to get current week number (same as schedule route)

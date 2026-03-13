@@ -1850,33 +1850,41 @@ export default function Admin() {
               isDark ? 'border-dark-700 bg-dark-800/50' : 'border-gray-100 bg-white/80'
             }`}>
               <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
-                {/* Schedule Sub-tab */}
-                <button
-                  onClick={() => setMatchesSubTab('schedule')}
-                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
-                    matchesSubTab === 'schedule'
-                      ? isDark
-                        ? 'bg-emerald-600 text-white shadow-lg'
-                        : 'bg-emerald-500 text-white shadow-lg'
-                      : isDark
-                        ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  <CalendarIcon />
-                  <span>Schedule</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    matchesSubTab === 'schedule'
-                      ? 'bg-white/20'
-                      : isDark ? 'bg-dark-600' : 'bg-gray-200'
-                  }`}>
-                    {schedule?.matches?.filter(m => m.isCompleted).length || 0} | {schedule?.matches?.length || 9}
-                  </span>
-                </button>
+                {/* Schedule Sub-tab - Only show if schedule exists */}
+                {schedule && (
+                  <button
+                    onClick={() => setMatchesSubTab('schedule')}
+                    className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
+                      matchesSubTab === 'schedule'
+                        ? isDark
+                          ? 'bg-emerald-600 text-white shadow-lg'
+                          : 'bg-emerald-500 text-white shadow-lg'
+                        : isDark
+                          ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <CalendarIcon />
+                    <span>Match Results</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      matchesSubTab === 'schedule'
+                        ? 'bg-white/20'
+                        : isDark ? 'bg-dark-600' : 'bg-gray-200'
+                    }`}>
+                      {schedule?.matches?.filter(m => m.isCompleted).length || 0}/{schedule?.matches?.length || 9}
+                    </span>
+                  </button>
+                )}
                 
-                {/* Update Sub-tab */}
+                {/* Create/Update Schedule Sub-tab */}
                 <button
-                  onClick={() => setMatchesSubTab('update')}
+                  onClick={() => {
+                    setMatchesSubTab('update')
+                    // Auto-open create form if no schedule exists
+                    if (!schedule) {
+                      setShowCreateSchedule(true)
+                    }
+                  }}
                   className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
                     matchesSubTab === 'update'
                       ? isDark
@@ -1887,44 +1895,85 @@ export default function Admin() {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                 <EditIcon/>
-                  <span>Update</span>
+                  {schedule ? <EditIcon/> : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
+                  <span>{schedule ? 'Update Schedule' : 'Create Schedule'}</span>
                 </button>
                 
-                {/* Settle Week Sub-tab */}
-                <button
-                  onClick={() => {
-                    if (schedule?.matches?.every(m => m.isCompleted) && !schedule?.isSettled) {
-                      setMatchesSubTab('settle')
-                    }
-                  }}
-                  disabled={!schedule?.matches?.every(m => m.isCompleted) || schedule?.isSettled}
-                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 whitespace-nowrap ${
-                    matchesSubTab === 'settle'
-                      ? isDark
-                        ? 'bg-amber-600 text-white shadow-lg'
-                        : 'bg-amber-500 text-white shadow-lg'
-                      : schedule?.matches?.every(m => m.isCompleted) && !schedule?.isSettled
+                {/* Settle Week Sub-tab - Only show if schedule exists */}
+                {schedule && (
+                  <button
+                    onClick={() => {
+                      if (schedule?.matches?.every(m => m.isCompleted) && !schedule?.isSettled) {
+                        setMatchesSubTab('settle')
+                      }
+                    }}
+                    disabled={!schedule?.matches?.every(m => m.isCompleted) || schedule?.isSettled}
+                    className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 whitespace-nowrap ${
+                      matchesSubTab === 'settle'
                         ? isDark
-                          ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        : isDark
-                          ? 'bg-dark-800 text-dark-500 cursor-not-allowed'
-                          : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <CheckIcon />
-                  <span className="hidden xs:inline">Verify Week</span>
-                  <span className="xs:hidden">Verify</span>
-                  {schedule?.isSettled && (
-                    <span className="text-xs">✅</span>
-                  )}
-                </button>
+                          ? 'bg-amber-600 text-white shadow-lg'
+                          : 'bg-amber-500 text-white shadow-lg'
+                        : schedule?.matches?.every(m => m.isCompleted) && !schedule?.isSettled
+                          ? isDark
+                            ? 'bg-dark-700 text-dark-300 hover:bg-dark-600'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          : isDark
+                            ? 'bg-dark-800 text-dark-500 cursor-not-allowed'
+                            : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <CheckIcon />
+                    <span className="hidden xs:inline">Verify Week</span>
+                    <span className="xs:hidden">Verify</span>
+                    {schedule?.isSettled && (
+                      <span className="text-xs">✅</span>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Schedule Sub-tab Content */}
-            {matchesSubTab === 'schedule' && (
+            {/* No Schedule State - Show Create Schedule prompt */}
+            {!schedule && matchesSubTab !== 'update' && (
+              <div className="p-6 sm:p-8">
+                <div className={`text-center py-12 rounded-xl border-2 border-dashed ${
+                  isDark ? 'border-dark-600 bg-dark-800/30' : 'border-gray-200 bg-gray-50/50'
+                }`}>
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                    isDark ? 'bg-purple-900/30' : 'bg-purple-100'
+                  }`}>
+                    <svg className={`w-8 h-8 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    No Active Schedule
+                  </h3>
+                  <p className={`text-sm mb-6 max-w-md mx-auto ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
+                    Create a new schedule to start accepting predictions for the upcoming week.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setMatchesSubTab('update')
+                      setShowCreateSchedule(true)
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create New Schedule
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Schedule Sub-tab Content - Only show if schedule exists */}
+            {matchesSubTab === 'schedule' && schedule && (
               <>
                 {/* AWS-Style Header */}
                 <div className={`px-4 sm:px-6 py-4 border-b ${
@@ -2231,67 +2280,54 @@ export default function Admin() {
                       </div>
                       <div>
                         <h2 className={`text-base sm:text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          Schedule Management
+                          {schedule ? 'Schedule Management' : 'Create New Schedule'}
                         </h2>
                         <p className={`text-xs sm:text-sm mt-0.5 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
-                          {allSchedules.length} schedule{allSchedules.length !== 1 ? 's' : ''} available
+                          {schedule 
+                            ? `${allSchedules.length} schedule${allSchedules.length !== 1 ? 's' : ''} available`
+                            : 'Set up matches for the upcoming week'
+                          }
                         </p>
                       </div>
                     </div>
                     
-                    {/* Action Buttons - AWS Style */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleRefreshSchedule}
-                        disabled={scheduleLoading}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium border transition-all ${
-                          isDark
-                            ? 'bg-dark-700 border-dark-600 text-dark-200 hover:bg-dark-600 hover:border-dark-500'
-                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        {scheduleLoading ? (
-                          <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                        ) : (
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                        )}
-                        <span>Refresh</span>
-                      </button>
-                      <button
-                        onClick={() => setShowCreateSchedule(!showCreateSchedule)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all ${
-                          showCreateSchedule
-                            ? isDark
-                              ? 'bg-dark-700 border border-dark-600 text-dark-300'
-                              : 'bg-gray-100 border border-gray-300 text-gray-600'
-                            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
-                        }`}
-                      >
-                        {showCreateSchedule ? (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span>Cancel</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>New</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    {/* Action Buttons - AWS Style - Only show if schedule exists */}
+                    {schedule && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowCreateSchedule(!showCreateSchedule)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                            showCreateSchedule
+                              ? isDark
+                                ? 'bg-dark-700 border border-dark-600 text-dark-300'
+                                : 'bg-gray-100 border border-gray-300 text-gray-600'
+                              : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
+                          }`}
+                        >
+                          {showCreateSchedule ? (
+                            <>
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              <span>Cancel</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              <span>New Schedule</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="p-4 sm:p-6">
               {/* Create Schedule Form - AWS Style Card */}
-              {showCreateSchedule && (
+              {(showCreateSchedule || !schedule) && (
                 <form onSubmit={handleCreateSchedule} className={`mb-6 rounded-lg border overflow-hidden ${
                   isDark ? 'bg-dark-800 border-dark-600' : 'bg-white border-gray-200 shadow-sm'
                 }`}>

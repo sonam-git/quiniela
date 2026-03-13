@@ -38,7 +38,6 @@ Quiniela/
 │   ├── middleware/
 │   │   └── auth.js
 │   ├── server.js
-│   ├── seed.js
 │   └── package.json
 ├── frontend/
 │   ├── src/
@@ -82,41 +81,25 @@ Quiniela/
    JWT_SECRET=your_super_secret_key_here
    ```
 
-4. **Seed the Database** (Optional - adds demo data)
-   ```bash
-   npm run seed
-   # or
-   node seed.js
-   ```
-   ⚠️ **Warning**: This clears ALL existing data (users, bets, schedules)
-
-5. **Create Schedule Only** (Preserves users and bets)
-   ```bash
-   # Create schedule for current jornada
-   npm run schedule
-   
-   # Create schedule for specific jornada (e.g., Jornada 6)
-   node createSchedule.js 6
-   
-   # Force replace existing schedule
-   node createSchedule.js 6 --force
-   ```
-
-6. **Start Backend Server**
+4. **Start Backend Server**
    ```bash
    npm run dev
    ```
 
-6. **Setup Frontend** (in a new terminal)
+5. **Setup Frontend** (in a new terminal)
    ```bash
    cd frontend
    npm install
    npm start
    ```
 
-7. **Open the App**
+6. **Open the App**
    
    Visit [http://localhost:3000](http://localhost:3000)
+
+7. **Create Schedule via Admin UI**
+   
+   Log in as an admin and navigate to the **Matches** tab to create schedules manually.
 
 ## Automatic Weekly Scheduling
 
@@ -129,22 +112,13 @@ The system includes an automatic scheduler that:
 3. **Dashboard Last Week Tab** - The dashboard displays a "Last Week" tab (when data exists) showing the final results from the previous week. This tab automatically disappears when the next week ends.
 
 **Manual Schedule Management:**
-```bash
-# Create schedule for current/next jornada
-npm run schedule
 
-# Create schedule for specific jornada (e.g., Jornada 6)
-node createSchedule.js 6
-
-# Force replace existing schedule
-node createSchedule.js 6 --force
-```
-
-## Demo Credentials
-
-After seeding the database:
-- **Email**: carlos@example.com
-- **Password**: password123
+Schedules are now created and managed exclusively through the Admin UI:
+1. Log in as an admin
+2. Go to the **Matches** tab
+3. Click **Create Schedule** to add a new week's matches
+4. Use **Update Schedule** to modify existing schedules
+5. Use **Verify Week** to settle completed weeks
 
 ## API Endpoints
 

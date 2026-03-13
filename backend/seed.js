@@ -214,21 +214,27 @@ const getStaticSchedule = (jornada) => {
 const getCurrentJornada = () => {
   const now = new Date();
   
+  // Sort jornadas numerically to ensure correct order (11, 12, 13, ...)
+  const sortedJornadas = Object.keys(LIGA_MX_CLAUSURA_2026)
+    .map(Number)
+    .sort((a, b) => a - b);
+  
   // Check each jornada to find the current or upcoming one
-  for (const [jornada, data] of Object.entries(LIGA_MX_CLAUSURA_2026)) {
+  for (const jornada of sortedJornadas) {
+    const data = LIGA_MX_CLAUSURA_2026[jornada];
     const jornadaStart = new Date(data.startDate);
     const jornadaEnd = new Date(jornadaStart);
     jornadaEnd.setDate(jornadaEnd.getDate() + 6); // Jornada spans about a week
     
     // If we're before the jornada ends, this is our current/upcoming jornada
     if (now <= jornadaEnd) {
-      return parseInt(jornada);
+      console.log(`📆 Date check: now=${now.toISOString().split('T')[0]}, jornada ${jornada} ends ${jornadaEnd.toISOString().split('T')[0]}`);
+      return jornada;
     }
   }
   
   // If all jornadas have passed, return the last one
-  const jornadas = Object.keys(LIGA_MX_CLAUSURA_2026).map(Number);
-  return Math.max(...jornadas);
+  return Math.max(...sortedJornadas);
 };
 
 // Helper to get current week number (same as schedule route)

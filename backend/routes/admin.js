@@ -1317,15 +1317,8 @@ router.put('/schedules/:scheduleId/match/:matchId', auth, adminAuth, async (req,
       return res.status(404).json({ message: 'Match not found' });
     }
 
-    // Check if any match has started (prevent editing after jornada starts)
-    const now = new Date();
-    const firstMatchTime = schedule.matches.reduce((earliest, m) => {
-      return m.startTime < earliest ? m.startTime : earliest;
-    }, schedule.matches[0].startTime);
-
-    if (now >= firstMatchTime) {
-      return res.status(400).json({ message: 'Cannot edit matches after the jornada has started' });
-    }
+    // Admin can update match details anytime (even after games start)
+    // This allows fixing errors in team names or times
 
     // Update match fields
     if (teamA) match.teamA = teamA;
@@ -1413,15 +1406,8 @@ router.delete('/schedules/:scheduleId', auth, adminAuth, async (req, res) => {
       return res.status(404).json({ message: 'Schedule not found' });
     }
 
-    // Don't allow deleting if matches have started
-    const now = new Date();
-    const firstMatchTime = schedule.matches.reduce((earliest, m) => {
-      return m.startTime < earliest ? m.startTime : earliest;
-    }, schedule.matches[0].startTime);
-
-    if (now >= firstMatchTime) {
-      return res.status(400).json({ message: 'Cannot delete schedule after matches have started' });
-    }
+    // Admin can delete schedule anytime (even after matches have started)
+    // This allows fixing major errors if needed
 
     const weekNumber = schedule.weekNumber;
     const year = schedule.year;

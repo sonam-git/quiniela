@@ -2649,8 +2649,8 @@ export default function Admin() {
                               </button>
                             )}
                             
-                            {/* Delete Button */}
-                            {!hasStarted && !sched.isSettled && (
+                            {/* Delete Button - Can delete anytime until settled */}
+                            {!sched.isSettled && (
                               <button
                                 onClick={() => handleDeleteSchedule(sched._id)}
                                 className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -2807,7 +2807,7 @@ export default function Admin() {
                                       </span>
                                     </div>
                                     
-                                    {!hasStarted && !sched.isSettled && (
+                                    {!sched.isSettled && (
                                       <button
                                         onClick={() => handleEditScheduleMatch(sched._id, match)}
                                         className={`p-1.5 rounded transition-colors flex-shrink-0 ${

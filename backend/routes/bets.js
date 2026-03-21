@@ -45,6 +45,30 @@ const checkBettingLock = async (weekNumber, year) => {
   return { locked: false, lockoutTime, firstMatchTime };
 };
 
+// Check if guest betting is locked (only after week is settled - allows adding guests after games start)
+const checkGuestBettingLock = async (weekNumber, year) => {
+  const schedule = await Schedule.findOne({ weekNumber, year });
+  if (!schedule) {
+    // No schedule for this week
+    return { locked: true, reason: 'No schedule found for this week' };
+  }
+
+  // If the week is already settled, guest betting is locked
+  if (schedule.isSettled) {
+    return { 
+      locked: true, 
+      reason: 'This week has been settled. Cannot add new guest bets.' 
+    };
+  }
+
+  const now = new Date();
+  const firstMatchTime = schedule.firstMatchTime;
+  const lockoutTime = new Date(firstMatchTime.getTime() - 5 * 60 * 1000);
+
+  // Guest bets are allowed even after games start (but not after settlement)
+  return { locked: false, lockoutTime, firstMatchTime };
+};
+
 // @route   GET /api/bets/my/current
 // @desc    Get current user's bet for the current week (or next week if current is settled)
 // @access  Private
@@ -846,8 +870,8 @@ router.post('/guest', auth, async (req, res) => {
 
     const cleanName = participantName.trim();
 
-    // Check betting lock
-    const lockStatus = await checkBettingLock(weekNumber, year);
+    // Check guest betting lock (allows adding guests even after games start, but not after settlement)
+    const lockStatus = await checkGuestBettingLock(weekNumber, year);
     if (lockStatus.locked) {
       return res.status(403).json({ 
         message: lockStatus.reason,

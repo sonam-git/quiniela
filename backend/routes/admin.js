@@ -1413,8 +1413,12 @@ router.delete('/schedules/:scheduleId', auth, adminAuth, async (req, res) => {
     const year = schedule.year;
     const scheduleId = schedule._id.toString();
 
-    // Delete associated bets
+    // Delete associated bets (both user bets and guest bets)
     await Bet.deleteMany({ scheduleId: schedule._id });
+    await GuestBet.deleteMany({ scheduleId: schedule._id });
+    // Also delete by weekNumber/year for bets that might not have scheduleId set
+    await Bet.deleteMany({ weekNumber, year });
+    await GuestBet.deleteMany({ weekNumber, year });
 
     // Delete schedule
     await Schedule.findByIdAndDelete(schedule._id);

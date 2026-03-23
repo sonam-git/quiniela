@@ -112,6 +112,31 @@ const LIGA_MX_TEAMS = [
   'UNAM Pumas'
 ]
 
+// Helper function to format a Date object for datetime-local input (in local timezone)
+// datetime-local inputs expect format: YYYY-MM-DDTHH:MM
+const formatDateTimeLocal = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+// Helper function to format display time in local timezone
+const formatDisplayTime = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 export default function Admin() {
   const [users, setUsers] = useState([])
   const [bets, setBets] = useState([])
@@ -1186,7 +1211,7 @@ export default function Admin() {
     setScheduleMatchForm({
       teamA: match.teamA,
       teamB: match.teamB,
-      startTime: new Date(match.startTime).toISOString().slice(0, 16) // Format for datetime-local input
+      startTime: formatDateTimeLocal(match.startTime) // Format for datetime-local input in local timezone
     })
   }
 
@@ -1204,10 +1229,12 @@ export default function Admin() {
 
     try {
       setScheduleLoading(true)
+      // Convert local datetime to ISO string for proper timezone handling
+      const localDate = new Date(scheduleMatchForm.startTime)
       const response = await api.put(`/admin/schedules/${selectedSchedule}/match/${editingScheduleMatch}`, {
         teamA: scheduleMatchForm.teamA,
         teamB: scheduleMatchForm.teamB,
-        startTime: scheduleMatchForm.startTime
+        startTime: localDate.toISOString() // Send as UTC ISO string
       })
       toast.success('Match updated successfully')
       handleCancelScheduleEdit()
@@ -1310,16 +1337,20 @@ export default function Admin() {
 
     try {
       setScheduleLoading(true)
+      // Convert local date+time to ISO strings for proper timezone handling
+      const matchesWithISOTime = newScheduleForm.matches.map(m => {
+        const localDate = new Date(`${m.date}T${m.time}`)
+        return {
+          teamA: m.teamA,
+          teamB: m.teamB,
+          startTime: localDate.toISOString() // Send as UTC ISO string
+        }
+      })
       await api.post('/admin/schedules/create', {
         weekNumber: parseInt(newScheduleForm.weekNumber),
         year: parseInt(newScheduleForm.year),
         jornada: newScheduleForm.jornada ? parseInt(newScheduleForm.jornada) : null,
-        matches: newScheduleForm.matches.map(m => ({
-          teamA: m.teamA,
-          teamB: m.teamB,
-          date: m.date,
-          time: m.time
-        }))
+        matches: matchesWithISOTime
       })
       // Success toast and state updates will be handled by real-time event (handleScheduleCreated)
       setShowCreateSchedule(false)
@@ -2185,13 +2216,7 @@ export default function Admin() {
                           
                           {/* Match Time */}
                           <p className={`text-xs mt-1 text-center ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-                            {new Date(match.startTime).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatDisplayTime(match.startTime)}
                           </p>
                         </div>
 
@@ -2649,22 +2674,21 @@ export default function Admin() {
                               </button>
                             )}
                             
-                            {/* Delete Button - Can delete anytime until settled */}
-                            {!sched.isSettled && (
-                              <button
-                                onClick={() => handleDeleteSchedule(sched._id)}
-                                className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                                  isDark
-                                    ? 'text-red-400 hover:bg-red-900/30'
-                                    : 'text-red-600 hover:bg-red-50'
-                                }`}
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span className="hidden sm:inline">Delete</span>
-                              </button>
-                            )}
+                            {/* Delete Button - Admin can delete any schedule */}
+                            <button
+                              onClick={() => handleDeleteSchedule(sched._id)}
+                              className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                isDark
+                                  ? 'text-red-400 hover:bg-red-900/30'
+                                  : 'text-red-600 hover:bg-red-50'
+                              }`}
+                              title="Delete Schedule"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
                           </div>
                         </div>
 
@@ -2798,12 +2822,7 @@ export default function Admin() {
                                       </div>
                                       
                                       <span className={`text-[10px] sm:text-xs flex-shrink-0 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
-                                        {new Date(match.startTime).toLocaleDateString('en-US', {
-                                          month: 'short',
-                                          day: 'numeric',
-                                          hour: '2-digit',
-                                          minute: '2-digit'
-                                        })}
+                                        {formatDisplayTime(match.startTime)}
                                       </span>
                                     </div>
                                     

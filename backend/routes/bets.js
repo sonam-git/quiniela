@@ -246,26 +246,41 @@ router.get('/current', async (req, res) => {
       guestBets = await GuestBet.find({ scheduleId: schedule._id })
         .populate('sponsorUserId', 'name email');
       
-      // If no guest bets found by scheduleId, fall back to weekNumber/year
-      // but filter by checking if predictions match current schedule's matches
-      if (guestBets.length === 0) {
-        const potentialGuestBets = await GuestBet.find({ 
-          weekNumber, 
-          year
-        }).populate('sponsorUserId', 'name email');
-        
-        // Filter to only include bets whose predictions match this schedule's matches
-        guestBets = potentialGuestBets.filter(gb => {
-          if (!gb.predictions || gb.predictions.length === 0) return false;
-          // Check if the first prediction's matchId exists in current schedule
-          const firstPredMatchId = gb.predictions[0]?.matchId?.toString();
-          return scheduleMatchIds.includes(firstPredMatchId);
+      // Also find legacy guest bets (without scheduleId) that match this schedule
+      const legacyGuestBets = await GuestBet.find({ 
+        weekNumber, 
+        year,
+        $or: [
+          { scheduleId: { $exists: false } },
+          { scheduleId: null }
+        ]
+      }).populate('sponsorUserId', 'name email');
+      
+      // Filter legacy bets to only include those whose predictions match this schedule's matches
+      const matchingLegacyBets = legacyGuestBets.filter(gb => {
+        if (!gb.predictions || gb.predictions.length === 0) return false;
+        // Check if ALL predictions' matchIds exist in current schedule (not just the first one)
+        return gb.predictions.every(pred => {
+          const predMatchId = pred.matchId?.toString();
+          return scheduleMatchIds.includes(predMatchId);
         });
-      }
+      });
+      
+      // Combine scheduleId-matched and legacy matched bets
+      guestBets = [...guestBets, ...matchingLegacyBets];
     } else {
       // Fallback for when schedule has no _id (shouldn't happen)
-      guestBets = await GuestBet.find({ weekNumber, year })
+      const potentialGuestBets = await GuestBet.find({ weekNumber, year })
         .populate('sponsorUserId', 'name email');
+      
+      // Filter by ALL predictions matching schedule's matches
+      guestBets = potentialGuestBets.filter(gb => {
+        if (!gb.predictions || gb.predictions.length === 0) return false;
+        return gb.predictions.every(pred => {
+          const predMatchId = pred.matchId?.toString();
+          return scheduleMatchIds.includes(predMatchId);
+        });
+      });
     }
     
     console.log(`📊 Found ${userBets.length} user bets and ${guestBets.length} guest bets for schedule ${schedule._id} (week ${weekNumber}, year ${year}, jornada ${schedule.jornada})`);
@@ -386,21 +401,27 @@ router.get('/settled-results', async (req, res) => {
     let guestBets = await GuestBet.find({ scheduleId: schedule._id })
       .populate('sponsorUserId', 'name email');
     
-    // If no guest bets found by scheduleId, fall back to weekNumber/year 
-    // but filter by checking if predictions match this schedule's matches
-    if (guestBets.length === 0) {
-      const potentialGuestBets = await GuestBet.find({ 
-        weekNumber: schedule.weekNumber, 
-        year: schedule.year
-      }).populate('sponsorUserId', 'name email');
-      
-      // Filter to only include bets whose predictions match this schedule's matches
-      guestBets = potentialGuestBets.filter(gb => {
-        if (!gb.predictions || gb.predictions.length === 0) return false;
-        const firstPredMatchId = gb.predictions[0]?.matchId?.toString();
-        return scheduleMatchIds.includes(firstPredMatchId);
+    // Also find legacy guest bets (without scheduleId) that match this schedule
+    const legacyGuestBets = await GuestBet.find({ 
+      weekNumber: schedule.weekNumber, 
+      year: schedule.year,
+      $or: [
+        { scheduleId: { $exists: false } },
+        { scheduleId: null }
+      ]
+    }).populate('sponsorUserId', 'name email');
+    
+    // Filter legacy bets to only include those whose ALL predictions match this schedule's matches
+    const matchingLegacyBets = legacyGuestBets.filter(gb => {
+      if (!gb.predictions || gb.predictions.length === 0) return false;
+      return gb.predictions.every(pred => {
+        const predMatchId = pred.matchId?.toString();
+        return scheduleMatchIds.includes(predMatchId);
       });
-    }
+    });
+    
+    // Combine scheduleId-matched and legacy matched bets
+    guestBets = [...guestBets, ...matchingLegacyBets];
     
     console.log(`📊 Settled results: Found ${userBets.length} user bets and ${guestBets.length} guest bets for schedule ${schedule._id} (jornada ${schedule.jornada})`);
 
@@ -841,12 +862,23 @@ router.post('/guest', auth, async (req, res) => {
     const now = new Date();
     let weekNumber = providedWeek || getWeekNumber(now);
     let year = providedYear || now.getFullYear();
+    let schedule = null;
 
-    // If no week provided, check if current week is settled and use next week
-    if (!providedWeek) {
-      const schedule = await Schedule.findOne({ weekNumber, year });
+    // Find the current active (unsettled) schedule - this ensures we get the correct scheduleId
+    schedule = await Schedule.findOne({ 
+      isSettled: false,
+      year: { $gte: year - 1 }
+    }).sort({ year: 1, weekNumber: 1 });
+
+    if (schedule) {
+      // Use the schedule's week number to stay consistent
+      weekNumber = schedule.weekNumber;
+      year = schedule.year;
+    } else if (!providedWeek) {
+      // Fallback: check if current week is settled and use next week
+      const currentSchedule = await Schedule.findOne({ weekNumber, year });
       
-      if (schedule && schedule.isSettled) {
+      if (currentSchedule && currentSchedule.isSettled) {
         const nextWeek = weekNumber + 1;
         const nextYear = nextWeek > 52 ? year + 1 : year;
         const actualNextWeek = nextWeek > 52 ? 1 : nextWeek;
@@ -859,7 +891,10 @@ router.post('/guest', auth, async (req, res) => {
         if (nextWeekSchedule && !nextWeekSchedule.isSettled) {
           weekNumber = actualNextWeek;
           year = nextYear;
+          schedule = nextWeekSchedule;
         }
+      } else {
+        schedule = currentSchedule;
       }
     }
 
@@ -884,13 +919,21 @@ router.post('/guest', auth, async (req, res) => {
       return res.status(400).json({ message: 'Must provide exactly 9 match predictions' });
     }
 
-    // Check if this guest already has a bet for this week from this user
-    const existingBet = await GuestBet.findOne({ 
+    // Check if this guest already has a bet for this schedule/week from this user
+    // Use scheduleId if available for more accurate duplicate detection
+    const existingBetQuery = { 
       sponsorUserId: req.user._id, 
-      weekNumber, 
-      year,
       participantName: cleanName
-    });
+    };
+    
+    if (schedule?._id) {
+      existingBetQuery.scheduleId = schedule._id;
+    } else {
+      existingBetQuery.weekNumber = weekNumber;
+      existingBetQuery.year = year;
+    }
+    
+    const existingBet = await GuestBet.findOne(existingBetQuery);
 
     if (existingBet) {
       return res.status(400).json({ 
@@ -899,9 +942,11 @@ router.post('/guest', auth, async (req, res) => {
     }
 
     // Create guest bet using the new GuestBet model
+    // Include scheduleId for accurate matching across jornadas
     const guestBet = new GuestBet({
       sponsorUserId: req.user._id,
       participantName: cleanName,
+      scheduleId: schedule?._id || null,
       weekNumber,
       year,
       totalGoals,

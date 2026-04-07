@@ -160,15 +160,23 @@ export default function Dashboard() {
           getSettledResultsBets()
         ])
         
-        setResultsSchedule(settledScheduleRes.schedule)
-        setResultsBets(settledBetsRes.bets)
-        setResultsInfo({
-          weekNumber: settledScheduleRes.weekNumber,
-          year: settledScheduleRes.year,
-          jornada: settledScheduleRes.jornada,
-          settledAt: settledScheduleRes.settledAt
-        })
-        setHasResults(true)
+        // Check if the backend actually has results (hasResults flag)
+        if (settledScheduleRes.hasResults && settledScheduleRes.schedule) {
+          setResultsSchedule(settledScheduleRes.schedule)
+          setResultsBets(settledBetsRes.bets || [])
+          setResultsInfo({
+            weekNumber: settledScheduleRes.weekNumber,
+            year: settledScheduleRes.year,
+            jornada: settledScheduleRes.jornada,
+            settledAt: settledScheduleRes.settledAt
+          })
+          setHasResults(true)
+        } else {
+          // Backend returned 200 but no results
+          setHasResults(false)
+          setResultsSchedule(null)
+          setResultsBets([])
+        }
       } catch (resultsError) {
         // No settled results available - that's OK
         setHasResults(false)
@@ -490,15 +498,18 @@ export default function Dashboard() {
     // Update the Results tab with the settled week data
     Promise.all([getSettledResults(), getSettledResultsBets()])
       .then(([scheduleRes, betsRes]) => {
-        setResultsSchedule(scheduleRes.schedule)
-        setResultsBets(betsRes.bets)
-        setResultsInfo({
-          weekNumber: scheduleRes.weekNumber,
-          year: scheduleRes.year,
-          jornada: scheduleRes.jornada,
-          settledAt: scheduleRes.settledAt
-        })
-        setHasResults(true)
+        // Check if the backend actually has results
+        if (scheduleRes.hasResults && scheduleRes.schedule) {
+          setResultsSchedule(scheduleRes.schedule)
+          setResultsBets(betsRes.bets || [])
+          setResultsInfo({
+            weekNumber: scheduleRes.weekNumber,
+            year: scheduleRes.year,
+            jornada: scheduleRes.jornada,
+            settledAt: scheduleRes.settledAt
+          })
+          setHasResults(true)
+        }
       })
       .catch(console.error)
     

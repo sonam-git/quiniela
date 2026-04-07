@@ -24,17 +24,38 @@ const calculateBetsWithLivePoints = async (schedule) => {
   if (!schedule) return [];
   
   try {
-    // Fetch all bets for this week
+    // Fetch all user bets for this week
     const userBets = await Bet.find({ 
       weekNumber: schedule.weekNumber, 
       year: schedule.year,
       isGuestBet: { $ne: true }
     }).populate('userId', 'name email');
     
-    const guestBets = await GuestBet.find({ 
+    // Fetch guest bets - prefer scheduleId for accurate matching
+    const scheduleMatchIds = schedule.matches.map(m => m._id.toString());
+    let guestBets = await GuestBet.find({ scheduleId: schedule._id })
+      .populate('sponsorUserId', 'name');
+    
+    // Also find legacy guest bets (without scheduleId) that match this schedule
+    const legacyGuestBets = await GuestBet.find({ 
       weekNumber: schedule.weekNumber, 
-      year: schedule.year 
+      year: schedule.year,
+      $or: [
+        { scheduleId: { $exists: false } },
+        { scheduleId: null }
+      ]
     }).populate('sponsorUserId', 'name');
+    
+    // Filter legacy bets to only include those whose ALL predictions match this schedule's matches
+    const matchingLegacyBets = legacyGuestBets.filter(gb => {
+      if (!gb.predictions || gb.predictions.length === 0) return false;
+      return gb.predictions.every(pred => {
+        const predMatchId = pred.matchId?.toString();
+        return scheduleMatchIds.includes(predMatchId);
+      });
+    });
+    
+    guestBets = [...guestBets, ...matchingLegacyBets];
     
     // Transform guest bets to match user bet format
     const transformedGuestBets = guestBets.map(gb => ({
@@ -1107,8 +1128,30 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
       await bet.save();
     }
 
-    // Get all guest bets for this week
-    const guestBets = await GuestBet.find({ weekNumber, year });
+    // Get all guest bets for this schedule - use scheduleId for accurate matching
+    const scheduleMatchIds = schedule.matches.map(m => m._id.toString());
+    let guestBets = await GuestBet.find({ scheduleId: schedule._id });
+    
+    // Also find legacy guest bets (without scheduleId) that match this schedule
+    const legacyGuestBets = await GuestBet.find({ 
+      weekNumber, 
+      year,
+      $or: [
+        { scheduleId: { $exists: false } },
+        { scheduleId: null }
+      ]
+    });
+    
+    // Filter legacy bets to only include those whose ALL predictions match this schedule's matches
+    const matchingLegacyBets = legacyGuestBets.filter(gb => {
+      if (!gb.predictions || gb.predictions.length === 0) return false;
+      return gb.predictions.every(pred => {
+        const predMatchId = pred.matchId?.toString();
+        return scheduleMatchIds.includes(predMatchId);
+      });
+    });
+    
+    guestBets = [...guestBets, ...matchingLegacyBets];
 
     // Calculate points and goal difference for each guest bet
     for (const guestBet of guestBets) {
@@ -1135,7 +1178,7 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
     // Combine all bets for ranking
     const allBetsForRanking = [
       ...await Bet.find({ weekNumber, year, isPlaceholder: { $ne: true }, isGuestBet: { $ne: true } }),
-      ...await GuestBet.find({ weekNumber, year })
+      ...guestBets // Use the already-filtered guest bets
     ];
 
     // Sort all bets: by points (desc), then by goal difference (asc - closest wins)
@@ -1188,10 +1231,33 @@ router.post('/schedule/settle', auth, adminAuth, async (req, res) => {
       .populate('userId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });
 
-    // Get final guest bets
-    const finalGuestBets = await GuestBet.find({ weekNumber, year })
+    // Get final guest bets - use the already-filtered list with scheduleId matching
+    // Re-fetch with populate for sponsor info
+    let finalGuestBets = await GuestBet.find({ scheduleId: schedule._id })
       .populate('sponsorUserId', 'name email')
       .sort({ totalPoints: -1, goalDifference: 1 });
+    
+    // Also include matching legacy guest bets
+    const finalLegacyGuestBets = await GuestBet.find({ 
+      weekNumber, 
+      year,
+      $or: [
+        { scheduleId: { $exists: false } },
+        { scheduleId: null }
+      ]
+    })
+      .populate('sponsorUserId', 'name email')
+      .sort({ totalPoints: -1, goalDifference: 1 });
+    
+    const finalMatchingLegacy = finalLegacyGuestBets.filter(gb => {
+      if (!gb.predictions || gb.predictions.length === 0) return false;
+      return gb.predictions.every(pred => {
+        const predMatchId = pred.matchId?.toString();
+        return scheduleMatchIds.includes(predMatchId);
+      });
+    });
+    
+    finalGuestBets = [...finalGuestBets, ...finalMatchingLegacy];
 
     // Combine all winners
     const allWinners = [

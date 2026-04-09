@@ -420,6 +420,7 @@ export default function Profile() {
   const navigate = useNavigate()
   
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [myBet, setMyBet] = useState(null)
   const [guestBets, setGuestBets] = useState([])
   const [schedule, setSchedule] = useState(null)
@@ -487,15 +488,26 @@ export default function Profile() {
     return `${minutes}m`
   }
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
+    
     try {
       setLoading(true)
+      setError(null)
+      console.log(`📊 Profile: Starting fetchData (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
+      
       const [betRes, scheduleRes, announcementsRes, guestBetsRes] = await Promise.all([
         api.get('/bets/my/current'),
         api.get('/schedule/current'),
         api.get('/announcements'),
         getMyGuestBets().catch(() => ({ guestBets: [] }))
       ])
+      
+      console.log('📊 Profile: Data fetched successfully', {
+        hasBet: !!betRes.data.bet,
+        hasSchedule: !!scheduleRes.data.schedule,
+        guestBets: guestBetsRes.guestBets?.length || 0
+      })
       
       setMyBet(betRes.data.bet)
       setGuestBets(guestBetsRes.guestBets || [])
@@ -516,7 +528,31 @@ export default function Profile() {
         setSelectedGuestId(prev => prev || guestBetsRes.guestBets[0]._id)
       }
     } catch (error) {
-      console.error('Error fetching profile data:', error)
+      console.error('Profile fetch error:', error, {
+        code: error.code,
+        message: error.message,
+        response: error.response?.status,
+        retryCount
+      })
+      
+      // Check if it's a network error and we haven't exhausted retries
+      const isNetworkError = error.code === 'ERR_NETWORK' || 
+                            error.message === 'Network Error' ||
+                            error.code === 'ECONNABORTED' ||
+                            !error.response;
+      
+      if (isNetworkError && retryCount < MAX_RETRIES) {
+        console.log(`Retrying profile fetch (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return fetchData(retryCount + 1)
+      }
+      
+      setError({
+        title: 'Failed to Load Profile',
+        message: isNetworkError 
+          ? 'Unable to connect to the server. The server may be starting up - please wait a moment and try again.'
+          : 'Something went wrong while loading your profile. Please try again.'
+      })
     } finally {
       setLoading(false)
     }
@@ -1045,6 +1081,65 @@ export default function Profile() {
             isDark ? 'border-emerald-500 border-t-transparent' : 'border-emerald-600 border-t-transparent'
           }`} />
           <p className={`mt-4 text-sm ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{t('loading')}</p>
+          <p className={`mt-1 text-xs ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+            Server may take up to 30 seconds to wake up...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen ${isDark ? 'bg-dark-900' : 'bg-gray-50'}`}>
+        <div className="max-w-lg mx-auto px-4 py-16">
+          <div className={`rounded-xl border p-8 text-center ${
+            isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-5 ${
+              isDark ? 'bg-red-900/20' : 'bg-red-50'
+            }`}>
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            
+            <h2 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {error.title}
+            </h2>
+            
+            <p className={`text-sm mb-6 ${isDark ? 'text-dark-400' : 'text-gray-600'}`}>
+              {error.message}
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={() => {
+                  setLoading(true)
+                  setError(null)
+                  fetchData()
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Try Again
+              </button>
+              
+              <Link
+                to="/dashboard"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isDark
+                    ? 'bg-dark-700 hover:bg-dark-600 text-white border border-dark-600'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                }`}
+              >
+                <BackIcon />
+                Back to Dashboard
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )

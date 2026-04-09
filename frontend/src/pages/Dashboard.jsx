@@ -148,7 +148,11 @@ export default function Dashboard() {
     }
   }
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
+    
+    console.log(`📊 Dashboard: Starting fetchData (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
+    
     try {
       setError(null)
       
@@ -224,13 +228,33 @@ export default function Dashboard() {
       setAnnouncements(announcementsRes.data.announcements || [])
       setBetAmount(betAmountValue || 20)
     } catch (error) {
+      console.error('Dashboard fetch error:', error, {
+        code: error.code,
+        message: error.message,
+        response: error.response?.status,
+        retryCount
+      })
+      
+      // Check if it's a network error and we haven't exhausted retries
+      const isNetworkError = error.code === 'ERR_NETWORK' || 
+                            error.message === 'Network Error' ||
+                            error.code === 'ECONNABORTED' ||
+                            !error.response;
+      
+      if (isNetworkError && retryCount < MAX_RETRIES) {
+        console.log(`Retrying fetch (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`)
+        // Wait a bit before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return fetchData(retryCount + 1)
+      }
+      
       if (error.response?.status === 404) {
         setError({
           type: 'not_found',
           title: 'No Schedule Available',
           message: 'The schedule for this week hasn\'t been created yet. Please check back later.'
         })
-      } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      } else if (isNetworkError) {
         setError({
           type: 'network',
           title: 'Connection Error',
@@ -619,7 +643,7 @@ export default function Dashboard() {
       }
     }, 120000) // 2 minutes fallback
     return () => clearInterval(interval)
-  }, [fetchData, isConnected])
+  }, [fetchData]) // Removed isConnected - it causes unnecessary refetches
 
   // Auto-switch to results tab if there's no current schedule but there are settled results
   useEffect(() => {

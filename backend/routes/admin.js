@@ -1581,27 +1581,14 @@ router.patch('/schedules/:scheduleId/fix-week', auth, adminAuth, async (req, res
 });
 
 // @route   POST /api/admin/schedules/refresh
-// @desc    Refresh schedule from API-Football
+// @desc    DISABLED - Was: Refresh schedule from API-Football
 // @access  Admin
+// NOTE: Automatic schedule creation is disabled. Admin must create schedules manually.
 router.post('/schedules/refresh', auth, adminAuth, async (req, res) => {
-  try {
-    const { createNextWeekSchedule } = require('../services/scheduler');
-    const result = await createNextWeekSchedule();
-    
-    if (result.success) {
-      // Emit real-time update
-      const io = req.app.get('io');
-      if (io) {
-        io.emit('schedule:created', { schedule: result.schedule });
-      }
-      res.json(result);
-    } else {
-      res.status(400).json(result);
-    }
-  } catch (error) {
-    console.error('Refresh schedule error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  res.status(400).json({ 
+    success: false, 
+    message: 'Automatic schedule creation is disabled. Please create schedules manually using the Create Schedule form.' 
+  });
 });
 
 // ==================== SETTINGS ROUTES ====================

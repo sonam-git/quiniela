@@ -292,85 +292,13 @@ router.post('/', auth, async (req, res) => {
 });
 
 // @route   POST /api/schedule/fetch-from-api
-// @desc    Fetch matches from API-Football and create schedule (Liga MX)
+// @desc    DISABLED - Was: Fetch matches from API-Football and create schedule
 // @access  Private
+// NOTE: Automatic schedule creation is disabled. Admin must create schedules manually.
 router.post('/fetch-from-api', auth, async (req, res) => {
-  try {
-    // Default to Liga MX (Mexican League)
-    const { league = LEAGUES.LIGA_MX, season = 2025 } = req.body;
-    
-    const now = new Date();
-    const weekNumber = getWeekNumber(now);
-    const year = now.getFullYear();
-
-    // Check if schedule already exists
-    const existing = await Schedule.findOne({ weekNumber, year });
-    if (existing) {
-      return res.status(400).json({ 
-        message: 'Schedule already exists for this week',
-        schedule: existing
-      });
-    }
-
-    // Get current round
-    const currentRound = await getCurrentRound(league, season);
-    console.log('Current round:', currentRound);
-
-    // Get fixtures for the current round
-    const fixtures = await getFixturesByRound(league, season, currentRound);
-    
-    if (!fixtures || fixtures.length === 0) {
-      return res.status(404).json({ message: 'No fixtures found for current round' });
-    }
-
-    // Take first 9 matches (or all if less than 9)
-    const selectedFixtures = fixtures.slice(0, 9);
-
-    // Map API response to our schema
-    const matches = selectedFixtures.map(fixture => ({
-      teamA: fixture.teams.home.name,
-      teamB: fixture.teams.away.name,
-      startTime: new Date(fixture.fixture.date),
-      apiFixtureId: fixture.fixture.id,
-      result: null,
-      scoreTeamA: null,
-      scoreTeamB: null,
-      isCompleted: false
-    }));
-
-    // Pad with placeholder matches if less than 9
-    while (matches.length < 9) {
-      const placeholderDate = new Date();
-      placeholderDate.setDate(placeholderDate.getDate() + 7);
-      matches.push({
-        teamA: `Team A${matches.length + 1}`,
-        teamB: `Team B${matches.length + 1}`,
-        startTime: placeholderDate,
-        result: null,
-        scoreTeamA: null,
-        scoreTeamB: null,
-        isCompleted: false
-      });
-    }
-
-    const schedule = new Schedule({
-      weekNumber,
-      year,
-      matches
-    });
-
-    await schedule.save();
-
-    res.status(201).json({ 
-      message: 'Schedule created from API-Football',
-      schedule,
-      round: currentRound,
-      fixturesCount: selectedFixtures.length
-    });
-  } catch (error) {
-    console.error('Fetch from API error:', error);
-    res.status(500).json({ message: 'Failed to fetch from API-Football', error: error.message });
-  }
+  res.status(400).json({ 
+    message: 'Automatic schedule creation from API is disabled. Please create schedules manually through the Admin panel.' 
+  });
 });
 
 // @route   POST /api/schedule/sync-results

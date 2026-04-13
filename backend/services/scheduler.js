@@ -870,6 +870,7 @@ module.exports = {
   getWeekNumber,
   getUpcomingJornada,
   checkAutoSettlement,
+  startAutoSettlementChecker,
   stopAutoSettlementChecker,
   forceSettleIncompleteSchedule,
   autoSettleSchedule,

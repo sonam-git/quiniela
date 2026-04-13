@@ -22,7 +22,8 @@ const resultsRoutes = require('./routes/results');
 const adminRoutes = require('./routes/admin');
 const announcementsRoutes = require('./routes/announcements');
 const pdfRoutes = require('./routes/pdf');
-const { initScheduler } = require('./services/scheduler');
+// DISABLED: Auto schedule creation - only using auto-settlement
+// const { initScheduler } = require('./services/scheduler');
 
 const app = express();
 const server = http.createServer(app);
@@ -97,8 +98,12 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    // Initialize automatic schedule creator with socket.io instance for real-time updates
-    initScheduler(io);
+    // DISABLED: Automatic schedule creation - admin creates schedules manually
+    console.log('📅 Auto-schedule creation: DISABLED (admin must create manually)');
+    // Only initialize auto-settlement checker (not the schedule creator)
+    const { startAutoSettlementChecker } = require('./services/scheduler');
+    startAutoSettlementChecker(io);
+    console.log('✅ Auto-settlement checker: ENABLED');
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
